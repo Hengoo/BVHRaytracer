@@ -3,17 +3,25 @@
 #include <algorithm>
 #include <vector>
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp> //https://glm.g-truc.net/0.9.4/api/a00158.html  for make quat from a pointer to a array
-#include <glm/gtx/hash.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
+//for the parallel for
+#include <execution>
 
-#include "accelerationStructure/bvh.h"
+#include "glmInclude.h"
 #include "lodepng/lodepng.h"
+
+struct RenderInfo
+{
+	float w;
+	float h;
+	int index;
+
+	RenderInfo(int w, int h, int index) : w(w), h(h), index(index)
+	{
+	}
+	RenderInfo() : w(0), h(0), index(0)
+	{
+	}
+};
 
 //spawns all the rays in the scene
 class Camera
@@ -25,47 +33,68 @@ public:
 	glm::vec3 position;
 	glm::vec3 forward;
 	glm::vec3 upward;
+	glm::vec3 right;
+
 	std::vector<unsigned char> image;
+
+	//contains all info needed to spawn the ray for the specific pixel. Only needed because i dont know how to get the loop index into the unsequenced for_each
+	std::vector<RenderInfo> renderInfos;
 
 	int height;
 	int width;
 
+	float sizeFactor = 0.1f;
+	float farPlane = 50;
+
 	std::unique_ptr<Bvh> bvh;
 
-	Camera(std::unique_ptr<Bvh> bvh, glm::vec3 position, glm::vec3 forward, glm::vec3 upward = glm::vec3(0, 1, 0), int height = 30, int width = 60) : position(position), forward(forward), upward(upward), height(height), width(width)
+	Camera(std::unique_ptr<Bvh> bvh, glm::vec3 position, glm::vec3 forward, glm::vec3 upward = glm::vec3(0, 1, 0), int height = 300, int width = 600) : position(position), forward(forward), upward(upward), height(height), width(width)
 	{
 		this->bvh = std::move(bvh);
-		forward = glm::normalize(forward);
-		upward = glm::normalize(upward);
+
+
+		right = glm::cross(forward, upward);
+		this->upward = glm::cross(right, forward);
+		right = glm::normalize(right);
+		this->forward = glm::normalize(this->forward);
+		this->upward = glm::normalize(this->upward);
+
 		image.resize(height * width * 4);
+		renderInfos.resize(height * width);
+
 	}
 
 	//spawns rays and collects results into image. Image is written on disk
 	void renderImage()
 	{
-		float sizeFactor = 0.1f;
-		float farPlane = 20;
 		//simplified ortho version for now:
+
+		//fill RenderInfo array.
 		for (int i = 0; i < width * height; i++)
 		{
-			int w = i % width - width / 2.f;
-			int h = i / width - height / 2.f;
-			glm::vec3 pos = position + (upward * (float)h - glm::cross(upward, forward) * (float)w) * sizeFactor;
-			auto ray = std::make_shared<Ray>(pos, forward);
-			auto result = bvh->intersect(ray);
-			//image[i * 4] = ray->distance / farPlane * 255;
-			//image[i * 4 + 1] = ray->distance / farPlane * 255;
-			//image[i * 4 + 2] = ray->distance / farPlane * 255;
-			image[i * 4] = ray->result[0];
-			image[i * 4 + 1] = ray->result[1];
-			image[i * 4 + 2] = ray->result[2];
-			image[i * 4 + 3] = 255;
+			float w = -(i % width - width / 2.f);
+			float h = -(i / width - height / 2.f);
 
-			if (i % width == i / width)
-			{
-				image[i * 4 + 1] = 255;
-			}
+			renderInfos[i] = RenderInfo(w, h, i);
 		}
+
+		//todo: 
+		//not a lambda expert: [this] seems to be needed so i can access object variables
+		std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
+			[&](auto& info)
+			{
+				glm::vec3 pos = position + (upward * (float)info.h - right * (float)info.w) * sizeFactor;
+
+				//todo: move to some method for sampling?
+
+				auto ray = std::make_shared<Ray>(pos, forward);
+
+				auto result = bvh->intersect(ray);
+				image[info.index * 4 + 0] = ray->result[0];
+				image[info.index * 4 + 1] = ray->result[1];
+				image[info.index * 4 + 2] = ray->result[2];
+				image[info.index * 4 + 3] = 255;
+			});
 
 		/*
 		for (int i = 0; i < height; i++)

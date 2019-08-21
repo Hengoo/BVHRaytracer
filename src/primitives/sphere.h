@@ -1,15 +1,9 @@
 #pragma once
 #include <iostream>
+#include <vector>
+#include <array>
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp> //https://glm.g-truc.net/0.9.4/api/a00158.html  for make quat from a pointer to a array
-#include <glm/gtx/hash.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
-
+#include "../glmInclude.h"
 #include "primitive.h"
 
 class Sphere : public Primitive
@@ -18,7 +12,9 @@ public:
 	glm::vec3 pos;
 	float radius;
 
-	Sphere(glm::vec3 pos, float radius) : pos(pos), radius(radius)
+	std::array<unsigned char,4> color;
+
+	Sphere(glm::vec3 pos, float radius, std::array<unsigned char, 4> color) : pos(pos), radius(radius), color(color)
 	{
 	}
 
@@ -26,7 +22,7 @@ public:
 	{
 	}
 
-	bool virtual intersect(std::shared_ptr<Ray> ray) override
+	virtual bool intersect(std::shared_ptr<Ray> ray) override
 	{
 
 
@@ -46,12 +42,44 @@ public:
 			if (dist < ray->distance)
 			{
 				//ray->result = {0,0,0,255};
-				auto tmp = ray->pos * 10.0f + ray->direction * dist ;
-				ray->result = {(unsigned char) tmp.x,(unsigned char)tmp.y, (unsigned char) tmp.z,255 };
+				auto tmp = ray->pos * 10.0f + ray->direction * dist;
+				//ray->result = { (unsigned char)tmp.x,(unsigned char)tmp.y, (unsigned char)tmp.z,255 };
+				ray->result = color;
 				ray->distance = dist;
 			}
 			return true;
 		}
+	}
+
+	virtual bool intersect(std::shared_ptr<Node> node) override
+	{
+		std::shared_ptr<Aabb> aabb = std::dynamic_pointer_cast<Aabb>(node);
+		if (aabb)
+		{
+			//aabb sphere intersection
+
+			//https://stackoverflow.com/questions/4578967/cube-sphere-intersection-test
+			float r2 = radius * radius;
+			if (pos.x < aabb->minBound.x) r2 -= pow(pos.x - aabb->minBound.x, 2);
+			else if (pos.x > aabb->minBound.x + aabb->boundDimension.x) r2 -= pow(pos.x - aabb->minBound.x + aabb->boundDimension.x, 2);
+
+			if (pos.y < aabb->minBound.y) r2 -= pow(pos.y - aabb->minBound.y, 2);
+			else if (pos.y > aabb->minBound.y + aabb->boundDimension.y) r2 -= pow(pos.y - aabb->minBound.y + aabb->boundDimension.y, 2);
+
+			if (pos.z < aabb->minBound.z) r2 -= pow(pos.z - aabb->minBound.z, 2);
+			else if (pos.z > aabb->minBound.z + aabb->boundDimension.z) r2 -= pow(pos.z - aabb->minBound.z + aabb->boundDimension.z, 2);
+
+			return r2 > 0;
+		}
+
+		//no derived type-> return false since base node has no collision / contains all childs
+		return true;
+	}
+
+	virtual void getBounds(glm::vec3& min, glm::vec3& max) override
+	{
+		min = pos - glm::vec3(radius);
+		max = pos + glm::vec3(radius);
 	}
 
 protected:

@@ -3,61 +3,29 @@
 #include <algorithm>
 #include <vector>
 
+//forward declarations:
+class Primitive;
+class Ray;
 
-#include "../ray.h"
-#include "../primitives/primitive.h"
-
+//node of the acceleration structure. Ray intersections are defineed in derived classes
 class Node
 {
 public:
+	virtual void addNode(std::shared_ptr<Node> n);
 
-	//better protected?
-	//if i change this to array i save space IF it is mostly filled. Vector has 24 byte overhead so its not that bad
-	std::vector<std::unique_ptr<Node>> children;
+	virtual void addPrimitive(std::shared_ptr<Primitive> p);
 
-	//benefit of primitives is nodes is that it coulds have larger primitives way up -> less duplicates  (if a triangle is in all children nodes, have it directly here)
-	std::vector<std::unique_ptr<Primitive>> primitives;
+	virtual bool intersect(std::shared_ptr<Ray> ray);
 
-	Node()
-	{
-	}
+	virtual void constructBvh();
 
-	~Node()
-	{
-	}
-
-	virtual void addNode(std::unique_ptr<Node> n)
-	{
-		children.push_back(std::move(n));
-	}
-
-	virtual void addPrimitive(std::unique_ptr<Primitive> p)
-	{
-		primitives.push_back(std::move(p));
-	}
-
-	virtual bool intersect(std::shared_ptr<Ray> ray)
-	{
-		//not sure if i need bool result?
-		bool result = false;
-		for (auto& c : children)
-		{
-			if (c->intersect(ray))
-			{
-				result = true;
-			}
-		}
-
-		for (auto& p : primitives)
-		{
-			if(p->intersect(ray));
-			{
-				result = true;
-			}
-		}
-		return result;
-	}
+	virtual int getChildCount();
+	virtual int getPrimCount();
 
 protected:
-	
+	//if i change this to array i save space IF it is mostly filled. Vector has 24 byte overhead so its not that bad
+	std::vector<std::shared_ptr<Node>> children;
+
+	//when all nodes can have primitives: nodes can have larger primitives higher in tree -> less duplicates (if a triangle is in all children nodes, have it directly here). ALso most likely less tests for shadow ray?
+	std::vector<std::shared_ptr<Primitive>> primitives;
 };
