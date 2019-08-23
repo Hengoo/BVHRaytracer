@@ -21,6 +21,8 @@ public:
 
 	//save result here? ps: need to care with parrallel writes here when i start  with threads
 	std::array<unsigned char, 4> result{ 0,0,0,255 };
+
+	//TODO check that i dont render things behind the camera (and throw node collisions away that are behind the camera)
 	float distance;
 
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
@@ -30,7 +32,7 @@ public:
 	{
 		this->direction = glm::normalize(direction);
 		invDirection = 1.0f / this->direction;
-		distance = INT_MAX;
+		distance = 222222.f;
 	}
 
 	~Ray()

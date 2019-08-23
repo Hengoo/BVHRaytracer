@@ -24,7 +24,7 @@ void Node::constructBvh()
 	}
 }
 
-bool Node::intersect(std::shared_ptr<Ray> ray)
+bool Node::intersect(Ray& ray)
 {
 	//not sure if i need bool results? i store result in the ray
 	bool result = false;

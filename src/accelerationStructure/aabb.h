@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <array>
 
 //for the parallel for
 #include <execution>
@@ -24,14 +25,16 @@ public:
 	glm::vec3 boundDimension;
 	//possible rotation??? -> since its just a bvh tester it doesnt really matter
 
-	Aabb(glm::vec3 pos = glm::vec3(0), glm::vec3 dimension = glm::vec3(0)) : minBound(pos), boundDimension(dimension)
+	Aabb(glm::vec3 pos = glm::vec3(-222222.0f), glm::vec3 dimension = glm::vec3(444444.0f)) : minBound(pos), boundDimension(dimension)
 	{
 	}
 
 	virtual void constructBvh() override
 	{
+		//currently very basic octree approach
+
 		//first update bounds of current aabb according to primitive:
-		glm::vec3 min(INT_MAX), max(-INT_MAX);
+		glm::vec3 min(222222.0f), max(-222222.0f);
 		glm::vec3 minp, maxp;
 		for (auto& p : primitives)
 		{
@@ -39,8 +42,9 @@ public:
 			min = glm::min(min, minp);
 			max = glm::max(max, maxp);
 		}
-		minBound = min;
-		boundDimension = max - min;
+
+		minBound = glm::max(min, minBound);
+		boundDimension = glm::min(max - min, boundDimension);
 
 		//check primitive count. if less than x primitives, stop.
 		if (primitives.size() <= 1)
@@ -48,7 +52,8 @@ public:
 			return;
 		}
 
-		//basic approach: construct multiple aabb and check all primitives against it. -> if its in then add it
+		//approach: construct multiple aabb and check all primitives against it. -> if its in then add it
+		//in theory i could try out different factors (replace 0.5 with vector with different values and check how good resulting aabb are)
 
 		//octree:
 		auto dim = boundDimension * 0.5f;
@@ -76,7 +81,7 @@ public:
 			{
 				for (auto& box : boxes)
 				{
-					if (prim->intersect(box))
+					if (prim->intersect(&*box))
 					{
 						box->addPrimitive(prim);
 					}
@@ -101,37 +106,35 @@ public:
 			}
 		}
 
-
-		//todo: keep primitives that are placed in all children in this node
-
+		//todo: keep primitives that are placed in all children in this node (and dont have them in the children)
 		primitives.clear();
 
 		//constructs bvh of all children:
 		Node::constructBvh();
 	}
 
-	virtual bool intersect(std::shared_ptr<Ray> ray) override
+	virtual bool intersect(Ray& ray) override
 	{
 		//mostly from here https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
 
 		//TODO replace / with * inverse direction so its only calc once
-		glm::vec3 tmin = (minBound - ray->pos) * ray->invDirection;
-		glm::vec3 tmax = (minBound - ray->pos + boundDimension) * ray->invDirection;
+		glm::vec3 tmin = (minBound - ray.pos) * ray.invDirection;
+		glm::vec3 tmax = (minBound - ray.pos + boundDimension) * ray.invDirection;
 
 		float tmp = 0;
-		if (ray->direction.x < 0)
+		if (ray.direction.x < 0)
 		{
 			tmp = tmin.x;
 			tmin.x = tmax.x;
 			tmax.x = tmp;
 		}
-		if (ray->direction.y < 0)
+		if (ray.direction.y < 0)
 		{
 			tmp = tmin.y;
 			tmin.y = tmax.y;
 			tmax.y = tmp;
 		}
-		if (ray->direction.z < 0)
+		if (ray.direction.z < 0)
 		{
 			tmp = tmin.z;
 			tmin.z = tmax.z;
@@ -166,7 +169,7 @@ public:
 			tmax.x = tmax.z;
 		}
 
-		//ray->result[1] += 10;
+		ray.result[1] += 10;
 		//intersect all primitves and nodes:
 		return Node::intersect(ray);
 	}

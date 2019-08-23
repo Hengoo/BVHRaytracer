@@ -32,7 +32,7 @@ public:
 	{
 	}
 
-	bool intersect(std::shared_ptr<Ray> ray)
+	bool intersect(Ray& ray)
 	{
 		return root->intersect(ray);
 	}
@@ -96,7 +96,7 @@ private:
 	{
 		float dist = 20;
 		std::array<unsigned char, 4> color = { rint(0, 255), rint(0, 255), rint(0, 255), 255 };
-		auto p = std::make_shared<Sphere>(glm::vec3(rfloat(2, dist), rfloat(-dist, dist), rfloat(-dist, dist)), rfloat(0.2f, 3.0f), color);
+		auto p = std::make_shared<Sphere>(glm::vec3(rfloat(-dist, dist), rfloat(-dist, dist), rfloat(-dist, dist)), rfloat(0.2f, 3.0f), color);
 		root->addPrimitive(p);
 	}
 

@@ -15,7 +15,7 @@ public:
 
 	virtual void addPrimitive(std::shared_ptr<Primitive> p);
 
-	virtual bool intersect(std::shared_ptr<Ray> ray);
+	virtual bool intersect(Ray& ray);
 
 	virtual void constructBvh();
 
@@ -23,7 +23,7 @@ public:
 	virtual int getPrimCount();
 
 protected:
-	//if i change this to array i save space IF it is mostly filled. Vector has 24 byte overhead so its not that bad
+	//TODO: when i deperatly need performance, this should be a unique_ptr
 	std::vector<std::shared_ptr<Node>> children;
 
 	//when all nodes can have primitives: nodes can have larger primitives higher in tree -> less duplicates (if a triangle is in all children nodes, have it directly here). ALso most likely less tests for shadow ray?

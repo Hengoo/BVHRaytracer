@@ -12,7 +12,7 @@ class Primitive
 public:
 
 	//check ray - primitive intersection
-	virtual bool intersect(std::shared_ptr<Ray> ray) = 0;
+	virtual bool intersect(Ray& ray) = 0;
 
 	
 	/*
@@ -22,8 +22,8 @@ public:
 	*/
 
 	//check node - primitive intersection
-	virtual bool intersect(std::shared_ptr<Node> node) = 0;
+	virtual bool intersect(Node* node) = 0;
 
-	//returns the min and max bounds of the primitive
+	//returns the min and max bounds of the primitive (those are worldBounds since i dont plan to support moving/rotating gameobjects)
 	virtual void getBounds(glm::vec3& min, glm::vec3& max) = 0;
 };

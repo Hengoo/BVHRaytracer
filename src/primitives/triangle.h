@@ -6,28 +6,54 @@
 #include "primitive.h"
 
 #include "../accelerationStructure/aabb.h"
+#include "../gameobject.h"
+#include "../mesh.h"
 
 class Triangle : public Primitive
 {
-	std::array<glm::vec3, 3> points;
+	//need a triangleMesh that stores the vertices, normals?, textures, uv, ez
+	//the mesh also stores the transforms of the object itself
 
+	//better: pointer to vertices -> could save pointer to first vertex INDEX to reduce memory
+	//std::array<glm::vec3, 3> points;
+
+
+	//TODO: definitly not the most efficient version -> can try different ways if more performance is needed?
+
+	//pointer to gameobject and mesh 
+	GameObject* gameObject;
+	Mesh* mesh;
+	//pointer to the first index of the triangle
+	//std::shared_ptr<uint32_t> index;
+	//id to first indexbuffer (in mesh)
+	int index;
+
+	//worldspace bounds:
 	glm::vec3 boundMin, boundMax;
 
 	void updateBounds()
 	{
+		auto t1 = mesh->vertices->operator[](index);
+		auto t2 = (*mesh->vertices)[index];
+		auto t3 = mesh->vertices->at(index);
 		//calc bounds from points:
-		boundMax = glm::vec3(-INT_MAX);
-		boundMin = glm::vec3(INT_MAX);
-		for (auto& p : points)
-		{
-			boundMin = glm::min(boundMin, p);
-			boundMax = glm::min(boundMax, p);
-		}
+
+		/*
+		boundMin = glm::min(points[0], points[1]);
+		boundMax = glm::max(points[0], points[1]);
+		boundMin = glm::min(boundMin, points[2]);
+		boundMax = glm::min(boundMax, points[2]);*/
 	}
 
 public:
+	/*
+	Triangle(glm::vec3 pos1, glm::vec3 pos2, glm::vec3 pos3) : points({ pos1, pos2, pos3 })
+	{
+		updateBounds();
+	}*/
 
-	Triangle(glm::vec3 pos1, glm::vec3 pos2, glm::vec3 pos3) : points({pos1, pos2, pos3})
+	Triangle(GameObject* gameObject, Mesh* mesh, int index)
+		:gameObject(gameObject), mesh(mesh), index(index)
 	{
 		updateBounds();
 	}
@@ -36,19 +62,13 @@ public:
 	{
 	}
 
-	virtual bool intersect(std::shared_ptr<Ray> ray) override
-	{	
+	virtual bool intersect(Ray& ray) override
+	{
 		return false;
 	}
 
-	virtual bool intersect(std::shared_ptr<Node> node) override
+	virtual bool intersect(Node* node) override
 	{
-		std::shared_ptr<Aabb> aabb = std::dynamic_pointer_cast<Aabb>(node);
-		if (aabb)
-		{
-			//aabb triangle intersection
-		}
-		
 		return true;
 	}
 
