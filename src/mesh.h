@@ -25,10 +25,10 @@ public:
 	std::shared_ptr<std::vector<unsigned char>> texture;
 	//TODO: add the other possible textures (at least normalmap?)
 
-	glm::vec4 color;
+	std::array<unsigned char, 4> color;
 	std::string name;
 
-	Mesh(std::shared_ptr<std::vector<Vertex>> vertices, std::shared_ptr<std::vector<uint32_t>> indices, glm::vec4 color, std::string name)
+	Mesh(std::shared_ptr<std::vector<Vertex>> vertices, std::shared_ptr<std::vector<uint32_t>> indices, std::array<unsigned char, 4> color, std::string name)
 		:vertices(vertices), indices(indices), color(color), name(name)
 	{
 	}

@@ -39,7 +39,7 @@ public:
 		hasParent = false;
 	}
 
-	//empty gameobject with name
+	//empty gameobject with name ->used for at least the root
 	GameObject(std::string name)
 		: name(name)
 	{
@@ -49,6 +49,10 @@ public:
 		globalTransform = glm::mat4(1);
 		invGlobalTransform = glm::mat4(1);
 		hasParent = false;
+	}
+	~GameObject()
+	{
+		std::cout << "gameobject descruct" << std::endl;
 	}
 
 	glm::mat4 getLocalTransform()
@@ -68,6 +72,11 @@ public:
 		{
 			c->propagateTransform(globalTransform);
 		}
+	}
+
+	void propagateTransform()
+	{
+		propagateTransform(glm::mat4(1));
 	}
 
 	void propagateHierarchy(bool fromParent)

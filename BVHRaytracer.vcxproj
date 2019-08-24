@@ -30,6 +30,7 @@
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\gameobject.h" />
     <ClInclude Include="src\glmInclude.h" />
+    <ClInclude Include="src\glmUtil.h" />
     <ClInclude Include="src\lodepng\lodepng.h" />
     <ClInclude Include="src\mesh.h" />
     <ClInclude Include="src\modelLoader.h" />
@@ -41,6 +42,7 @@
     <ClInclude Include="src\tinyGltf\stb_image.h" />
     <ClInclude Include="src\tinyGltf\stb_image_write.h" />
     <ClInclude Include="src\tinyGltf\tiny_gltf.h" />
+    <ClInclude Include="src\util.h" />
     <ClInclude Include="src\vertex.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -97,7 +99,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
@@ -110,7 +112,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
@@ -123,7 +125,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -140,7 +142,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>

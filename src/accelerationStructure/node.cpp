@@ -38,7 +38,7 @@ bool Node::intersect(Ray& ray)
 
 	for (auto& p : primitives)
 	{
-		if (p->intersect(ray));
+		if (p->intersect(ray))
 		{
 			result = true;
 		}

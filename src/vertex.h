@@ -1,5 +1,6 @@
 #pragma once
 #include "glmInclude.h"
+#include "primitives/primitive.h"
 
 struct Vertex
 {

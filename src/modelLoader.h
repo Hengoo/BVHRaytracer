@@ -115,7 +115,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 	for (size_t i = 0; i < gltfModel.meshes.size(); i++)
 	{
 		auto& m = gltfModel.meshes[i];
-		int primitiveId = 0;
+		size_t primitiveId = 0;
 
 		auto& primitive = m.primitives[primitiveId];
 		if (m.primitives.size() != 1)
@@ -124,8 +124,8 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			std::cout << "primtive count is not 1 but " << m.primitives.size() << std::endl;
 		}
 
-		int meshVertexId = 0;
-		int meshIndexId = 0;
+		size_t meshVertexId = 0;
+		size_t meshIndexId = 0;
 
 		//i use the id that is used to get the accessor for testing if its unique
 
@@ -242,9 +242,9 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			texId = gltfModel.materials[matId].emissiveTexture.index;
 		}
 		auto color = gltfModel.materials[matId].pbrMetallicRoughness.baseColorFactor;
+		std::array<unsigned char, 4> c = {color[0]*255, color[1]*255, color[2] * 255 , color[3] * 255};
+		meshes.push_back(std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], c, m.name));
 
-		meshes.push_back(std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], glm::make_vec4(color.data()), m.name));
-		
 		//TODO use color !!!!!
 
 		//add the different textures if they are specified

@@ -79,7 +79,7 @@ public:
 		}
 
 		//no derived type-> return false since base node has no collision / contains all childs
-		return true;
+		return false;
 	}
 
 	virtual void getBounds(glm::vec3& min, glm::vec3& max) override

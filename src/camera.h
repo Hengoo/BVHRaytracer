@@ -80,7 +80,7 @@ public:
 
 		//todo: 
 		//not a lambda expert: [this] seems to be needed so i can access object variables
-		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+		std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
 				glm::vec3 pos = position + (upward * (float)info.h - right * (float)info.w) * sizeFactor;
@@ -90,6 +90,10 @@ public:
 				auto ray = Ray(pos, forward);
 
 				auto result = bvh->intersect(ray);
+				if (result)
+				{
+					auto debugOnly = 0;
+				}
 				image[info.index * 4 + 0] = ray.result[0];
 				image[info.index * 4 + 1] = ray.result[1];
 				image[info.index * 4 + 2] = ray.result[2];

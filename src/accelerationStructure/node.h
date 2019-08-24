@@ -13,7 +13,7 @@ class Node
 public:
 	virtual void addNode(std::shared_ptr<Node> n);
 
-	virtual void addPrimitive(std::shared_ptr<Primitive> p);
+	virtual void addPrimitive(std::shared_ptr <Primitive> p);
 
 	virtual bool intersect(Ray& ray);
 
@@ -27,5 +27,5 @@ protected:
 	std::vector<std::shared_ptr<Node>> children;
 
 	//when all nodes can have primitives: nodes can have larger primitives higher in tree -> less duplicates (if a triangle is in all children nodes, have it directly here). ALso most likely less tests for shadow ray?
-	std::vector<std::shared_ptr<Primitive>> primitives;
+	std::vector< std::shared_ptr<Primitive>> primitives;
 };

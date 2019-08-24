@@ -35,6 +35,7 @@ public:
 		gameObjects[0]->hasParent = true;
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		loadGltfModel("models/OrientationTest.glb", gameObjects, meshes);
+		//loadGltfModel("models/Triangle.glb", gameObjects, meshes);
 
 		for (auto& go : gameObjects)
 		{
@@ -53,19 +54,19 @@ public:
 			//clear ids because there is no use to keep them
 			go->childIds.clear();
 		}
-
 		auto root = gameObjects[0];
-		
+		root->propagateTransform();
+
+		//dont need those anymore
 		gameObjects.clear();
 		meshes.clear();
 
-		auto debug = 0;
-
-		root.reset();
-
 		//IMPORTANT!!!! Bvh b = Bvh() calls the copy constructor
-		//Camera c(std::make_unique<Bvh>(), glm::vec3(0,-5,0), glm::vec3(1,-1,0));
-		Camera c(std::make_unique<Bvh>(), glm::vec3(0, 5, 5), glm::vec3(1, -0.5, -0.5));
+		//Camera c(std::make_unique<Bvh>(), glm::vec3(0,-5,0), glm::vec3(1, -0.5, -0.5));
+		
+		//Camera c(std::make_unique<Bvh>(*root), glm::vec3(0, 5, 5), glm::vec3(1, -0.5, -0.5));
+		//Camera c(std::make_unique<Bvh>(*root), glm::vec3(0, 50, 0), glm::vec3(1, -0.5, -0.5));
+		Camera c(std::make_unique<Bvh>(*root), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
 		c.renderImage();
 	}
 
