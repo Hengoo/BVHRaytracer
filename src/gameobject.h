@@ -62,11 +62,12 @@ public:
 		auto scaleMat = glm::scale(glm::mat4(1.0f), scale);
 		//first scale, then rot, than trans
 		return transMat * rotMat * scaleMat;
+		//return  scaleMat * rotMat * transMat;
 	}
 
 	void propagateTransform(glm::mat4 parentGlobalTransform)
 	{
-		globalTransform = getLocalTransform() * parentGlobalTransform;
+		globalTransform = parentGlobalTransform * getLocalTransform();
 		invGlobalTransform = glm::inverse(globalTransform);
 		for (auto& c : children)
 		{
@@ -94,5 +95,11 @@ public:
 		}
 	}
 
+	//recenters and rescales gameobject so that aabb goes from ~ (-1,-1-,1) to (1,1,1)
+	void recenter(glm::vec3 boundMin, glm::vec3 boundMax)
+	{
+		pos = (boundMin + boundMax) * 0.5f;
+		scale = glm::vec3(1) / (boundMin - boundMax);
+	}
 
 };

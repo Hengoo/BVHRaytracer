@@ -37,9 +37,6 @@ public:
 		root = std::make_shared<Aabb>();
 		//iterate trough gameobject root and add all triangles to the aabb
 		iterateGo(gameObject);
-
-		constructBvh();
-
 	}
 
 	~Bvh()
@@ -52,9 +49,9 @@ public:
 	}
 
 	// copy constructor -> called when an already existing object is overwritten by an other
-	Bvh(const Bvh& other) = delete;
+	//Bvh(const Bvh& other) = delete;
 	// copy assignment -> called when an already existing object is used to create a new object
-	Bvh& operator=(const Bvh& other) = delete;
+	//Bvh& operator=(const Bvh& other) = delete;
 
 	void constructBvh()
 	{
@@ -105,8 +102,6 @@ private:
 		{
 			addRandomSphere();
 		}
-
-		constructBvh();
 	}
 
 
@@ -118,8 +113,4 @@ private:
 		auto p = std::make_shared<Sphere>(glm::vec3(rfloat(-dist, dist), rfloat(-dist, dist), rfloat(-dist, dist)), rfloat(0.2f, 3.0f), color);
 		root->addPrimitive(p);
 	}
-
-
-
-
 };

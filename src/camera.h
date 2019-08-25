@@ -43,16 +43,13 @@ public:
 	int height;
 	int width;
 
-	float sizeFactor = 0.1f;
+	float sizeFactor;
+
+	//todo not implemented
 	float farPlane = 50;
 
-	std::unique_ptr<Bvh> bvh;
-
-	Camera(std::unique_ptr<Bvh> bvh, glm::vec3 position, glm::vec3 forward, glm::vec3 upward = glm::vec3(0, 1, 0), int height = 1920, int width = 1080) : position(position), forward(forward), upward(upward), height(height), width(width)
+	Camera(float pixelSize, glm::vec3 position, glm::vec3 forward, glm::vec3 upward = glm::vec3(0, 1, 0), int height = 1000, int width = 1000) : position(position), sizeFactor(pixelSize), forward(forward), upward(upward), height(height), width(width)
 	{
-		this->bvh = std::move(bvh);
-
-
 		right = glm::cross(forward, upward);
 		this->upward = glm::cross(right, forward);
 		right = glm::normalize(right);
@@ -80,7 +77,7 @@ public:
 
 		//todo: 
 		//not a lambda expert: [this] seems to be needed so i can access object variables
-		std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
+		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
 				glm::vec3 pos = position + (upward * (float)info.h - right * (float)info.w) * sizeFactor;
@@ -89,7 +86,7 @@ public:
 
 				auto ray = Ray(pos, forward);
 
-				auto result = bvh->intersect(ray);
+				auto result = bvh.intersect(ray);
 				if (result)
 				{
 					auto debugOnly = 0;

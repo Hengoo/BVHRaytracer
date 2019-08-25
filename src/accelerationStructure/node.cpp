@@ -2,9 +2,12 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+//for the parallel for
+#include <execution>
 
 #include "node.h"
 #include "../primitives/primitive.h"
+#include "../ray.h"
 
 void Node::addNode(std::shared_ptr<Node> n)
 {
@@ -18,31 +21,42 @@ void Node::addPrimitive(std::shared_ptr<Primitive> p)
 
 void Node::constructBvh()
 {
-	for (auto& c : children)
-	{
-		c->constructBvh();
-	}
+	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
+		[&](auto& c)
+		{
+			c->constructBvh();
+		});
 }
 
 bool Node::intersect(Ray& ray)
 {
-	//not sure if i need bool results? i store result in the ray
 	bool result = false;
-	for (auto& c : children)
-	{
-		if (c->intersect(ray))
-		{
-			result = true;
-		}
-	}
 
 	for (auto& p : primitives)
 	{
 		if (p->intersect(ray))
 		{
 			result = true;
+			if (ray.shadowRay)
+			{
+				return true;
+			}
 		}
 	}
+
+	for (auto& c : children)
+	{
+		if (c->intersect(ray))
+		{
+			result = true;
+			if (ray.shadowRay)
+			{
+				return true;
+			}
+		}
+	}
+
+
 
 	return result;
 }

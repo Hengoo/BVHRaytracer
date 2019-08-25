@@ -44,13 +44,13 @@ public:
 		{
 			//std::cout << "sphere intersect true" << std::endl;
 			float dist = (-b - sqrt(discriminant)) / (2.0f * a);
-			if (dist < ray.distance)
+			if (dist < ray.tMax)
 			{
 				//ray.result = {0,0,0,255};
 				auto tmp = ray.pos * 10.0f + ray.direction * dist;
 				//ray.result = { (unsigned char)tmp.x,(unsigned char)tmp.y, (unsigned char)tmp.z,255 };
 				ray.result = color;
-				ray.distance = dist;
+				ray.tMax = dist;
 			}
 			return true;
 		}
@@ -66,19 +66,19 @@ public:
 
 			//https://stackoverflow.com/questions/4578967/cube-sphere-intersection-test
 			float r2 = radius * radius;
-			if (pos.x < aabb->minBound.x) r2 -= pow(pos.x - aabb->minBound.x, 2);
-			else if (pos.x > aabb->minBound.x + aabb->boundDimension.x) r2 -= pow(pos.x - aabb->minBound.x + aabb->boundDimension.x, 2);
+			if (pos.x < aabb->boundMin.x) r2 -= pow(pos.x - aabb->boundMin.x, 2);
+			else if (pos.x > aabb->boundMax.x) r2 -= pow(pos.x - aabb->boundMax.x, 2);
 
-			if (pos.y < aabb->minBound.y) r2 -= pow(pos.y - aabb->minBound.y, 2);
-			else if (pos.y > aabb->minBound.y + aabb->boundDimension.y) r2 -= pow(pos.y - aabb->minBound.y + aabb->boundDimension.y, 2);
+			if (pos.y < aabb->boundMin.y) r2 -= pow(pos.y - aabb->boundMin.y, 2);
+			else if (pos.y > aabb->boundMax.y) r2 -= pow(pos.y - aabb->boundMax.y, 2);
 
-			if (pos.z < aabb->minBound.z) r2 -= pow(pos.z - aabb->minBound.z, 2);
-			else if (pos.z > aabb->minBound.z + aabb->boundDimension.z) r2 -= pow(pos.z - aabb->minBound.z + aabb->boundDimension.z, 2);
+			if (pos.z < aabb->boundMin.z) r2 -= pow(pos.z - aabb->boundMin.z, 2);
+			else if (pos.z > aabb->boundMax.z) r2 -= pow(pos.z - aabb->boundMax.z, 2);
 
 			return r2 > 0;
 		}
 
-		//no derived type-> return false since base node has no collision / contains all childs
+		//no derived type-> should not happen
 		return false;
 	}
 

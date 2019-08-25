@@ -9,9 +9,10 @@
 #include "glmInclude.h"
 #include "modelLoader.h"
 
+#include "light.h"
+#include "global.h"
 
-
-#include "primitives/triangle.h"
+//#include "primitives/triangle.h"
 
 /*
 	general performance things / todo:
@@ -25,7 +26,7 @@ class RayTracer
 public:
 	void run()
 	{
-		
+
 	}
 
 	RayTracer()
@@ -35,7 +36,15 @@ public:
 		gameObjects[0]->hasParent = true;
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		loadGltfModel("models/OrientationTest.glb", gameObjects, meshes);
+		//loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshes);
 		//loadGltfModel("models/Triangle.glb", gameObjects, meshes);
+		//loadGltfModel("models/ParentRotTransTest.glb", gameObjects, meshes);
+
+		//gearbox assy works only works when exported by blender. some overflow in index buffers, not fully sure   PS: DONT load right now with naive octree!
+		//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
+		//loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
+
+		//loadGltfModel("models/2CylinderEngine.glb", gameObjects, meshes);
 
 		for (auto& go : gameObjects)
 		{
@@ -55,18 +64,38 @@ public:
 			go->childIds.clear();
 		}
 		auto root = gameObjects[0];
-		root->propagateTransform();
+		root->propagateTransform();		
 
 		//dont need those anymore
 		gameObjects.clear();
 		meshes.clear();
 
-		//IMPORTANT!!!! Bvh b = Bvh() calls the copy constructor
-		//Camera c(std::make_unique<Bvh>(), glm::vec3(0,-5,0), glm::vec3(1, -0.5, -0.5));
-		
-		//Camera c(std::make_unique<Bvh>(*root), glm::vec3(0, 5, 5), glm::vec3(1, -0.5, -0.5));
-		//Camera c(std::make_unique<Bvh>(*root), glm::vec3(0, 50, 0), glm::vec3(1, -0.5, -0.5));
-		Camera c(std::make_unique<Bvh>(*root), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
+		//add some lights:
+		lights.push_back(Light(glm::vec3(0, 10, 0), 10));
+
+		//bvh of (seeded) random sphere
+		//auto bvh = std::make_unique<Bvh>();
+
+		//bvh of loaded model:
+		bvh = Bvh(*root);
+
+		bvh.constructBvh();
+
+		Camera c(0.1f, glm::vec3(-10,5,5), glm::vec3(1, -0.5, -0.5));
+
+		//the gltf model version
+		//Camera c(std::move(bvh), glm::vec3(0, 10, 0 ), glm::vec3(0, -1,0) , glm::vec3(1,0,0));
+
+		//Camera c(std::move(bvh), glm::vec3(-10, 10.f, 10.f), glm::vec3(1, -0.5, -0.5));
+		//Camera c(std::move(bvh), glm::vec3(0, 50, 0), glm::vec3(1, -0.5, -0.5));
+		//Camera c(std::move(bvh), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
+
+		//good lizard camera:
+		//Camera c(0.007f, glm::vec3(-2, 0.5f, 1.5f), glm::vec3(1, -0.5, -0.5));
+
+		//gearbox camera
+		//Camera c(1, glm::vec3(-1000, 500, 500), glm::vec3(1, -0.5, -0.5));
+
 		c.renderImage();
 	}
 

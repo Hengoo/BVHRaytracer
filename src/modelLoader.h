@@ -6,6 +6,7 @@
 #include "gameobject.h"
 #include "vertex.h"
 #include "mesh.h"
+#include "texture.h"
 
 
 //include tinygltf
@@ -51,7 +52,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 	//helpfull: https://github.com/syoyo/tinygltf/wiki/Accessing-vertex-data
 
 	//vector of sharded pointers to images. The sharedptr are later in the meshes
-	std::vector<std::shared_ptr<std::vector<unsigned char>>> textures;
+	std::vector<std::shared_ptr<Texture>> textures;
 
 	//offset to the modelUID of gltf
 	int modelIndexOffset = meshes.size();
@@ -60,7 +61,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 
 	//import and load all images into gpu memory:
 	//increase texture vector sizes:
-	textures.resize(gltfModel.images.size());
+	textures.reserve(gltfModel.images.size());
 
 	//go trough all images and import them.
 	for (int i = 0; i < gltfModel.images.size(); i++)
@@ -80,7 +81,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 
 		//need to check what exactly happens to the memory here? i kinda want it to copy??
 		//auto sharPtr = std::make_shared<std::vector<unsigned char>>(std::move(gltfImage));
-		textures[i] = std::make_shared<std::vector<unsigned char>>(gltfImage.image);
+		textures.push_back(std::make_shared<Texture>(gltfImage.width, gltfImage.height, gltfImage.image));
 	}
 
 	struct VertexId {
@@ -167,14 +168,15 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			//store into vertex vector
 			//initialize sharedptr
 			vertices.push_back(std::make_shared<std::vector<Vertex>>());
-			vertices[i]->reserve(vertices.size() + accessor.count);
+			vertices[meshVertexId]->reserve(vertices.size() + accessor.count);
 			for (size_t j = 0; j < accessor.count; ++j) {
 				//go trough each vertex variable we have. (pos, normal, uvcoordinate)
-				vertices[i]->push_back(Vertex(positionArray[j], normalArray[j], uvArray[j]));
+				vertices[meshVertexId]->push_back(Vertex(positionArray[j], normalArray[j], uvArray[j]));
 			}
 		}
 		else
 		{
+			auto deb = 0;
 			//this combination is already loeaded into memory.
 		}
 
@@ -198,24 +200,21 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 				//unsigned int
 				uint32_t* indexArray = reinterpret_cast<uint32_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
 				//directly copy to vector:
-				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray + indexAccessor.byteOffset, indexArray + indexAccessor.byteOffset + indexAccessor.count));
-				//indices[i]->insert(indices[i]->end(), indexArray, indexArray + indexAccessor.count);
+				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
 			}
 			else if (indexAccessor.componentType == 5123)
 			{
 				//unsigned short
 				uint16_t* indexArray = reinterpret_cast<uint16_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
 				//directly copy to vector:
-				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray + indexAccessor.byteOffset, indexArray + indexAccessor.byteOffset + indexAccessor.count));
-				//indices[i]->insert(indices[i]->end(), indexArray + indexAccessor.byteOffset, indexArray + indexAccessor.byteOffset + indexAccessor.count);
+				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
 			}
 			else if (indexAccessor.componentType == 5121)
 			{
 				//unsigned byte
 				uint8_t* indexArray = reinterpret_cast<uint8_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
 				//directly copy to vector:
-				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray + indexAccessor.byteOffset, indexArray + indexAccessor.byteOffset + indexAccessor.count));
-				//indices[i]->insert(indices[i]->end(), indexArray + indexAccessor.byteOffset, indexArray + indexAccessor.byteOffset + indexAccessor.count);
+				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
 			}
 			else
 			{
@@ -224,6 +223,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 		}
 		else
 		{
+			auto debug = 0;
 			//index already loaded
 		}
 
@@ -242,7 +242,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			texId = gltfModel.materials[matId].emissiveTexture.index;
 		}
 		auto color = gltfModel.materials[matId].pbrMetallicRoughness.baseColorFactor;
-		std::array<unsigned char, 4> c = {color[0]*255, color[1]*255, color[2] * 255 , color[3] * 255};
+		std::array<unsigned char, 4> c = { color[0] * 255, color[1] * 255, color[2] * 255 , color[3] * 255 };
 		meshes.push_back(std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], c, m.name));
 
 		//TODO use color !!!!!
@@ -254,7 +254,12 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 		}
 	}
 
-	std::cout << "loaded " << vertices.size() << " vertices" << std::endl;
+	size_t vertexCount = 0;
+	for (auto& v : vertices)
+	{
+		vertexCount += v->size();
+	}
+	std::cout << "loaded " << vertices.size() << " GameObjects with " << vertexCount << " Vertices" << std::endl;
 
 	//reserve enought gameobjects so we can point on empty slots (TODO: need to check if this is correct????????)
 	gameObjects.resize(gameObjects.size() + gltfModel.nodes.size());
@@ -264,12 +269,6 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 	//i think i sould remove empty (mesh == -1) nodes THAT DONT change the transform?
 	for (auto& node : gltfModel.nodes)
 	{
-		if (node.mesh == -1)
-		{
-			//todo also need to do the hierachy thing. its under node.child
-			std::cout << "NOT loaded -1 mesh (TODO implement empty nodes / gameobjects)" << std::endl;
-			continue;
-		}
 		glm::quat rot = glm::mat4(1.0f);
 		glm::vec3 tran = glm::vec4(0.0f);
 		glm::vec3 scale = glm::vec3(1.0f);
@@ -315,7 +314,17 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 		//TODO node.mesh is not correct when i only save unique models
 		//auto go = GameObject(std::make_shared<Mesh>(meshes[node.mesh + modelIndexOffset]), tran, rot, scale, node.name);
 		//gameobjects.push_back(go);
-		gameObjects[id + gameObjectOffset] = std::make_shared<GameObject>(meshes[node.mesh + modelIndexOffset], childIds, tran, rot, scale, node.name);
+
+		int meshId = node.mesh;
+		if (node.mesh != -1)
+		{
+			gameObjects[id + gameObjectOffset] = std::make_shared<GameObject>(meshes[node.mesh + modelIndexOffset], childIds, tran, rot, scale, node.name);
+		}
+		else
+		{
+			gameObjects[id + gameObjectOffset] = std::make_shared<GameObject>(nullptr, childIds, tran, rot, scale, node.name);
+		}
+
 		id++;
 	}
 }

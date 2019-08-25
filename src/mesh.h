@@ -7,6 +7,7 @@
 
 #include "glmInclude.h"
 #include "vertex.h"
+#include "texture.h"
 
 //triangle mesh. If i ever want a mesh of other primitives i can make some interface structure
 class Mesh
@@ -22,7 +23,7 @@ public:
 	std::shared_ptr<std::vector<Vertex>> vertices;
 	std::shared_ptr<std::vector<uint32_t>> indices;
 	//all textures can be empty
-	std::shared_ptr<std::vector<unsigned char>> texture;
+	std::shared_ptr<Texture> texture;
 	//TODO: add the other possible textures (at least normalmap?)
 
 	std::array<unsigned char, 4> color;

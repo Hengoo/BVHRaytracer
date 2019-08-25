@@ -9,9 +9,8 @@
 
 #include "node.h"
 #include "../ray.h"
-//#include "../primitives/primitive.h"
 
-#include "glmInclude.h"
+#include "../glmInclude.h"
 #include "../primitives/primitive.h"
 
 //forward declarations:
@@ -21,11 +20,11 @@ class Aabb : public Node
 {
 public:
 	//edge with smallest value in each dimension
-	glm::vec3 minBound;
-	glm::vec3 boundDimension;
+	glm::vec3 boundMin;
+	glm::vec3 boundMax;
 	//possible rotation??? -> since its just a bvh tester it doesnt really matter
 
-	Aabb(glm::vec3 pos = glm::vec3(-222222.0f), glm::vec3 dimension = glm::vec3(444444.0f)) : minBound(pos), boundDimension(dimension)
+	Aabb(glm::vec3 boundMin = glm::vec3(-222222.0f), glm::vec3 boundMax = glm::vec3(222222.0f)) : boundMin(boundMin), boundMax(boundMax)
 	{
 	}
 
@@ -43,11 +42,12 @@ public:
 			max = glm::max(max, maxp);
 		}
 
-		minBound = glm::max(min, minBound);
-		boundDimension = glm::min(max - min, boundDimension);
+		//make sure the aabb box never gets larger
+		boundMin = glm::max(min, boundMin);
+		boundMax = glm::min(max, boundMax);
 
 		//check primitive count. if less than x primitives, stop.
-		if (primitives.size() <= 1)
+		if (primitives.size() <= 16)
 		{
 			return;
 		}
@@ -56,25 +56,25 @@ public:
 		//in theory i could try out different factors (replace 0.5 with vector with different values and check how good resulting aabb are)
 
 		//octree:
-		auto dim = boundDimension * 0.5f;
+		auto dim = (boundMax - boundMin) * 0.5f;
 		std::vector<std::shared_ptr<Node>> boxes;
 
 		auto minx = glm::vec3(dim.x, 0, 0);
 		auto miny = glm::vec3(0, dim.y, 0);
 		auto minz = glm::vec3(0, 0, dim.z);
 
-		boxes.push_back(std::make_shared<Aabb>(minBound, dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin, boundMin + dim));
 
 
-		boxes.push_back(std::make_shared<Aabb>(minBound + minx, dim));
-		boxes.push_back(std::make_shared<Aabb>(minBound + miny, dim));
-		boxes.push_back(std::make_shared<Aabb>(minBound + minz, dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin + minx, boundMin + minx + dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin + miny, boundMin + miny + dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin + minz, boundMin + minz + dim));
 
-		boxes.push_back(std::make_shared<Aabb>(minBound + minx + minz, dim));
-		boxes.push_back(std::make_shared<Aabb>(minBound + miny + minz, dim));
-		boxes.push_back(std::make_shared<Aabb>(minBound + minx + miny, dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin + minx + minz, boundMin + minx + minz + dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin + miny + minz, boundMin + miny + minz + dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin + minx + miny, boundMin + minx + miny + dim));
 
-		boxes.push_back(std::make_shared<Aabb>(minBound + minx + miny + minz, dim));
+		boxes.push_back(std::make_shared<Aabb>(boundMin + minx + miny + minz, boundMin + minx + miny + minz + dim));
 
 		std::for_each(std::execution::seq, primitives.begin(), primitives.end(),
 			[&](auto& prim)
@@ -106,8 +106,9 @@ public:
 			}
 		}
 
-		//todo: keep primitives that are placed in all children in this node (and dont have them in the children)
+		//todo: try keeping primitives that are placed in all children in this node (and dont have them in the children)
 		primitives.clear();
+		primitives.shrink_to_fit();
 
 		//constructs bvh of all children:
 		Node::constructBvh();
@@ -115,69 +116,55 @@ public:
 
 	virtual bool intersect(Ray& ray) override
 	{
-		//mostly from here https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+		float t;
+		//second answer form here: https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+		// r.dir is unit direction vector of ray
+		// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+		// r.org is origin of ray
 
-		//TODO replace / with * inverse direction so its only calc once
-		glm::vec3 tmin = (minBound - ray.pos) * ray.invDirection;
-		glm::vec3 tmax = (minBound - ray.pos + boundDimension) * ray.invDirection;
+		//float t1 = (boundMin.x - ray.pos.x) * ray.invDirection.x;
+		//float t2 = (boundMax.x - ray.pos.x) * ray.invDirection.x;
+		//float t3 = (boundMin.y - ray.pos.y) * ray.invDirection.y;
+		//float t4 = (boundMax.y - ray.pos.y) * ray.invDirection.y;
+		//float t5 = (boundMin.z - ray.pos.z) * ray.invDirection.z;
+		//float t6 = (boundMax.z - ray.pos.z) * ray.invDirection.z;
+		
+		
+		//float tmin = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
+		//float tmax = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
-		float tmp = 0;
-		if (ray.direction.x < 0)
-		{
-			tmp = tmin.x;
-			tmin.x = tmax.x;
-			tmax.x = tmp;
-		}
-		if (ray.direction.y < 0)
-		{
-			tmp = tmin.y;
-			tmin.y = tmax.y;
-			tmax.y = tmp;
-		}
-		if (ray.direction.z < 0)
-		{
-			tmp = tmin.z;
-			tmin.z = tmax.z;
-			tmax.z = tmp;
-		}
-		//if oriented box: rotate ray and rotate origin by box rotation (this has to bed one before the 
+		glm::fvec3 t1 = (boundMin - ray.pos) * ray.invDirection;
+		glm::fvec3 t2 = (boundMax - ray.pos) * ray.invDirection;
+		float tmin = std::max(std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y)), std::min(t1.z, t2.z));
+		float tmax = std::min(std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y)), std::max(t1.z, t2.z));
+		//TODO: test what glm::min does (component wise or not???) -> should be faster than the above version
 
-		if ((tmin.x > tmax.y) || (tmin.y > tmax.x))
+		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+		if (tmax < 0)
+		{
+			t = tmax;
+			return false;
+		}
+
+		// if tmin > tmax, ray doesn't intersect AABB
+		if (tmin > tmax)
+		{
+			t = tmax;
+			return false;
+		}
+
+		//distance to aabb suface:
+		//t = tmin;
+
+		if (ray.tMax < tmin)
 		{
 			return false;
 		}
-		if (tmin.y > tmin.x)
-		{
-			tmin.x = tmin.y;
-		}
-		if (tmax.y < tmax.x)
-		{
-			tmax.x = tmax.y;
-		}
 
-		//in theory i only need to compute the z part here
-		if ((tmin.x > tmax.z) || (tmin.z > tmax.x))
-		{
-			return false;
-		}
-		if (tmin.z > tmin.x)
-		{
-			tmin.x = tmin.z;
-		}
-		if (tmax.z < tmax.x)
-		{
-			tmax.x = tmax.z;
-		}
+		//check if intersection is closer than
 
-		ray.result[1] += 10;
+		//intersection occured:
 		//intersect all primitves and nodes:
 		return Node::intersect(ray);
 	}
-
-protected:
-
-
-
-
-
 };

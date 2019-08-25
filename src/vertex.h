@@ -13,4 +13,11 @@ struct Vertex
 		:pos(pos), normal(normal), texCoord(texCoord)
 	{
 	}
+
+	Vertex()
+	{
+		pos = glm::vec3(0);
+		normal = glm::vec3(0,1,0);
+		texCoord = glm::vec2(0);
+	}
 };

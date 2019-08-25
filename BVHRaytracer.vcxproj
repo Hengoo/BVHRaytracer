@@ -20,8 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\accelerationStructure\node.cpp" />
+    <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\lodepng\lodepng.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\primitives\triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\accelerationStructure\aabb.h" />
@@ -31,6 +33,8 @@
     <ClInclude Include="src\gameobject.h" />
     <ClInclude Include="src\glmInclude.h" />
     <ClInclude Include="src\glmUtil.h" />
+    <ClInclude Include="src\global.h" />
+    <ClInclude Include="src\light.h" />
     <ClInclude Include="src\lodepng\lodepng.h" />
     <ClInclude Include="src\mesh.h" />
     <ClInclude Include="src\modelLoader.h" />
@@ -38,6 +42,7 @@
     <ClInclude Include="src\primitives\sphere.h" />
     <ClInclude Include="src\primitives\triangle.h" />
     <ClInclude Include="src\ray.h" />
+    <ClInclude Include="src\texture.h" />
     <ClInclude Include="src\tinyGltf\json.hpp" />
     <ClInclude Include="src\tinyGltf\stb_image.h" />
     <ClInclude Include="src\tinyGltf\stb_image_write.h" />
