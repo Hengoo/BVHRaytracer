@@ -12,6 +12,8 @@ static PBRT_CONSTEXPR float MachineEpsilon =
 std::numeric_limits<float>::epsilon() * 0.5;
 #endif
 
+//static is needed to prevent double declaration (global function ... c++ ...)
+
 //random int
 static int rint(int min, int max)
 {
@@ -36,21 +38,6 @@ static float rfloat(float min, float max)
 
 static  inline float gamma(int n)
 {
-https://github.com/mmp/pbrt-v3/blob/master/src/core/pbrt.h
-	return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
-}
-
-static  inline void scaleColor(std::array<unsigned char, 4> & c1, std::array<unsigned char, 4> & c2)
-{
-	c1[0] *= ((float)c2[0]) * (1.f / 255.f);
-	c1[1] *= ((float)c2[1]) * (1.f / 255.f);
-	c1[2] *= ((float)c2[2]) * (1.f / 255.f);
-	c1[3] *= ((float)c2[3]) * (1.f / 255.f);
-}
-
-static inline void scaleColor(std::array<unsigned char, 4> & c1, float& c2)
-{
-	c1[0] *= c2;
-	c1[1] *= c2;
-	c1[2] *= c2;
+	//https://github.com/mmp/pbrt-v3/blob/master/src/core/pbrt.h
+	return (float)((n * MachineEpsilon) / (1 - n * MachineEpsilon));
 }

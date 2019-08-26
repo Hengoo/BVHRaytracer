@@ -1,12 +1,13 @@
 #include "triangle.h"
 
 #include "../accelerationStructure/bvh.h"
-#include "../light.h"
+#include "../lights/light.h"
 #include "../global.h"
 
 #include "../glmUtil.h"
 #include "../util.h"
 
+#include "../color.h"
 #include "../gameobject.h"
 #include "../mesh.h"
 #include "../accelerationStructure/aabb.h"
@@ -18,20 +19,19 @@ void Triangle::update()
 	//auto t2 = (*mesh->vertices)[index];
 	//auto t3 = mesh->vertices->at(index);
 
-	glm::vec4 pos0((*mesh->vertices)[(*mesh->indices)[index + 0]].pos, 1);
-	glm::vec4 pos1((*mesh->vertices)[(*mesh->indices)[index + 1]].pos, 1);
-	glm::vec4 pos2((*mesh->vertices)[(*mesh->indices)[index + 2]].pos, 1);
-	//points[0] = (gameObject->globalTransform * pos0).xyz;
-	//points[1] = (gameObject->globalTransform * pos1).xyz;
-	//points[2] = (gameObject->globalTransform * pos2).xyz;
-	points[0] = glm::vec3(gameObject->globalTransform * pos0);
-	points[1] = glm::vec3(gameObject->globalTransform * pos1);
-	points[2] = glm::vec3(gameObject->globalTransform * pos2);
+	glm::vec4 pos0((*mesh->vertices)[(*mesh->indices)[(size_t)index + 0]].pos, 1);
+	glm::vec4 pos1((*mesh->vertices)[(*mesh->indices)[(size_t)index + 1]].pos, 1);
+	glm::vec4 pos2((*mesh->vertices)[(*mesh->indices)[(size_t)index + 2]].pos, 1);
 
-	boundMin = glm::min(points[0], points[1]);
-	boundMax = glm::max(points[0], points[1]);
-	boundMin = glm::min(boundMin, points[2]);
-	boundMax = glm::max(boundMax, points[2]);
+	glm::vec3 pos00 = gameObject->globalTransform * pos0;
+	glm::vec3 pos11 = gameObject->globalTransform * pos1;
+	glm::vec3 pos22 = gameObject->globalTransform * pos2;
+
+	boundMin = glm::min(pos00, pos11);
+	boundMax = glm::max(pos00, pos11);
+	boundMin = glm::min(boundMin, pos22);
+	boundMax = glm::max(boundMax, pos22);
+
 }
 
 bool Triangle::intersect(Ray& ray)
@@ -42,11 +42,22 @@ bool Triangle::intersect(Ray& ray)
 
 	//load vertices:
 	std::array<Vertex, 3> vertices = {};
-	vertices[0] = (*mesh->vertices)[(*mesh->indices)[index + 0]];
-	vertices[1] = (*mesh->vertices)[(*mesh->indices)[index + 1]];
-	vertices[2] = (*mesh->vertices)[(*mesh->indices)[index + 2]];
+	vertices[0] = (*mesh->vertices)[(*mesh->indices)[(size_t)index + 0]];
+	vertices[1] = (*mesh->vertices)[(*mesh->indices)[(size_t)index + 1]];
+	vertices[2] = (*mesh->vertices)[(*mesh->indices)[(size_t)index + 2]];
 
-	//transform vertices to ray coordinate space:
+	//vec4 for transform:
+	glm::vec4 pos0(vertices[0].pos, 1);
+	glm::vec4 pos1(vertices[1].pos, 1);
+	glm::vec4 pos2(vertices[2].pos, 1);
+
+	//world space vertex position:
+	std::array<glm::vec3, 3> points = {};
+	points[0] = gameObject->globalTransform * pos0;
+	points[1] = gameObject->globalTransform * pos1;
+	points[2] = gameObject->globalTransform * pos2;
+
+	//transform vertex positions to ray coordinate space:
 	glm::vec3 p0t = points[0] - ray.pos;
 	glm::vec3 p1t = points[1] - ray.pos;
 	glm::vec3 p2t = points[2] - ray.pos;
@@ -77,7 +88,7 @@ bool Triangle::intersect(Ray& ray)
 	float e1 = p2t.x * p0t.y - p2t.y * p0t.x;
 	float e2 = p0t.x * p1t.y - p0t.y * p1t.x;
 
-	// Fall back to double precision test at triangle edges  (TODO: need to check how much this changes)
+	// Fall back to double precision test at triangle edges
 	if (e0 == 0.0f || e1 == 0.0f || e2 == 0.0f) {
 		double p2txp1ty = (double)p2t.x * (double)p1t.y;
 		double p2typ1tx = (double)p2t.y * (double)p1t.x;
@@ -145,7 +156,8 @@ bool Triangle::intersect(Ray& ray)
 	//end if shadowRay:
 	if (ray.shadowRay)
 	{
-		return true;
+		//small number to prevent self shadowing due to floating point errors
+		return t >= 0.001f;
 	}
 
 
@@ -153,32 +165,41 @@ bool Triangle::intersect(Ray& ray)
 	glm::vec3 pHit = b0 * points[0] + b1 * points[0] + b2 * points[0];
 	glm::vec2 uvHit = b0 * vertices[0].texCoord + b1 * vertices[1].texCoord + b2 * vertices[2].texCoord;
 
-	std::array<unsigned char, 4> color = { 255, 255, 255, 255 };
+	Color color(1.f, 1.f, 1.f, 1.f);
 	if (mesh->texture)
 	{
-		std::array<unsigned char, 4> textureResult = mesh->texture->getColor(uvHit);
-		scaleColor(color, textureResult);
+		color.scale(mesh->texture->getColor(uvHit));
 	}
-	scaleColor(color, mesh->color);
+	color.scale(mesh->color);
 
+	//TODO: to this similar to derefered rendering (gather all information and solve rest later)
 	//light shading / shadowrays:
 	for (auto& l : lights)
 	{
-		glm::vec3 lightVector = glm::normalize(l.pos- pHit);
-		//thise triangle normals seem to be inversed right now
-		//auto normal1 = computeNormal(points[0], points[1], points[2]);
+		float lightDistance;
+		glm::vec3 lightVector;
+
+		//todo use light color
+		auto lightColor = l->getLightDirection(pHit, lightVector, lightDistance);
+		//those calculated triangle normals seem to be inversed right now?
+		//auto normal = -computeNormal(points[0], points[1], points[2]);
 		auto normal = glm::normalize(b0 * vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
-		//TODO this is probably wrong!!!! (with non uniform sclaing)
-		normal = gameObject->globalTransform * glm::vec4(normal,1);
+		//TODO this is wrong with non uniform sclaing
+		normal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 1));
 		float f = glm::dot(normal, lightVector);
 		Ray ray(pHit, lightVector, true);
-		ray.tMax = glm::length(l.pos - pHit);
-		if (bvh.intersect(ray))
+		ray.tMax = lightDistance;
+
+		//only shoot ray when surface points in light direction
+		if (f > 0)
 		{
-			f = 0;
+			if (bvh.intersect(ray))
+			{
+				f = 0;
+			}
 		}
-		f = std::max(0.1f, f);
-		scaleColor(color, f);
+		f = std::max(0.2f, f);
+		color.scale(f);
 	}
 
 	ray.tMax = t;
@@ -198,6 +219,8 @@ bool Triangle::intersect(Node* node)
 		return (boundMin.x <= aabb->boundMax.x && boundMax.x >= aabb->boundMin.x) &&
 			(boundMin.y <= aabb->boundMax.y && boundMax.y >= aabb->boundMin.y) &&
 			(boundMin.z <= aabb->boundMax.z && boundMax.z >= aabb->boundMin.z);
+		
+		//TODO: more accurate aabb triangle test in case the above one detects intersection
 	}
 
 	//no know type-> should not happen

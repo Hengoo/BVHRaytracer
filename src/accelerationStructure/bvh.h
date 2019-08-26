@@ -64,7 +64,7 @@ protected:
 
 private:
 
-	void iterateGo(GameObject& go)
+	void iterateGo(const GameObject& go)
 	{
 		//for (auto& p : (*go.mesh->vertices))
 		if (go.mesh)

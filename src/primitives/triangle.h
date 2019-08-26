@@ -12,27 +12,17 @@ class GameObject;
 
 class Triangle : public Primitive
 {
-	//need a triangleMesh that stores the vertices, normals?, textures, uv, ez
-	//the mesh also stores the transforms of the object itself
-
-	//For now the easy version, better version would not save them here but gather tham from the mesh*
-	std::array<glm::vec3, 3> points;
-
-
-	//TODO: definitly not the most efficient version -> can try different ways if more performance is needed?
-
 	//pointer to gameobject and mesh 
-	GameObject* gameObject;
-	Mesh* mesh;
-	//pointer to the first index of the triangle
-	//std::shared_ptr<uint32_t> index;
+	const GameObject* gameObject;
+	const Mesh* mesh;
+
 	//id to first indexbuffer (in mesh)
 	int index;
 
-	//worldspace bounds:
+	//worldspace bounds: (will keep bounds for super simple aabb to aabb intersection)
 	glm::vec3 boundMin, boundMax;
 
-	//calc bounds from points:
+	//update bounds from points:
 	void update();
 
 
@@ -43,7 +33,7 @@ public:
 		updateBounds();
 	}*/
 
-	Triangle(GameObject* gameObject, Mesh* mesh, int index)
+	Triangle(const GameObject* gameObject, const Mesh* mesh, int index)
 		:gameObject(gameObject), mesh(mesh), index(index)
 	{
 		update();

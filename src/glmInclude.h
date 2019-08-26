@@ -2,16 +2,15 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_XYZW_ONLY
 
+#define GLM_FORCE_XYZW_ONLY
+//#define GLM_SWIZZLE
 
 //#define GLM_FORCE_PURE
 
 #define GLM_FORCE_INTRINSICS
 
-
 //#define GLM_ENABLE_EXPERIMENTAL
-//#define GLM_SWIZZLE#
 
 //fore inline seems slightly faster ?
 //#define GLM_FORCE_INLINE 

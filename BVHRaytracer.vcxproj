@@ -30,11 +30,14 @@
     <ClInclude Include="src\accelerationStructure\bvh.h" />
     <ClInclude Include="src\accelerationStructure\node.h" />
     <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\color.h" />
     <ClInclude Include="src\gameobject.h" />
     <ClInclude Include="src\glmInclude.h" />
     <ClInclude Include="src\glmUtil.h" />
     <ClInclude Include="src\global.h" />
-    <ClInclude Include="src\light.h" />
+    <ClInclude Include="src\lights\directionalLight.h" />
+    <ClInclude Include="src\lights\light.h" />
+    <ClInclude Include="src\lights\pointLight.h" />
     <ClInclude Include="src\lodepng\lodepng.h" />
     <ClInclude Include="src\mesh.h" />
     <ClInclude Include="src\modelLoader.h" />

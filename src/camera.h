@@ -13,9 +13,9 @@ struct RenderInfo
 {
 	float w;
 	float h;
-	int index;
+	size_t index;
 
-	RenderInfo(float w, float h, int index) : w(w), h(h), index(index)
+	RenderInfo(float w, float h, size_t index) : w(w), h(h), index(index)
 	{
 	}
 	RenderInfo() : w(0), h(0), index(0)
@@ -40,15 +40,15 @@ public:
 	//contains all info needed to spawn the ray for the specific pixel. Only needed because i dont know how to get the loop index into the unsequenced for_each
 	std::vector<RenderInfo> renderInfos;
 
-	int height;
-	int width;
+	size_t height;
+	size_t width;
 
 	float sizeFactor;
 
-	//todo not implemented
+	//todo not implemented (most likely not needed anyway)
 	float farPlane = 50;
 
-	Camera(float pixelSize, glm::vec3 position, glm::vec3 forward, glm::vec3 upward = glm::vec3(0, 1, 0), int height = 1000, int width = 1000) : position(position), sizeFactor(pixelSize), forward(forward), upward(upward), height(height), width(width)
+	Camera(float pixelSize, glm::vec3 position, glm::vec3 forward, glm::vec3 upward = glm::vec3(0, 1, 0), size_t height = 1000, size_t width = 1000) : position(position), sizeFactor(pixelSize), forward(forward), upward(upward), height(height), width(width)
 	{
 		right = glm::cross(forward, upward);
 		this->upward = glm::cross(right, forward);
@@ -91,10 +91,10 @@ public:
 				{
 					auto debugOnly = 0;
 				}
-				image[info.index * 4 + 0] = ray.result[0];
-				image[info.index * 4 + 1] = ray.result[1];
-				image[info.index * 4 + 2] = ray.result[2];
-				image[info.index * 4 + 3] = 255;
+				image[info.index * 4 + 0] = (unsigned char)(ray.result.r * 255);
+				image[info.index * 4 + 1] = (unsigned char)(ray.result.g * 255);
+				image[info.index * 4 + 2] = (unsigned char)(ray.result.b * 255);
+				image[info.index * 4 + 3] = (unsigned char)(ray.result.a * 255);
 			});
 
 		/*

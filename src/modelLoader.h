@@ -7,6 +7,8 @@
 #include "vertex.h"
 #include "mesh.h"
 #include "texture.h"
+#include "util.h"
+#include "color.h"
 
 
 //include tinygltf
@@ -55,9 +57,9 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 	std::vector<std::shared_ptr<Texture>> textures;
 
 	//offset to the modelUID of gltf
-	int modelIndexOffset = meshes.size();
+	size_t modelIndexOffset = meshes.size();
 	//offset to the gameobject uid of gltf (needed to reference the right children)
-	int gameObjectOffset = gameObjects.size();
+	size_t gameObjectOffset = gameObjects.size();
 
 	//import and load all images into gpu memory:
 	//increase texture vector sizes:
@@ -155,7 +157,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			auto& normalAccessor = gltfModel.accessors[normalAccId];
 			auto& normalBufferView = gltfModel.bufferViews[normalAccessor.bufferView];
 			auto& normalBuffer = gltfModel.buffers[normalBufferView.buffer];
-			glm::vec3* normalArray = reinterpret_cast<glm::vec3*>(&normalBuffer.data[bufferView.byteOffset + normalAccessor.byteOffset]);
+			glm::vec3* normalArray = reinterpret_cast<glm::vec3*>(&normalBuffer.data[normalBufferView.byteOffset + normalAccessor.byteOffset]);
 
 			//texture coord
 			auto& uvAccessor = gltfModel.accessors[uvAccId];
@@ -227,10 +229,9 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			//index already loaded
 		}
 
-		//TODO: !!!
-		//check if vertex/index combo is already created: (so we create less descriptor sets)   IF i do this i also have to save the meshid of gltf inside model so i can find the right model for the nodes(gameobjects)
-
 		int matId = m.primitives[primitiveId].material;
+
+		//TODO: load all textures correctly:
 
 		int texId = -1;
 		if (gltfModel.materials[matId].pbrMetallicRoughness.baseColorTexture.index != -1)
@@ -242,15 +243,12 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			texId = gltfModel.materials[matId].emissiveTexture.index;
 		}
 		auto color = gltfModel.materials[matId].pbrMetallicRoughness.baseColorFactor;
-		std::array<unsigned char, 4> c = { color[0] * 255, color[1] * 255, color[2] * 255 , color[3] * 255 };
-		meshes.push_back(std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], c, m.name));
-
-		//TODO use color !!!!!
+		meshes.push_back(std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], Color(color), m.name));
 
 		//add the different textures if they are specified
 		if (texId != -1)
 		{
-			meshes[i]->texture = textures[texId];
+			meshes[i + modelIndexOffset]->texture = textures[texId];
 		}
 	}
 
@@ -308,7 +306,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 		for (auto& c : node.children)
 		{
 			//i really hope gltf does not support circular dependencies
-			childIds.push_back(c + gameObjectOffset);
+			childIds.push_back(c + (int)gameObjectOffset);
 		}
 
 		//TODO node.mesh is not correct when i only save unique models

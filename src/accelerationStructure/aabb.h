@@ -76,17 +76,16 @@ public:
 
 		boxes.push_back(std::make_shared<Aabb>(boundMin + minx + miny + minz, boundMin + minx + miny + minz + dim));
 
-		std::for_each(std::execution::seq, primitives.begin(), primitives.end(),
-			[&](auto& prim)
+		for (auto& prim : primitives)
+		{
+			for (auto& box : boxes)
 			{
-				for (auto& box : boxes)
+				if (prim->intersect(&*box))
 				{
-					if (prim->intersect(&*box))
-					{
-						box->addPrimitive(prim);
-					}
+					box->addPrimitive(prim);
 				}
-			});
+			}
+		}
 
 		//check if one box has all primitives this node has
 		for (auto& b : boxes)
@@ -128,16 +127,17 @@ public:
 		//float t4 = (boundMax.y - ray.pos.y) * ray.invDirection.y;
 		//float t5 = (boundMin.z - ray.pos.z) * ray.invDirection.z;
 		//float t6 = (boundMax.z - ray.pos.z) * ray.invDirection.z;
-		
-		
+
+
 		//float tmin = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
 		//float tmax = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
 		glm::fvec3 t1 = (boundMin - ray.pos) * ray.invDirection;
 		glm::fvec3 t2 = (boundMax - ray.pos) * ray.invDirection;
-		float tmin = std::max(std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y)), std::min(t1.z, t2.z));
-		float tmax = std::min(std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y)), std::max(t1.z, t2.z));
-		//TODO: test what glm::min does (component wise or not???) -> should be faster than the above version
+		//float tmin = std::max(std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y)), std::min(t1.z, t2.z));
+		//float tmax = std::min(std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y)), std::max(t1.z, t2.z));
+		float tmin = glm::compMax(glm::min(t1, t2));
+		float tmax = glm::compMin(glm::max(t1, t2));
 
 		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
 		if (tmax < 0)

@@ -5,6 +5,7 @@
 
 #include "../glmInclude.h"
 #include "primitive.h"
+#include "../color.h"
 
 /*
 most simple primitive, only implenented to see first results and get compfortable with structure. 
@@ -17,9 +18,9 @@ public:
 	glm::vec3 pos;
 	float radius;
 
-	std::array<unsigned char,4> color;
+	Color color;
 
-	Sphere(glm::vec3 pos, float radius, std::array<unsigned char, 4> color) : pos(pos), radius(radius), color(color)
+	Sphere(glm::vec3 pos, float radius, Color color) : pos(pos), radius(radius), color(color)
 	{
 	}
 

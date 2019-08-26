@@ -5,6 +5,7 @@
 
 
 #include "glmInclude.h"
+#include "color.h"
 
 class Ray
 {
@@ -20,7 +21,7 @@ public:
 	bool shadowRay;
 
 	//save result here? ps: need to care with parrallel writes here when i start  with threads
-	std::array<unsigned char, 4> result{ 0,0,0,255 };
+	Color result;
 
 	//TODO check that i dont render things behind the camera (and throw node collisions away that are behind the camera)
 	//float distance;
@@ -34,6 +35,7 @@ public:
 		this->direction = glm::normalize(direction);
 		invDirection = 1.0f / this->direction;
 		tMax = 222222.f;
+		result = Color(0);
 	}
 
 	~Ray()

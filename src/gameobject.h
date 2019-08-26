@@ -25,9 +25,9 @@ public:
 	glm::vec3 pos;
 	glm::quat rot;
 	glm::vec3 scale;
-	std::string name;
+	const std::string name;
 
-	//not fully sure how to exactly use those
+	//not sure if i need both
 	glm::mat4 globalTransform;
 	glm::mat4 invGlobalTransform;
 
@@ -65,7 +65,7 @@ public:
 		//return  scaleMat * rotMat * transMat;
 	}
 
-	void propagateTransform(glm::mat4 parentGlobalTransform)
+	void propagateTransform(const glm::mat4& parentGlobalTransform)
 	{
 		globalTransform = parentGlobalTransform * getLocalTransform();
 		invGlobalTransform = glm::inverse(globalTransform);
@@ -80,7 +80,7 @@ public:
 		propagateTransform(glm::mat4(1));
 	}
 
-	void propagateHierarchy(bool fromParent)
+	void propagateHierarchy(const bool& fromParent)
 	{
 		if (fromParent)
 		{
@@ -96,7 +96,7 @@ public:
 	}
 
 	//recenters and rescales gameobject so that aabb goes from ~ (-1,-1-,1) to (1,1,1)
-	void recenter(glm::vec3 boundMin, glm::vec3 boundMax)
+	void recenter(const glm::vec3& boundMin, const glm::vec3& boundMax)
 	{
 		pos = (boundMin + boundMax) * 0.5f;
 		scale = glm::vec3(1) / (boundMin - boundMax);

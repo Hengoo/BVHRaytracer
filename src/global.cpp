@@ -1,4 +1,4 @@
 #include "global.h"
 
-std::vector<Light> lights;
+std::vector<std::unique_ptr<Light>> lights;
 Bvh bvh;
