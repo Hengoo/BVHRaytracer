@@ -185,7 +185,7 @@ bool Triangle::intersect(Ray& ray)
 		//auto normal = -computeNormal(points[0], points[1], points[2]);
 		auto normal = glm::normalize(b0 * vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
 		//TODO this is wrong with non uniform sclaing
-		normal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 1));
+		normal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
 		float f = glm::dot(normal, lightVector);
 		Ray ray(pHit, lightVector, true);
 		ray.tMax = lightDistance;
