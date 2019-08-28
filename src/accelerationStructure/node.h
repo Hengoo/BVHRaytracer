@@ -17,6 +17,7 @@ public:
 
 	virtual bool intersect(Ray& ray);
 
+	//might want to add tree depth here?
 	virtual void constructBvh();
 
 	virtual int getChildCount();

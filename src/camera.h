@@ -31,9 +31,8 @@ public:
 	//should have more camrea parameters
 
 	glm::vec3 position;
-	glm::vec3 forward;
-	glm::vec3 upward;
-	glm::vec3 right;
+
+	glm::mat4 transform;
 
 	std::vector<unsigned char> image;
 
@@ -43,48 +42,66 @@ public:
 	size_t height;
 	size_t width;
 
-	float sizeFactor;
+	//1.37f for 40 degree, 0.866f for 60 degree (horizontal fov)
+	float focalLength;
 
 	//todo not implemented (most likely not needed anyway)
 	float farPlane = 50;
 
-	Camera(float pixelSize, glm::vec3 position, glm::vec3 forward, glm::vec3 upward = glm::vec3(0, 1, 0), size_t height = 1000, size_t width = 1000) : position(position), sizeFactor(pixelSize), forward(forward), upward(upward), height(height), width(width)
+	Camera(glm::vec3 position, glm::vec3 lookCenter, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920) : position(position), focalLength(focalLength), height(height), width(width)
 	{
-		right = glm::cross(forward, upward);
-		this->upward = glm::cross(right, forward);
-		right = glm::normalize(right);
-		this->forward = glm::normalize(this->forward);
-		this->upward = glm::normalize(this->upward);
+		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
 
 		image.resize(height * width * 4);
 		renderInfos.resize(height * width);
 
 	}
 
+	Camera(glm::mat4 transform, float focalLength = 0.866f, size_t height = 1000, size_t width = 1000) : transform(transform), focalLength(focalLength), height(height), width(width)
+	{
+		image.resize(height * width * 4);
+		renderInfos.resize(height * width);
+
+		position = transform * glm::vec4(0, 0, 0, 1);
+	}
+
 	//spawns rays and collects results into image. Image is written on disk
 	void renderImage()
 	{
+		glm::vec3 decScale;
+		glm::quat decOrientation;
+		glm::vec3 decTranslation;
+		glm::vec3 decSkew;
+		glm::vec4 decPerspective;
+		glm::decompose(transform, decScale, decOrientation, decTranslation, decSkew, decPerspective);
+
 		//simplified ortho version for now:
 
 		//fill RenderInfo array.
 		for (int i = 0; i < width * height; i++)
 		{
-			float w = -(i % width - width / 2.f);
+			//todo: move to some method for sampling(and make RenderInfo save more than one w,h combination per pixel)?
+			float w = (i % width - width / 2.f);
 			float h = -(i / width - height / 2.f);
 
 			renderInfos[i] = RenderInfo(w, h, i);
 		}
 
-		//todo: 
-		//not a lambda expert: [this] seems to be needed so i can access object variables
 		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
-				glm::vec3 pos = position + (upward * (float)info.h - right * (float)info.w) * sizeFactor;
+				//orthographic camera, dont think i will use it anytime soon
+				//glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / 100);
+				//glm::vec3 pos = position + glm::vec3(transform * centerOffset);
+				//auto forward = glm::vec3(transform * glm::vec4(0, 0, -1, 0) );
+				//auto ray = Ray(pos, forward);
 
-				//todo: move to some method for sampling?
 
-				auto ray = Ray(pos, forward);
+				//glm uses x = right, y = up , -z = forward ...
+
+				glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
+				glm::vec3 pos = position + glm::vec3(transform * centerOffset ) ;
+				auto ray = Ray(position, pos - position);
 
 				auto result = bvh.intersect(ray);
 				if (result)
@@ -95,21 +112,21 @@ public:
 				image[info.index * 4 + 1] = (unsigned char)(ray.result.g * 255);
 				image[info.index * 4 + 2] = (unsigned char)(ray.result.b * 255);
 				image[info.index * 4 + 3] = (unsigned char)(ray.result.a * 255);
-			});
+					});
 
-		/*
-		for (int i = 0; i < height; i++)
-		{
-			for (int j = 0; j < width; j++)
-			{
-				if (i == j)
+				/*
+				for (int i = 0; i < height; i++)
 				{
-					image[4 * (i * width + j) + 2] = 255;
-				}
-			}
-		}*/
+					for (int j = 0; j < width; j++)
+					{
+						if (i == j)
+						{
+							image[4 * (i * width + j) + 2] = 255;
+						}
+					}
+				}*/
 
-		encodeTwoSteps("why.png", image, width, height);
+				encodeTwoSteps("why.png", image, width, height);
 	}
 
 private:

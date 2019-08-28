@@ -39,6 +39,7 @@ public:
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		//loadGltfModel("models/OrientationTest.glb", gameObjects, meshes);
 		loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshes);
+
 		//loadGltfModel("models/Triangle.glb", gameObjects, meshes);
 		//loadGltfModel("models/ParentRotTransTest.glb", gameObjects, meshes);
 
@@ -46,11 +47,11 @@ public:
 		//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
 		//loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
 		//loadGltfModel("models/2CylinderEngine.glb", gameObjects, meshes);
-		
-		loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+
+		//loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
 
 
-		
+
 		for (auto& go : gameObjects)
 		{
 			for (auto& c : go->childIds)
@@ -69,11 +70,11 @@ public:
 			go->childIds.clear();
 		}
 		auto root = gameObjects[0];
-		root->propagateTransform();		
+		root->propagateTransform();
 
 		//dont need those anymore
-		gameObjects.clear();
-		meshes.clear();
+		//gameObjects.clear();
+		//meshes.clear();
 
 		//add some lights:
 		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
@@ -96,13 +97,16 @@ public:
 		//Camera c(std::move(bvh), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
 
 		//good lizard camera:
-		//Camera c(0.007f, glm::vec3(-2, 0.5f, 1.5f), glm::vec3(1, -0.5, -0.5));
+		Camera c(glm::vec3(3.5f, 2.5f, 5.f), glm::vec3(-1, 0.3, 1.1));
+
 
 		//gearbox camera
 		//Camera c(1, glm::vec3(-1000, 500, 500), glm::vec3(1, -0.5, -0.5));
 
 		//shift happens(blender sclaed version:
-		Camera c(0.035f, glm::vec3(10, 5, -5), glm::vec3(-1, -0.5, 0.5));
+		//Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
+
+		//Camera c(glm::vec3(0,0,-10 ), glm::vec3(0, 0, 0));
 
 		c.renderImage();
 	}

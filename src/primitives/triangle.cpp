@@ -162,7 +162,7 @@ bool Triangle::intersect(Ray& ray)
 
 
 	// Interpolate $(u,v)$ parametric coordinates and hit point
-	glm::vec3 pHit = b0 * points[0] + b1 * points[0] + b2 * points[0];
+	glm::vec3 pHit = b0 * points[0] + b1 * points[1] + b2 * points[2];
 	glm::vec2 uvHit = b0 * vertices[0].texCoord + b1 * vertices[1].texCoord + b2 * vertices[2].texCoord;
 
 	Color color(1.f, 1.f, 1.f, 1.f);

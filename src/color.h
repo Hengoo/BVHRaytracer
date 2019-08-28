@@ -5,6 +5,7 @@
 class Color
 {
 public:
+	//could do this as glm::vec4
 	float r;
 	float g;
 	float b;
