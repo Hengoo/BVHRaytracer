@@ -27,6 +27,9 @@ public:
 	//float distance;
 	float tMax;
 
+	unsigned int nodeIntersectionCount = 0;
+	unsigned int primitiveIntersectionCount = 0;
+
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
 
 

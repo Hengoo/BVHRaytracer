@@ -52,7 +52,7 @@ public:
 	}
 	~GameObject()
 	{
-		std::cout << "gameobject descruct" << std::endl;
+		//std::cout << "gameobject descruct" << std::endl;
 	}
 
 	glm::mat4 getLocalTransform()

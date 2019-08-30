@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
-#include <algorithm>
 #include <vector>
 #include <array>
+#include <algorithm>
 
 //for the parallel for
 #include <execution>
@@ -132,10 +132,9 @@ public:
 		//float tmin = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
 		//float tmax = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
+		//glm version of above code (faster)
 		glm::fvec3 t1 = (boundMin - ray.pos) * ray.invDirection;
 		glm::fvec3 t2 = (boundMax - ray.pos) * ray.invDirection;
-		//float tmin = std::max(std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y)), std::min(t1.z, t2.z));
-		//float tmax = std::min(std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y)), std::max(t1.z, t2.z));
 		float tmin = glm::compMax(glm::min(t1, t2));
 		float tmax = glm::compMin(glm::max(t1, t2));
 
@@ -156,6 +155,7 @@ public:
 		//distance to aabb suface:
 		//t = tmin;
 
+		//stop when current ray distance is closer than maximum possible distance to aabb (yes tmin name is missleading)
 		if (ray.tMax < tmin)
 		{
 			return false;

@@ -36,6 +36,11 @@ public:
 
 	std::vector<unsigned char> image;
 
+	std::vector<unsigned int> nodeIntersectionCounts;
+	std::vector<unsigned int> primitiveIntersectionCounts;
+	size_t nodeIntersectionCount;
+	size_t primitiveIntersectionCount;
+
 	//contains all info needed to spawn the ray for the specific pixel. Only needed because i dont know how to get the loop index into the unsequenced for_each
 	std::vector<RenderInfo> renderInfos;
 
@@ -53,6 +58,8 @@ public:
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
 
 		image.resize(height * width * 4);
+		nodeIntersectionCounts.resize(height * width);
+		primitiveIntersectionCounts.resize(height * width);
 		renderInfos.resize(height * width);
 
 	}
@@ -61,7 +68,8 @@ public:
 	{
 		image.resize(height * width * 4);
 		renderInfos.resize(height * width);
-
+		nodeIntersectionCounts.resize(height * width);
+		primitiveIntersectionCounts.resize(height * width);
 		position = transform * glm::vec4(0, 0, 0, 1);
 	}
 
@@ -87,6 +95,8 @@ public:
 			renderInfos[i] = RenderInfo(w, h, i);
 		}
 
+		//array for 
+
 		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
@@ -100,7 +110,7 @@ public:
 				//glm uses x = right, y = up , -z = forward ...
 
 				glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
-				glm::vec3 pos = position + glm::vec3(transform * centerOffset ) ;
+				glm::vec3 pos = position + glm::vec3(transform * centerOffset);
 				auto ray = Ray(position, pos - position);
 
 				auto result = bvh.intersect(ray);
@@ -112,21 +122,30 @@ public:
 				image[info.index * 4 + 1] = (unsigned char)(ray.result.g * 255);
 				image[info.index * 4 + 2] = (unsigned char)(ray.result.b * 255);
 				image[info.index * 4 + 3] = (unsigned char)(ray.result.a * 255);
-					});
 
-				/*
-				for (int i = 0; i < height; i++)
+				nodeIntersectionCounts[info.index] = ray.nodeIntersectionCount;
+				primitiveIntersectionCounts[info.index] = ray.primitiveIntersectionCount;
+
+			});
+
+		/*
+		for (int i = 0; i < height; i++)
+		{
+			for (int j = 0; j < width; j++)
+			{
+				if (i == j)
 				{
-					for (int j = 0; j < width; j++)
-					{
-						if (i == j)
-						{
-							image[4 * (i * width + j) + 2] = 255;
-						}
-					}
-				}*/
+					image[4 * (i * width + j) + 2] = 255;
+				}
+			}
+		}*/
 
-				encodeTwoSteps("why.png", image, width, height);
+		primitiveIntersectionCount = std::accumulate(primitiveIntersectionCounts.begin(), primitiveIntersectionCounts.end(), 0);
+		nodeIntersectionCount = std::accumulate(nodeIntersectionCounts.begin(), nodeIntersectionCounts.end(), 0);
+		std::cout << "node intersections: " <<nodeIntersectionCount << std::endl;
+		std::cout << "primitive intersections: " << primitiveIntersectionCount << std::endl;
+
+		encodeTwoSteps("why.png", image, width, height);
 	}
 
 private:

@@ -34,6 +34,7 @@ bool Node::intersect(Ray& ray)
 
 	for (auto& p : primitives)
 	{
+		ray.primitiveIntersectionCount++;
 		if (p->intersect(ray))
 		{
 			result = true;
@@ -46,6 +47,7 @@ bool Node::intersect(Ray& ray)
 
 	for (auto& c : children)
 	{
+		ray.nodeIntersectionCount++;
 		if (c->intersect(ray))
 		{
 			result = true;
