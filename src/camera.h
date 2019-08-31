@@ -36,8 +36,10 @@ public:
 
 	std::vector<unsigned char> image;
 
-	std::vector<unsigned int> nodeIntersectionCounts;
-	std::vector<unsigned int> primitiveIntersectionCounts;
+	std::vector<std::vector<unsigned int>> nodeIntersectionPerPixelCount;
+	std::vector<std::vector<unsigned int>> primitiveIntersectionPerPixelCount;
+	std::vector<size_t> nodeIntersectionPerDepthCount;
+	std::vector<size_t> primitiveIntersectionPerDepthCount;
 	size_t nodeIntersectionCount;
 	size_t primitiveIntersectionCount;
 
@@ -58,8 +60,8 @@ public:
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
 
 		image.resize(height * width * 4);
-		nodeIntersectionCounts.resize(height * width);
-		primitiveIntersectionCounts.resize(height * width);
+		nodeIntersectionPerPixelCount.resize(height * width);
+		primitiveIntersectionPerPixelCount.resize(height * width);
 		renderInfos.resize(height * width);
 
 	}
@@ -68,8 +70,8 @@ public:
 	{
 		image.resize(height * width * 4);
 		renderInfos.resize(height * width);
-		nodeIntersectionCounts.resize(height * width);
-		primitiveIntersectionCounts.resize(height * width);
+		nodeIntersectionPerPixelCount.resize(height * width);
+		primitiveIntersectionPerPixelCount.resize(height * width);
 		position = transform * glm::vec4(0, 0, 0, 1);
 	}
 
@@ -123,9 +125,8 @@ public:
 				image[info.index * 4 + 2] = (unsigned char)(ray.result.b * 255);
 				image[info.index * 4 + 3] = (unsigned char)(ray.result.a * 255);
 
-				nodeIntersectionCounts[info.index] = ray.nodeIntersectionCount;
-				primitiveIntersectionCounts[info.index] = ray.primitiveIntersectionCount;
-
+				nodeIntersectionPerPixelCount[info.index] = ray.nodeIntersectionCount;
+				primitiveIntersectionPerPixelCount[info.index] = ray.primitiveIntersectionCount;
 			});
 
 		/*
@@ -140,12 +141,48 @@ public:
 			}
 		}*/
 
-		primitiveIntersectionCount = std::accumulate(primitiveIntersectionCounts.begin(), primitiveIntersectionCounts.end(), 0);
-		nodeIntersectionCount = std::accumulate(nodeIntersectionCounts.begin(), nodeIntersectionCounts.end(), 0);
-		std::cout << "node intersections: " <<nodeIntersectionCount << std::endl;
-		std::cout << "primitive intersections: " << primitiveIntersectionCount << std::endl;
+		for (auto& perPixel : primitiveIntersectionPerPixelCount)
+		{
+			for (size_t i = 0; i < perPixel.size(); i++)
+			{
+				if (primitiveIntersectionPerDepthCount.size() < perPixel.size())
+				{
+					primitiveIntersectionPerDepthCount.resize(perPixel.size());
+				}
+				primitiveIntersectionPerDepthCount[i] += perPixel[i];
+			}
+		}
 
-		encodeTwoSteps("why.png", image, width, height);
+		for (auto& perPixel : nodeIntersectionPerPixelCount)
+		{
+			for (size_t i = 0; i < perPixel.size(); i++)
+			{
+				if (nodeIntersectionPerDepthCount.size() < perPixel.size())
+				{
+					nodeIntersectionPerDepthCount.resize(perPixel.size());
+				}
+				nodeIntersectionPerDepthCount[i] += perPixel[i];
+			}
+		}
+
+		//TODO: could seperate different ray types (primary, shadowray, ...)
+		primitiveIntersectionCount = std::accumulate(primitiveIntersectionPerDepthCount.begin(), primitiveIntersectionPerDepthCount.end(), 0);
+		nodeIntersectionCount = std::accumulate(nodeIntersectionPerDepthCount.begin(), nodeIntersectionPerDepthCount.end(), 0);
+		std::cout << "node      intersections: " << nodeIntersectionCount << std::endl;
+		std::cout << "primitive intersections: " << primitiveIntersectionCount << std::endl ;
+		std::cout << std::endl;
+		/*
+		for (size_t i = 0; i < nodeIntersectionPerDepthCount.size(); i++)
+		{
+			std::cout << "node      intersections at depth " << i << " : " << nodeIntersectionPerDepthCount[i] << std::endl;
+		}
+		std::cout << std::endl;
+		for (size_t i = 0; i < primitiveIntersectionPerDepthCount.size(); i++)
+		{
+			std::cout << "primitive intersections at depth " << i << " : " << primitiveIntersectionPerDepthCount[i] << std::endl;
+		}*/
+
+		//encodeTwoSteps("why.png", image, width, height);
 	}
 
 private:

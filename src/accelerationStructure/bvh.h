@@ -45,6 +45,11 @@ public:
 
 	bool intersect(Ray& ray)
 	{
+		if (ray.nodeIntersectionCount.size() < 1)
+		{
+			ray.nodeIntersectionCount.resize(1);
+		}
+		ray.nodeIntersectionCount[0]++;
 		return root->intersect(ray);
 	}
 
@@ -53,9 +58,9 @@ public:
 	// copy assignment -> called when an already existing object is used to create a new object
 	//Bvh& operator=(const Bvh& other) = delete;
 
-	void constructBvh()
+	void constructBvh(const unsigned int branchingFactor, const unsigned int leafCount)
 	{
-		root->constructBvh();
+		root->constructBvh(0, branchingFactor, leafCount);
 	}
 
 

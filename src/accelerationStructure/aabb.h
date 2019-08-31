@@ -28,7 +28,7 @@ public:
 	{
 	}
 
-	virtual void constructBvh() override
+	virtual void constructBvh(unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount) override
 	{
 		//currently very basic octree approach
 
@@ -47,7 +47,7 @@ public:
 		boundMax = glm::min(max, boundMax);
 
 		//check primitive count. if less than x primitives, stop.
-		if (primitives.size() <= 16)
+		if (primitives.size() <= leafCount)
 		{
 			return;
 		}
@@ -90,6 +90,7 @@ public:
 		//check if one box has all primitives this node has
 		for (auto& b : boxes)
 		{
+			//TODO: this can lead to quite large leaf sizes -> or to endless loops if i want to obey leafsize
 			if (b->getPrimCount() == getPrimCount())
 			{
 				return;
@@ -110,7 +111,7 @@ public:
 		primitives.shrink_to_fit();
 
 		//constructs bvh of all children:
-		Node::constructBvh();
+		Node::constructBvh(depth, branchingFactor, leafCount);
 	}
 
 	virtual bool intersect(Ray& ray) override
@@ -155,7 +156,7 @@ public:
 		//distance to aabb suface:
 		//t = tmin;
 
-		//stop when current ray distance is closer than maximum possible distance to aabb (yes tmin name is missleading)
+		//stop when current ray distance is closer than minimum possible distance of the aabb
 		if (ray.tMax < tmin)
 		{
 			return false;

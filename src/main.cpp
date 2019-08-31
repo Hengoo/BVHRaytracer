@@ -33,6 +33,9 @@ public:
 
 	RayTracer()
 	{
+		unsigned int branchingFactor = 8;
+		unsigned int leafCount = 16;
+
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
 		gameObjects[0]->hasParent = true;
@@ -48,9 +51,7 @@ public:
 		//loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
 		//loadGltfModel("models/2CylinderEngine.glb", gameObjects, meshes);
 
-		//loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
-
-
+		loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
 
 		for (auto& go : gameObjects)
 		{
@@ -79,36 +80,46 @@ public:
 		//add some lights:
 		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 
-		//bvh of (seeded) random sphere
-		//auto bvh = std::make_unique<Bvh>();
-
-		//bvh of loaded model:
-		bvh = Bvh(*root);
-
-		bvh.constructBvh();
-
-		//Camera c(0.1f, glm::vec3(-10,5,5), glm::vec3(1, -0.5, -0.5));
-
-		//the gltf model version
-		//Camera c(std::move(bvh), glm::vec3(0, 10, 0 ), glm::vec3(0, -1,0) , glm::vec3(1,0,0));
-
-		//Camera c(std::move(bvh), glm::vec3(-10, 10.f, 10.f), glm::vec3(1, -0.5, -0.5));
-		//Camera c(std::move(bvh), glm::vec3(0, 50, 0), glm::vec3(1, -0.5, -0.5));
-		//Camera c(std::move(bvh), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
-
-		//good lizard camera:
-		Camera c(glm::vec3(3.5f, 2.5f, 5.f), glm::vec3(-1, 0.3, 1.1));
+		for (size_t i = 2; i < 32; i++)
+		{
+			leafCount = i;
+			std::cout << "raytraced with branching factor of " << branchingFactor << " and a maximum leaf size of " << leafCount << std::endl;
 
 
-		//gearbox camera
-		//Camera c(1, glm::vec3(-1000, 500, 500), glm::vec3(1, -0.5, -0.5));
+			//bvh of (seeded) random sphere
+			//auto bvh = std::make_unique<Bvh>();
 
-		//shift happens(blender sclaed version:
-		//Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
+			//bvh of loaded model:
+			bvh = Bvh(*root);
+			bvh.constructBvh(branchingFactor, leafCount);
 
-		//Camera c(glm::vec3(0,0,-10 ), glm::vec3(0, 0, 0));
+			//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 
-		c.renderImage();
+			
+			//Camera c(0.1f, glm::vec3(-10,5,5), glm::vec3(1, -0.5, -0.5));
+
+			//the gltf model version
+			//Camera c(std::move(bvh), glm::vec3(0, 10, 0 ), glm::vec3(0, -1,0) , glm::vec3(1,0,0));
+
+			//Camera c(std::move(bvh), glm::vec3(-10, 10.f, 10.f), glm::vec3(1, -0.5, -0.5));
+			//Camera c(std::move(bvh), glm::vec3(0, 50, 0), glm::vec3(1, -0.5, -0.5));
+			//Camera c(std::move(bvh), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
+
+			//good lizard camera:
+			Camera c(glm::vec3(3.5f, 2.5f, 5.f), glm::vec3(-1, 0.3, 1.1));
+
+
+			//gearbox camera
+			//Camera c(1, glm::vec3(-1000, 500, 500), glm::vec3(1, -0.5, -0.5));
+
+			//shift happens(blender sclaed version:
+			//Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
+
+			//Camera c(glm::vec3(0,0,-10 ), glm::vec3(0, 0, 0));
+
+			c.renderImage();
+
+		}
 	}
 
 private:

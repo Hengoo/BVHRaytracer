@@ -20,15 +20,14 @@ public:
 
 	bool shadowRay;
 
-	//save result here? ps: need to care with parrallel writes here when i start  with threads
 	Color result;
 
 	//TODO check that i dont render things behind the camera (and throw node collisions away that are behind the camera)
 	//float distance;
 	float tMax;
-
-	unsigned int nodeIntersectionCount = 0;
-	unsigned int primitiveIntersectionCount = 0;
+	//TODO: do it as vector -> counter for each depth in the tree
+	std::vector<unsigned int> nodeIntersectionCount;
+	std::vector<unsigned int> primitiveIntersectionCount;
 
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
 

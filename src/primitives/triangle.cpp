@@ -187,17 +187,36 @@ bool Triangle::intersect(Ray& ray)
 		//TODO this is wrong with non uniform sclaing
 		normal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
 		float f = glm::dot(normal, lightVector);
-		Ray ray(pHit, lightVector, true);
-		ray.tMax = lightDistance;
+		Ray shadowRay(pHit, lightVector, true);
+		shadowRay.tMax = lightDistance;
 
 		//only shoot ray when surface points in light direction
 		if (f > 0)
 		{
-			if (bvh.intersect(ray))
+			if (bvh.intersect(shadowRay))
 			{
 				f = 0;
 			}
+			//add shadowRay intersection to this ones
+			if (ray.nodeIntersectionCount.size() < shadowRay.nodeIntersectionCount.size())
+			{
+				ray.nodeIntersectionCount.resize(shadowRay.nodeIntersectionCount.size());
+			}
+			for (size_t i = 0; i < shadowRay.nodeIntersectionCount.size(); i++)
+			{
+				ray.nodeIntersectionCount[i] += shadowRay.nodeIntersectionCount[i];
+			}
+
+			if (ray.primitiveIntersectionCount.size() < shadowRay.primitiveIntersectionCount.size())
+			{
+				ray.primitiveIntersectionCount.resize(shadowRay.primitiveIntersectionCount.size());
+			}
+			for (size_t i = 0; i < shadowRay.primitiveIntersectionCount.size(); i++)
+			{
+				ray.primitiveIntersectionCount[i] += shadowRay.primitiveIntersectionCount[i];
+			}
 		}
+
 		f = std::max(0.2f, f);
 		color.scale(f);
 	}

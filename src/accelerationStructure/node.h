@@ -11,6 +11,7 @@ class Ray;
 class Node
 {
 public:
+	unsigned int depth;
 	virtual void addNode(std::shared_ptr<Node> n);
 
 	virtual void addPrimitive(std::shared_ptr <Primitive> p);
@@ -18,7 +19,7 @@ public:
 	virtual bool intersect(Ray& ray);
 
 	//might want to add tree depth here?
-	virtual void constructBvh();
+	virtual void constructBvh(unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount);
 
 	virtual int getChildCount();
 	virtual int getPrimCount();
