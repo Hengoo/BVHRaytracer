@@ -89,6 +89,11 @@ public:
 		max = pos + glm::vec3(radius);
 	}
 
+	virtual glm::vec3 getCenter() override
+	{
+		return pos;
+	}
+
 protected:
 
 

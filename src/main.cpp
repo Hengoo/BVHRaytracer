@@ -41,17 +41,17 @@ public:
 		gameObjects[0]->hasParent = true;
 		std::vector<std::shared_ptr<Mesh>> meshes;
 		//loadGltfModel("models/OrientationTest.glb", gameObjects, meshes);
-		loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshes);
+		//loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshes);
 
 		//loadGltfModel("models/Triangle.glb", gameObjects, meshes);
 		//loadGltfModel("models/ParentRotTransTest.glb", gameObjects, meshes);
 
 		//PS: DONT load right now with naive octree!
-		//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
+		loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
 		//loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
 		//loadGltfModel("models/2CylinderEngine.glb", gameObjects, meshes);
 
-		loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+		//loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
 
 		for (auto& go : gameObjects)
 		{
@@ -80,7 +80,7 @@ public:
 		//add some lights:
 		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 
-		for (size_t i = 2; i < 32; i++)
+		for (size_t i = 1; i < 16; i++)
 		{
 			leafCount = i;
 			std::cout << "raytraced with branching factor of " << branchingFactor << " and a maximum leaf size of " << leafCount << std::endl;
@@ -91,7 +91,7 @@ public:
 
 			//bvh of loaded model:
 			bvh = Bvh(*root);
-			bvh.constructBvh(branchingFactor, leafCount);
+			bvh.recursiveOctree(branchingFactor, leafCount);
 
 			//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 
@@ -106,11 +106,11 @@ public:
 			//Camera c(std::move(bvh), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
 
 			//good lizard camera:
-			Camera c(glm::vec3(3.5f, 2.5f, 5.f), glm::vec3(-1, 0.3, 1.1));
+			//Camera c(glm::vec3(3.5f, 2.5f, 5.f), glm::vec3(-1, 0.3, 1.1));
 
 
 			//gearbox camera
-			//Camera c(1, glm::vec3(-1000, 500, 500), glm::vec3(1, -0.5, -0.5));
+			Camera c(glm::vec3(0, 0, 0), glm::vec3(50, 0, 0));
 
 			//shift happens(blender sclaed version:
 			//Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));

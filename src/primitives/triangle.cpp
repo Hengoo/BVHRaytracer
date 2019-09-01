@@ -235,11 +235,15 @@ bool Triangle::intersect(Node* node)
 		//aabb triangle intersection
 
 		//for now: just aabb with aabb of triangle intersection. (could be more accurate)
-		return (boundMin.x <= aabb->boundMax.x && boundMax.x >= aabb->boundMin.x) &&
-			(boundMin.y <= aabb->boundMax.y && boundMax.y >= aabb->boundMin.y) &&
-			(boundMin.z <= aabb->boundMax.z && boundMax.z >= aabb->boundMin.z);
+		//return (boundMin.x <= aabb->boundMax.x && boundMax.x >= aabb->boundMin.x) &&
+		//	(boundMin.y <= aabb->boundMax.y && boundMax.y >= aabb->boundMin.y) &&
+		//	(boundMin.z <= aabb->boundMax.z && boundMax.z >= aabb->boundMin.z);
 		
-		//TODO: more accurate aabb triangle test in case the above one detects intersection
+		//small redesign: return triangle center vs aabb colision result (this way a triangle cannot be in multiple aabbs:
+		auto c = getCenter();
+		return (c.x <= aabb->boundMax.x && c.x >= aabb->boundMin.x) &&
+			(c.y <= aabb->boundMax.y && c.y >= aabb->boundMin.y) &&
+			(c.z <= aabb->boundMax.z && c.z >= aabb->boundMin.z);
 	}
 
 	//no know type-> should not happen

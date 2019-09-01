@@ -171,7 +171,7 @@ public:
 		std::cout << "node      intersections: " << nodeIntersectionCount << std::endl;
 		std::cout << "primitive intersections: " << primitiveIntersectionCount << std::endl ;
 		std::cout << std::endl;
-		/*
+		
 		for (size_t i = 0; i < nodeIntersectionPerDepthCount.size(); i++)
 		{
 			std::cout << "node      intersections at depth " << i << " : " << nodeIntersectionPerDepthCount[i] << std::endl;
@@ -180,9 +180,9 @@ public:
 		for (size_t i = 0; i < primitiveIntersectionPerDepthCount.size(); i++)
 		{
 			std::cout << "primitive intersections at depth " << i << " : " << primitiveIntersectionPerDepthCount[i] << std::endl;
-		}*/
+		}
 
-		//encodeTwoSteps("why.png", image, width, height);
+		encodeTwoSteps("why.png", image, width, height);
 	}
 
 private:

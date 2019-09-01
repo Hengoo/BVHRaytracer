@@ -48,9 +48,14 @@ public:
 
 	virtual bool intersect(Node* node) override;
 
-	virtual void getBounds(glm::vec3& min, glm::vec3& max) override
+	virtual inline void getBounds(glm::vec3& min, glm::vec3& max) override
 	{
 		min = boundMin;
 		max = boundMax;
+	}
+
+	virtual inline glm::vec3 getCenter() override
+	{
+		return (boundMax * 0.5f + boundMin * 0.5f);
 	}
 };

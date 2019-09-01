@@ -20,7 +20,7 @@ public:
 
 	Bvh()
 	{
-		root = std::make_shared<Aabb>();
+		root = std::make_shared<Aabb>(0);
 
 		randomFillBvh();
 
@@ -34,7 +34,7 @@ public:
 
 	Bvh(GameObject& gameObject)
 	{
-		root = std::make_shared<Aabb>();
+		root = std::make_shared<Aabb>(0);
 		//iterate trough gameobject root and add all triangles to the aabb
 		iterateGo(gameObject);
 	}
@@ -58,9 +58,12 @@ public:
 	// copy assignment -> called when an already existing object is used to create a new object
 	//Bvh& operator=(const Bvh& other) = delete;
 
-	void constructBvh(const unsigned int branchingFactor, const unsigned int leafCount)
+	void recursiveOctree(const unsigned int branchingFactor, const unsigned int leafCount)
 	{
-		root->constructBvh(0, branchingFactor, leafCount);
+		//root->recursiveOctree(leafCount);
+		root->recursiveBvh(branchingFactor, leafCount);
+
+		//for better performance: could go trough all nodes and recreate primitives in the order they are in the tree (also with minimal needed data)
 	}
 
 

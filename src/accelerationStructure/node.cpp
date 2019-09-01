@@ -19,22 +19,28 @@ void Node::addPrimitive(std::shared_ptr<Primitive> p)
 	primitives.push_back(p);
 }
 
-void Node::constructBvh(unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount)
+void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
 {
-	Node::depth = depth;
-	depth++;
 	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
 		[&](auto& c)
 		{
-			c->constructBvh(depth, branchingFactor, leafCount);
-			c->depth = depth;
+			c->recursiveBvh(branchingFactor, leafCount);
+		});
+}
+
+void Node::recursiveOctree(const unsigned int leafCount)
+{
+	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
+		[&](auto& c)
+		{
+			c->recursiveOctree(leafCount);
 		});
 }
 
 bool Node::intersect(Ray& ray)
 {
 	bool result = false;
-	
+
 	for (auto& p : primitives)
 	{
 		if (ray.primitiveIntersectionCount.size() < depth + 2)

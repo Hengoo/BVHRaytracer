@@ -26,4 +26,7 @@ public:
 
 	//returns the min and max bounds of the primitive (those are worldBounds since i dont plan to support moving/rotating gameobjects)
 	virtual void getBounds(glm::vec3& min, glm::vec3& max) = 0;
+
+	//returns the center of the bounding box
+	virtual glm::vec3 getCenter() = 0;
 };
