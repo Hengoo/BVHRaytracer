@@ -21,6 +21,8 @@ class Triangle : public Primitive
 
 	//worldspace bounds: (will keep bounds for super simple aabb to aabb intersection)
 	glm::vec3 boundMin, boundMax;
+	//its faster to save it than the recompute it
+	glm::vec3 center;
 
 	//update bounds from points:
 	void update();
@@ -56,6 +58,7 @@ public:
 
 	virtual inline glm::vec3 getCenter() override
 	{
-		return (boundMax * 0.5f + boundMin * 0.5f);
+		//return (boundMax * 0.5f + boundMin * 0.5f);
+		return center;
 	}
 };

@@ -32,6 +32,7 @@ void Triangle::update()
 	boundMin = glm::min(boundMin, pos22);
 	boundMax = glm::max(boundMax, pos22);
 
+	center = (boundMax * 0.5f + boundMin * 0.5f);
 }
 
 bool Triangle::intersect(Ray& ray)

@@ -110,5 +110,8 @@
     <ClInclude Include="src\color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\typedef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -7,17 +7,23 @@
 //for the parallel for
 #include <execution>
 
+//#include <atomic>
+
 #include "node.h"
 #include "../ray.h"
 
 #include "../glmInclude.h"
 #include "../primitives/primitive.h"
-
 #include "../glmUtil.h"
+#include "../typedef.h"
 
 //forward declarations:
 class Primitive;
 
+static bool sortPrimitive(std::shared_ptr<Primitive>& p1, std::shared_ptr<Primitive>& p2, int axis)
+{
+	return p1->getCenter()[axis] < p2->getCenter()[axis];
+}
 class Aabb : public Node
 {
 public:
@@ -26,49 +32,56 @@ public:
 	glm::vec3 boundMax;
 	//possible rotation??? -> since its just a bvh tester it doesnt really matter
 
-	Aabb(unsigned int depth, glm::vec3 boundMin = glm::vec3(-222222.0f), glm::vec3 boundMax = glm::vec3(222222.0f)) : Node(depth), boundMin(boundMin), boundMax(boundMax)
+	Aabb(unsigned int depth, std::shared_ptr<primPointVector> primitives, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
+		: Node(depth, primitives, primitiveBegin, primitiveEnd)
 	{
-	}
-
-	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
-	{
-		//update  bounds and center based on the primitives:
-		//we dont care about previous bounds
+		//update  bounds based on the primitives:
 		glm::vec3 min(222222.0f), max(-222222.0f);
 		glm::vec3 minp, maxp;
-		for (auto& p : primitives)
-		{
-			p->getBounds(minp, maxp);
-			min = glm::min(min, minp);
-			max = glm::max(max, maxp);
-		}
+		std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
+			[&](auto& p)
+			{
+				p->getBounds(minp, maxp);
+				min = glm::min(min, minp);
+				max = glm::max(max, maxp);
+			});
 
 		boundMin = min;
 		boundMax = max;
+	}
 
-		//check primitive count. if less than x primitives, stop.
+	//bool sortBy(Primitive& p1, Primitive& p2, int& axis)
+
+
+	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
+	{
+		//check primitive count. if less than x primitives, this node is finished.
 		if (getPrimCount() <= leafCount)
 		{
 			//TODO i think i should create an aabb for those triangles IF the leafcount > 1
+			//not sure about this. the benefit of NOT doing it would be that in theory we could load all primitives together
 			return;
 		}
 
-		//choose axis to split:
+		//TODO: if i want to keep primitives in this node i have to spawn them to primitiveBegin BEFORE the sort
+		//also dont forget to set primitiveBegin and primitiveEnd correctly before end of method
+
 		int axis = 0;
 		//calculate distance of centers along each axis -> largest distance is the axis we want to split
-		min = glm::vec3(222222.0f);
-		max = glm::vec3(-222222.0f);
+		glm::vec3 min = glm::vec3(222222.0f);
+		glm::vec3 max = glm::vec3(-222222.0f);
 		glm::vec3 centerDistance;
-		for (auto& p : primitives)
-		{
-			centerDistance = p->getCenter();
-			min = glm::min(min, centerDistance);
-			max = glm::max(max, centerDistance);
-		}
+		std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
+			[&](auto& p)
+			{
+				centerDistance = p->getCenter();
+				min = glm::min(min, centerDistance);
+				max = glm::max(max, centerDistance);
+			});
 		centerDistance = max - min;
 
+		//choose axis to split:
 		//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
-
 		axis = maxDimension(centerDistance);
 
 		//stop when triangle centers are at the same position (when this happens to often i might try the real center instead of the aabb center????
@@ -78,64 +91,55 @@ public:
 			return;
 		}
 
-		//spliting factor:
-		float factor = 0.5f;
-		//for now i split at the middle of the triangle centers
-		float cent = max[axis] * 0.5f + min[axis] * 0.5f;
-		factor = (cent - boundMin[axis]) / (boundMax[axis] - boundMin[axis]);
 
-		//TODO: calculate factor acording to heuristic (i could give the heuristic as a function pointer??)
-
-		std::vector<std::shared_ptr<Node>> boxes;
-
-		glm::vec3 f1(0), f2(0);
-		f1[axis] = factor;
-		f2[axis] = 1.0f - factor;
-
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin, boundMax + ((boundMin - boundMax) * f2)));
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + ((boundMax - boundMin) * f1), boundMax));
-
-		std::vector<bool> flag(primitives.size());
-		//for (auto& prim : primitives)
-		for (size_t i = 0; i < primitives.size(); i++)
+		//sort primitive array along axis:
+		//its faster to first check if its sorted
+		if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, axis)))
 		{
-			for (auto& box : boxes)
-			{
-				if (!flag[i] && primitives[i]->intersect(&*box))
-				{
-					//i have to check how often it happens that a primitive is added to two nodes due to floating point accuracy
-					box->addPrimitive(primitives[i]);
-					flag[i] = true;
-				}
-			}
+			std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, axis));
 		}
 
-		//only add not empty nodes to the children.
-		for (auto& b : boxes)
-		{
-			if (b->getPrimCount() != 0)
-			{
-				addNode(b);
-			}
-			else
-			{
-				std::cout << "tried to make node without children." << std::endl;
-				return;
-			}
-		}
+		//approach: test all versions (go trough sorted primitives and with each iteration add one more to the second node until we tried all.
+		//test all combos with heuristic  (save results in array and take the one with best result;
 
-		//todo: try keeping primitives in this node when they are very large (this would keep child aabb boxes smaller (might save much for HUGE triangles)
-		primitives.clear();
-		primitives.shrink_to_fit();
+		unsigned int size = getPrimCount();
+		primPointVector::iterator currentSplit = primitiveBegin + 1;
 
+		/*
+		//Split by "heuristic"
+		std::vector<float> metric(size - 1);
+		std::vector<int> loopIndex(size - 1);
+		std::iota(loopIndex.begin(), loopIndex.end(), 0);
+		std::for_each(std::execution::par_unseq, loopIndex.begin(), loopIndex.end(),
+			[&](auto& i)
+			{
+				float m = 0;
+				Aabb node1(depth + 1, primitives, primitiveBegin, primitiveBegin + i);
+				Aabb node2(depth + 1, primitives, primitiveBegin + i, primitiveEnd);
+				m = abs((int)node1.getPrimCount() - (int)node2.getPrimCount());
+				metric[i] = m;
+			});
+		//make the split with the best metric:
+		currentSplit = primitiveBegin + std::distance(metric.begin(), std::min_element(metric.begin(), metric.end())) + 1;
+		*/
+		//lazy split by half
+		currentSplit = primitiveBegin + size/2;
+		addNode(std::make_shared<Aabb>(depth + 1, primitives, primitiveBegin, currentSplit));
+		addNode(std::make_shared<Aabb>(depth + 1, primitives, currentSplit, primitiveEnd));
+
+		//just a debug output to get warned abount eventual loop
 		if (depth >= 35)
 		{
 			std::cout << depth << std::endl;
 		}
+
+		primitiveBegin = primitiveEnd;
+
 		//constructs bvh of all children:
 		Node::recursiveBvh(branchingFactor, leafCount);
 	}
 
+	/* todo: this is broken since i dont have a primitive array anymore
 	//rekursive octreetree build
 	virtual void recursiveOctree(const unsigned int leafCount) override
 	{
@@ -144,18 +148,20 @@ public:
 		//first update bounds of current aabb according to primitive:
 		glm::vec3 min(222222.0f), max(-222222.0f);
 		glm::vec3 minp, maxp;
-		for (auto& p : primitives)
-		{
-			p->getBounds(minp, maxp);
-			min = glm::min(min, minp);
-			max = glm::max(max, maxp);
-		}
+		//for (auto& p : primitives)
+		std::for_each(std::execution::par_unseq, primitiveBegin, primitiveEnd,
+			[&](auto& info)
+			{
+				p->getBounds(minp, maxp);
+				min = glm::min(min, minp);
+				max = glm::max(max, maxp);
+			});
 
 		boundMin = min;
 		boundMax = max;
 
 		//check primitive count. if less than x primitives, stop.
-		if (primitives.size() <= leafCount)
+		if ((*primitives).size() <= leafCount)
 		{
 			return;
 		}
@@ -220,8 +226,9 @@ public:
 		//constructs bvh of all children:
 		Node::recursiveOctree(leafCount);
 	}
+	*/
 
-	virtual bool intersect(Ray& ray) override
+	virtual bool intersectNode(Ray& ray, float& distance) override
 	{
 		float t;
 		//second answer form here: https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
@@ -269,10 +276,14 @@ public:
 			return false;
 		}
 
-		//check if intersection is closer than
+		//ray.result.g += 0.002f;
+
+		//tmax gives less triangle intersections
+		distance = tmax;
+		return true;
 
 		//intersection occured:
 		//intersect all primitves and nodes:
-		return Node::intersect(ray);
+		//return Node::intersect(ray);
 	}
 };

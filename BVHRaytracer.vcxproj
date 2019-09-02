@@ -50,6 +50,7 @@
     <ClInclude Include="src\tinyGltf\stb_image.h" />
     <ClInclude Include="src\tinyGltf\stb_image_write.h" />
     <ClInclude Include="src\tinyGltf\tiny_gltf.h" />
+    <ClInclude Include="src\typedef.h" />
     <ClInclude Include="src\util.h" />
     <ClInclude Include="src\vertex.h" />
   </ItemGroup>

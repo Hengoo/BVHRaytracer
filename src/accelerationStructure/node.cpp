@@ -9,15 +9,35 @@
 #include "../primitives/primitive.h"
 #include "../ray.h"
 
+struct DistanceNode
+{
+	int id;
+	float distance;
+
+	DistanceNode()
+	{
+		id = -1;
+		distance = -1;
+	}
+	DistanceNode(int id, float distance)
+		:id(id), distance(distance)
+	{
+	}
+};
+static bool sortDistanceNode(DistanceNode& d1, DistanceNode& d2)
+{
+	return d1.distance < d2.distance;
+}
+
 void Node::addNode(std::shared_ptr<Node> n)
 {
 	children.push_back(n);
 }
 
-void Node::addPrimitive(std::shared_ptr<Primitive> p)
-{
-	primitives.push_back(p);
-}
+//void Node::addPrimitive(std::shared_ptr<Primitive> p)
+//{
+//	primitives.push_back(p);
+//}
 
 void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
 {
@@ -41,22 +61,23 @@ bool Node::intersect(Ray& ray)
 {
 	bool result = false;
 
-	for (auto& p : primitives)
-	{
-		if (ray.primitiveIntersectionCount.size() < depth + 2)
+	std::for_each(primitiveBegin, primitiveEnd,
+		[&](auto& p)
 		{
-			ray.primitiveIntersectionCount.resize(depth + 2);
-		}
-		ray.primitiveIntersectionCount[depth + 1]++;
-		if (p->intersect(ray))
-		{
-			result = true;
-			if (ray.shadowRay)
+			if (ray.primitiveIntersectionCount.size() < depth + 2)
 			{
-				return true;
+				ray.primitiveIntersectionCount.resize(depth + 2);
 			}
-		}
-	}
+			ray.primitiveIntersectionCount[depth + 1]++;
+			if (p->intersect(ray))
+			{
+				result = true;
+				if (ray.shadowRay)
+				{
+					return true;
+				}
+			}
+		});
 
 	for (auto& c : children)
 	{
@@ -65,7 +86,46 @@ bool Node::intersect(Ray& ray)
 			ray.nodeIntersectionCount.resize(depth + 2);
 		}
 		ray.nodeIntersectionCount[depth + 1]++;
-		if (c->intersect(ray))
+		float dist;
+		if (c->intersectNode(ray, dist))
+		{
+			if (c->intersect(ray))
+			{
+				result = true;
+				if (ray.shadowRay)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	//this has less intersections but is SLOWER (38 seconds instead of 31 seconds for 8 times the shift happens)
+	//TODO: want to retest this with a larger branching factor(and probably only for nodes with depth under 5?)
+	/*
+	//idea: sort nodes by distance to them -> traverse closer ones first
+	std::vector<DistanceNode> d;
+	//TODO: need to check if its faster to reserve or not
+	//d.reserve(children.size());
+
+	for (size_t i = 0; i < children.size(); i++)
+	{
+		if (ray.nodeIntersectionCount.size() < depth + 2)
+		{
+			ray.nodeIntersectionCount.resize(depth + 2);
+		}
+		ray.nodeIntersectionCount[depth + 1]++;
+		float dist;
+		if (children[i]->intersectNode(ray, dist))
+		{
+			d.push_back(DistanceNode(i, dist));
+		}
+	}
+
+	std::sort(d.begin(), d.end(), sortDistanceNode);
+	for (auto& di : d)
+	{
+		if (children[di.id]->intersect(ray))
 		{
 			result = true;
 			if (ray.shadowRay)
@@ -73,19 +133,17 @@ bool Node::intersect(Ray& ray)
 				return true;
 			}
 		}
-	}
-
-
+	}*/
 
 	return result;
 }
 
-int Node::getChildCount()
+unsigned int Node::getChildCount()
 {
 	return children.size();
 }
 
-int Node::getPrimCount()
+unsigned int Node::getPrimCount()
 {
-	return primitives.size();
+	return std::distance(primitiveBegin, primitiveEnd);
 }

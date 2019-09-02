@@ -14,7 +14,6 @@ public:
 	//check ray - primitive intersection
 	virtual bool intersect(Ray& ray) = 0;
 
-	
 	/*
 	-there can be different node types (i want to experiment with aabb, rotated boxes, but also with spheres
 	-there can be different primitive types: triangles, spheres, boxes, ?quads?, ez

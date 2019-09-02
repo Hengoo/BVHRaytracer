@@ -63,6 +63,8 @@ public:
 		nodeIntersectionPerPixelCount.resize(height * width);
 		primitiveIntersectionPerPixelCount.resize(height * width);
 		renderInfos.resize(height * width);
+		nodeIntersectionCount = 0;
+		primitiveIntersectionCount = 0;
 
 	}
 
@@ -73,6 +75,8 @@ public:
 		nodeIntersectionPerPixelCount.resize(height * width);
 		primitiveIntersectionPerPixelCount.resize(height * width);
 		position = transform * glm::vec4(0, 0, 0, 1);
+		nodeIntersectionCount = 0;
+		primitiveIntersectionCount = 0;
 	}
 
 	//spawns rays and collects results into image. Image is written on disk
@@ -129,18 +133,6 @@ public:
 				primitiveIntersectionPerPixelCount[info.index] = ray.primitiveIntersectionCount;
 			});
 
-		/*
-		for (int i = 0; i < height; i++)
-		{
-			for (int j = 0; j < width; j++)
-			{
-				if (i == j)
-				{
-					image[4 * (i * width + j) + 2] = 255;
-				}
-			}
-		}*/
-
 		for (auto& perPixel : primitiveIntersectionPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
@@ -182,7 +174,7 @@ public:
 			std::cout << "primitive intersections at depth " << i << " : " << primitiveIntersectionPerDepthCount[i] << std::endl;
 		}
 
-		encodeTwoSteps("why.png", image, width, height);
+		//encodeTwoSteps("why.png", image, width, height);
 	}
 
 private:

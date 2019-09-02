@@ -25,12 +25,10 @@ public:
 	//TODO check that i dont render things behind the camera (and throw node collisions away that are behind the camera)
 	//float distance;
 	float tMax;
-	//TODO: do it as vector -> counter for each depth in the tree
 	std::vector<unsigned int> nodeIntersectionCount;
 	std::vector<unsigned int> primitiveIntersectionCount;
 
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
-
 
 	Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false) : pos(pos), direction(direction), shadowRay(shadowRay)
 	{
@@ -43,9 +41,4 @@ public:
 	~Ray()
 	{
 	}
-
-protected:
-
-
-
 };

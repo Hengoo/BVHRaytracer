@@ -12,6 +12,7 @@
 #include "../primitives/triangle.h"
 
 #include "../util.h"
+#include "../typedef.h"
 
 
 class Bvh
@@ -20,9 +21,9 @@ public:
 
 	Bvh()
 	{
-		root = std::make_shared<Aabb>(0);
+		//root = std::make_shared<Aabb>(0);
 
-		randomFillBvh();
+		//randomFillBvh();
 
 
 		//naive idea: make a node with "everything" then iteratively split it up in the middle
@@ -34,9 +35,11 @@ public:
 
 	Bvh(GameObject& gameObject)
 	{
-		root = std::make_shared<Aabb>(0);
 		//iterate trough gameobject root and add all triangles to the aabb
-		iterateGo(gameObject);
+		std::shared_ptr<primPointVector> primitives = std::make_shared<primPointVector>();
+		iterateGo(gameObject, primitives);
+		root = std::make_shared<Aabb>(0, primitives, primitives->begin(), primitives->end());
+
 	}
 
 	~Bvh()
@@ -50,7 +53,11 @@ public:
 			ray.nodeIntersectionCount.resize(1);
 		}
 		ray.nodeIntersectionCount[0]++;
-		return root->intersect(ray);
+		float dist = 0;
+		if (root->intersectNode(ray, dist))
+		{
+			return root->intersect(ray);
+		}
 	}
 
 	// copy constructor -> called when an already existing object is overwritten by an other
@@ -72,7 +79,7 @@ protected:
 
 private:
 
-	void iterateGo(const GameObject& go)
+	void iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& primitives)
 	{
 		//for (auto& p : (*go.mesh->vertices))
 		if (go.mesh)
@@ -80,7 +87,7 @@ private:
 			for (int i = 0; i < go.mesh->indices->size(); i += 3)
 			{
 				//triangle version:
-				root->addPrimitive(std::make_shared<Triangle>(&go, &*go.mesh, i));
+				primitives->push_back(std::make_shared<Triangle>(&go, &*go.mesh, i));
 
 				//sphere version (one sphere for each triangle?
 				//std::array<unsigned char, 4> color = { ruchar(0, 255), ruchar(0, 255), ruchar(0, 255), 255 };
@@ -90,7 +97,7 @@ private:
 		}
 		for (auto& g : go.children)
 		{
-			iterateGo(*g);
+			iterateGo(*g, primitives);
 		}
 	}
 
@@ -114,11 +121,10 @@ private:
 
 
 
-	void addRandomSphere()
+	std::shared_ptr<Primitive> addRandomSphere()
 	{
 		float dist = 20;
 		std::array<unsigned char, 4> color = { ruchar(0, 255), ruchar(0, 255), ruchar(0, 255), 255 };
-		auto p = std::make_shared<Sphere>(glm::vec3(rfloat(-dist, dist), rfloat(-dist, dist), rfloat(-dist, dist)), rfloat(0.2f, 3.0f), color);
-		root->addPrimitive(p);
+		return std::make_shared<Sphere>(glm::vec3(rfloat(-dist, dist), rfloat(-dist, dist), rfloat(-dist, dist)), rfloat(0.2f, 3.0f), color);
 	}
 };
