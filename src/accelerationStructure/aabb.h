@@ -20,12 +20,22 @@
 //forward declarations:
 class Primitive;
 
+struct NodePair
+{
+	std::unique_ptr<Node> node1;
+	std::unique_ptr<Node> node2;
+	std::vector<float>::iterator metricBegin;
+	std::vector<float>::iterator metricEnd;
+	int index;
+};
+
 static bool sortPrimitive(std::shared_ptr<Primitive>& p1, std::shared_ptr<Primitive>& p2, int axis)
 {
 	return p1->getCenter()[axis] < p2->getCenter()[axis];
 }
 class Aabb : public Node
 {
+
 public:
 	//edge with smallest value in each dimension
 	glm::vec3 boundMin;
@@ -35,7 +45,14 @@ public:
 	Aabb(unsigned int depth, std::shared_ptr<primPointVector> primitives, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
 		: Node(depth, primitives, primitiveBegin, primitiveEnd)
 	{
-		//update  bounds based on the primitives:
+		calculateBounds();
+	}
+
+	//bool sortBy(Primitive& p1, Primitive& p2, int& axis)
+
+	void calculateBounds()
+	{
+		//calculate bounds based on the primitives:
 		glm::vec3 min(222222.0f), max(-222222.0f);
 		glm::vec3 minp, maxp;
 		std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
@@ -49,9 +66,6 @@ public:
 		boundMin = min;
 		boundMax = max;
 	}
-
-	//bool sortBy(Primitive& p1, Primitive& p2, int& axis)
-
 
 	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
 	{
@@ -105,25 +119,76 @@ public:
 		unsigned int size = getPrimCount();
 		primPointVector::iterator currentSplit = primitiveBegin + 1;
 
-		/*
 		//Split by "heuristic"
 		std::vector<float> metric(size - 1);
-		std::vector<int> loopIndex(size - 1);
-		std::iota(loopIndex.begin(), loopIndex.end(), 0);
-		std::for_each(std::execution::par_unseq, loopIndex.begin(), loopIndex.end(),
-			[&](auto& i)
+		if (depth < 3 && getPrimCount() > 5000)
+		{
+			//parallel version: (do 8 node pairs in parallel:)
+			//ONLY usefull for the first few nodes because after all nodes work parralel
+
+			//the reason why its faster to have this large is because there are clusters that require a node bound recalculation for each decreasePrimitives
+			int parallelCount = 64;
+			std::vector<NodePair> work(parallelCount);
+			for (size_t i = 0; i < parallelCount; i++)
 			{
-				float m = 0;
-				Aabb node1(depth + 1, primitives, primitiveBegin, primitiveBegin + i);
-				Aabb node2(depth + 1, primitives, primitiveBegin + i, primitiveEnd);
-				m = abs((int)node1.getPrimCount() - (int)node2.getPrimCount());
-				metric[i] = m;
-			});
+				int start = (size / parallelCount) * i;
+				int end = (size / parallelCount) * (i + 1);
+				if (i == parallelCount - 1)
+				{
+					end = size - 1;
+				}
+				work[i].node1 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin, primitiveBegin + start);
+				work[i].node2 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin + start, primitiveEnd);
+				work[i].metricBegin = metric.begin() + start;
+				work[i].metricEnd = metric.begin() + end;
+				work[i].index = i;
+				//std::cout << "worklaod: " << std::distance(work[i].metricBegin, work[i].metricEnd) << std::endl;
+			}
+			std::cout << "start" << std::endl;
+			std::for_each(std::execution::par_unseq, work.begin(), work.end(),
+				[&](auto& w)
+				{
+					std::for_each(std::execution::seq, w.metricBegin, w.metricEnd,
+						[&](auto& met)
+						{
+							float m = 0;
+							w.node1->increasePrimitives();
+							w.node2->decreasePrimitives();
+							m = abs((int)w.node1->getPrimCount() - (int)w.node2->getPrimCount());
+							met = m;
+						});
+					//std::cout << "work " << w.index << " finished" <<std::endl;
+				});
+			//std::cout << depth << std::endl;
+		}
+		else
+		{
+			//full sequential version:
+			Aabb node1(depth + 1, primitives, primitiveBegin, primitiveBegin);
+			Aabb node2(depth + 1, primitives, primitiveBegin, primitiveEnd);
+
+			std::for_each(std::execution::seq, metric.begin(), metric.end(),
+				[&](auto& met)
+				{
+					float m = 0;
+					node1.increasePrimitives();
+					node2.decreasePrimitives();
+					m = abs((int)node1.getPrimCount() - (int)node2.getPrimCount());
+					met = m;
+				});
+		}
 		//make the split with the best metric:
 		currentSplit = primitiveBegin + std::distance(metric.begin(), std::min_element(metric.begin(), metric.end())) + 1;
-		*/
+		auto bestSplit = primitiveBegin + size / 2;
+		if (std::distance(currentSplit, bestSplit) != 0)
+		{
+			int d1 = std::distance(currentSplit, primitiveBegin);
+			int d2 = std::distance(bestSplit, primitiveBegin);
+			auto deb = 0;
+		}
+
 		//lazy split by half
-		currentSplit = primitiveBegin + size/2;
+		//currentSplit = primitiveBegin + size / 2;
 		addNode(std::make_shared<Aabb>(depth + 1, primitives, primitiveBegin, currentSplit));
 		addNode(std::make_shared<Aabb>(depth + 1, primitives, currentSplit, primitiveEnd));
 
@@ -285,5 +350,32 @@ public:
 		//intersection occured:
 		//intersect all primitves and nodes:
 		//return Node::intersect(ray);
+	}
+
+	void increasePrimitives() override
+	{
+		//increment end iterator and adjust the bounds according to the new primitive;
+		primitiveEnd = primitiveEnd + 1;
+
+		glm::vec3 minp, maxp;
+		(*primitiveEnd)->getBounds(minp, maxp);
+		boundMin = glm::min(boundMin, minp);
+		boundMax = glm::max(boundMax, maxp);
+	}
+
+	void decreasePrimitives() override
+	{
+		//increment Begin iterator and recalculate the bounds when the "lost" primitive was part of the bounds;
+		glm::vec3 minp, maxp;
+		(*primitiveBegin)->getBounds(minp, maxp);
+		if (minp.x == boundMin.x || minp.y == boundMin.y || minp.z == boundMin.z
+			|| maxp.x == boundMax.x || maxp.y == boundMax.y || maxp.z == boundMax.z)
+		{
+			//recalc bounds
+			calculateBounds();
+		}
+		boundMin = glm::min(boundMin, minp);
+		boundMax = glm::max(boundMax, maxp);
+		primitiveBegin = primitiveBegin + 1;
 	}
 };

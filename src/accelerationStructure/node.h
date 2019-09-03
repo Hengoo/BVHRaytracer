@@ -36,6 +36,8 @@ public:
 
 	virtual unsigned int getChildCount();
 	virtual unsigned int getPrimCount();
+	virtual void increasePrimitives() = 0;
+	virtual void decreasePrimitives() = 0;
 
 protected:
 	//this could be a unique pointer

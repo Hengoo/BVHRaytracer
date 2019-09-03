@@ -100,7 +100,7 @@ bool Node::intersect(Ray& ray)
 		}
 	}
 
-	//this has less intersections but is SLOWER (38 seconds instead of 31 seconds for 8 times the shift happens)
+	//this has less intersections but is SLOWER (38 seconds instead of 31 seconds for rendering the shift happens 8 times)
 	//TODO: want to retest this with a larger branching factor(and probably only for nodes with depth under 5?)
 	/*
 	//idea: sort nodes by distance to them -> traverse closer ones first

@@ -174,7 +174,7 @@ public:
 			std::cout << "primitive intersections at depth " << i << " : " << primitiveIntersectionPerDepthCount[i] << std::endl;
 		}
 
-		//encodeTwoSteps("why.png", image, width, height);
+		encodeTwoSteps("why.png", image, width, height);
 	}
 
 private:

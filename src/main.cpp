@@ -47,11 +47,13 @@ public:
 		//loadGltfModel("models/ParentRotTransTest.glb", gameObjects, meshes);
 
 		//PS: DONT load right now with naive octree!
-		//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
+		loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
 		//loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
 		//loadGltfModel("models/2CylinderEngine.glb", gameObjects, meshes);
 
-		loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+		//loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+
+		//TODO: loading multiple models might have an error somehwrer?
 
 		for (auto& go : gameObjects)
 		{
@@ -80,7 +82,7 @@ public:
 		//add some lights:
 		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 
-		for (size_t i = 1; i < 9; i++)
+		for (size_t i = 1; i < 2; i++)
 		{
 			leafCount = i;
 			std::cout << "raytraced with branching factor of " << branchingFactor << " and a maximum leaf size of " << leafCount << std::endl;
@@ -110,10 +112,10 @@ public:
 
 
 			//gearbox camera
-			//Camera c(glm::vec3(0, 0, 0), glm::vec3(50, 0, 0));
+			Camera c(glm::vec3(0, 0, 0), glm::vec3(50, 0, 0));
 
 			//shift happens(blender sclaed version:
-			Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
+			//Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
 
 			//Camera c(glm::vec3(0,0,-10 ), glm::vec3(0, 0, 0));
 
