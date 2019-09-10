@@ -38,11 +38,20 @@ public:
 	virtual unsigned int getPrimCount();
 	virtual void increasePrimitives() = 0;
 	virtual void decreasePrimitives() = 0;
+	virtual float getSurfaceArea() = 0;
 
-protected:
+	//using sah approach from pbrt http://www.pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies.html
+	//TODO : currently also use their cost of 1/8
+	inline float sah(Node& n1, Node& n2)
+	{
+		return 0.125 * ((n1.getPrimCount() * n1.getSurfaceArea() + n2.getPrimCount() * n2.getSurfaceArea()) / getSurfaceArea());
+	}
+
 	//this could be a unique pointer
 	std::vector<std::shared_ptr<Node>> children;
 
+protected:
+	
 	//all nodes share the same vector
 	std::shared_ptr<primPointVector> primitives;
 	//begin and end iterator represent the children this node contains  (what when none???)

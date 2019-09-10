@@ -47,11 +47,11 @@ public:
 		//loadGltfModel("models/ParentRotTransTest.glb", gameObjects, meshes);
 
 		//PS: DONT load right now with naive octree!
-		loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
+		//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
 		//loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
 		//loadGltfModel("models/2CylinderEngine.glb", gameObjects, meshes);
 
-		//loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+		loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
 
 		//TODO: loading multiple models might have an error somehwrer?
 
@@ -94,6 +94,7 @@ public:
 			//bvh of loaded model:
 			bvh = Bvh(*root);
 			bvh.recursiveOctree(branchingFactor, leafCount);
+			bvh.collapseChilds(0);
 
 			//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 
@@ -112,10 +113,10 @@ public:
 
 
 			//gearbox camera
-			Camera c(glm::vec3(0, 0, 0), glm::vec3(50, 0, 0));
+			//Camera c(glm::vec3(0, 0, 0), glm::vec3(50, 0, 0));
 
 			//shift happens(blender sclaed version:
-			//Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
+			Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
 
 			//Camera c(glm::vec3(0,0,-10 ), glm::vec3(0, 0, 0));
 

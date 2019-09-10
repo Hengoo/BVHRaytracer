@@ -67,9 +67,15 @@ public:
 		boundMax = max;
 	}
 
+	float getSurfaceArea() override
+	{
+		auto d = boundMax - boundMin;
+		return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
+	}
+
 	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
 	{
-		//check primitive count. if less than x primitives, this node is finished.
+		//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
 		if (getPrimCount() <= leafCount)
 		{
 			//TODO i think i should create an aabb for those triangles IF the leafcount > 1
@@ -110,6 +116,7 @@ public:
 		//its faster to first check if its sorted
 		if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, axis)))
 		{
+			//TODO test what parallel stuff like std::execution::seq or unseqpar does here
 			std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, axis));
 		}
 
@@ -123,8 +130,8 @@ public:
 		std::vector<float> metric(size - 1);
 		if (depth < 3 && getPrimCount() > 5000)
 		{
-			//parallel version: (do 8 node pairs in parallel:)
-			//ONLY usefull for the first few nodes because after all nodes work parralel
+			//parallel version: (calculate the metric for different intervals parallel)
+			//-> usefull for the first few nodes because after all nodes work parallel
 
 			//the reason why its faster to have this large is because there are clusters that require a node bound recalculation for each decreasePrimitives
 			int parallelCount = 64;
@@ -154,7 +161,8 @@ public:
 							float m = 0;
 							w.node1->increasePrimitives();
 							w.node2->decreasePrimitives();
-							m = abs((int)w.node1->getPrimCount() - (int)w.node2->getPrimCount());
+							//m = abs((int)w.node1->getPrimCount() - (int)w.node2->getPrimCount());
+							m = sah(*w.node1.get(), *w.node2.get());
 							met = m;
 						});
 					//std::cout << "work " << w.index << " finished" <<std::endl;
@@ -174,6 +182,8 @@ public:
 					node1.increasePrimitives();
 					node2.decreasePrimitives();
 					m = abs((int)node1.getPrimCount() - (int)node2.getPrimCount());
+
+					m = sah(node1, node2);
 					met = m;
 				});
 		}
