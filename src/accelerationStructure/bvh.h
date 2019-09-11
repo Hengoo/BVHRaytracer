@@ -48,14 +48,38 @@ public:
 
 	bool intersect(Ray& ray)
 	{
-		if (ray.nodeIntersectionCount.size() < 1)
+		if (root->getPrimCount() == 0)
 		{
-			ray.nodeIntersectionCount.resize(1);
+			if (ray.nodeIntersectionCount.size() < 1)
+			{
+				ray.nodeIntersectionCount.resize(1);
+			}
+			ray.nodeIntersectionCount[0]++;
 		}
-		ray.nodeIntersectionCount[0]++;
+		else
+		{
+			if (root->getChildCount() != 0)
+			{
+				std::cout << "TODO: implement correct counter for primitive intersection in upper nodes" << std::endl;
+			}
+			if (ray.leafIntersectionCount.size() < 1)
+			{
+				ray.leafIntersectionCount.resize(1);
+			}
+			ray.leafIntersectionCount[0]++;
+		}
+
 		float dist = 0;
 		if (root->intersectNode(ray, dist))
 		{
+			if (root->getPrimCount() == 0)
+			{
+				ray.successfulNodeIntersectionCount++;
+			}
+			else
+			{
+				ray.successfulLeafIntersectionCount++;
+			}
 			return root->intersect(ray);
 		}
 	}

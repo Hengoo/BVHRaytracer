@@ -53,6 +53,8 @@ public:
 
 		loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
 
+		//loadGltfModel("models/4Cubes.glb", gameObjects, meshes);
+
 		//TODO: loading multiple models might have an error somehwrer?
 
 		for (auto& go : gameObjects)
@@ -94,11 +96,11 @@ public:
 			//bvh of loaded model:
 			bvh = Bvh(*root);
 			bvh.recursiveOctree(branchingFactor, leafCount);
-			bvh.collapseChilds(0);
+			//bvh.collapseChilds(0);
 
 			//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 
-			
+
 			//Camera c(0.1f, glm::vec3(-10,5,5), glm::vec3(1, -0.5, -0.5));
 
 			//the gltf model version
@@ -119,6 +121,8 @@ public:
 			Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
 
 			//Camera c(glm::vec3(0,0,-10 ), glm::vec3(0, 0, 0));
+
+			//Camera c(glm::vec3(0, 0, -3), glm::vec3(0, 0, 0));
 
 			c.renderImage();
 

@@ -151,7 +151,7 @@ public:
 				work[i].index = i;
 				//std::cout << "worklaod: " << std::distance(work[i].metricBegin, work[i].metricEnd) << std::endl;
 			}
-			std::cout << "start" << std::endl;
+
 			std::for_each(std::execution::par_unseq, work.begin(), work.end(),
 				[&](auto& w)
 				{
@@ -189,13 +189,6 @@ public:
 		}
 		//make the split with the best metric:
 		currentSplit = primitiveBegin + std::distance(metric.begin(), std::min_element(metric.begin(), metric.end())) + 1;
-		auto bestSplit = primitiveBegin + size / 2;
-		if (std::distance(currentSplit, bestSplit) != 0)
-		{
-			int d1 = std::distance(currentSplit, primitiveBegin);
-			int d2 = std::distance(bestSplit, primitiveBegin);
-			auto deb = 0;
-		}
 
 		//lazy split by half
 		//currentSplit = primitiveBegin + size / 2;
@@ -353,7 +346,7 @@ public:
 
 		//ray.result.g += 0.002f;
 
-		//tmax gives less triangle intersections
+		//tmax gives less triangle intersections when sorting
 		distance = tmax;
 		return true;
 

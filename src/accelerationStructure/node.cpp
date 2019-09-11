@@ -64,13 +64,10 @@ bool Node::intersect(Ray& ray)
 	std::for_each(primitiveBegin, primitiveEnd,
 		[&](auto& p)
 		{
-			if (ray.primitiveIntersectionCount.size() < depth + 2)
-			{
-				ray.primitiveIntersectionCount.resize(depth + 2);
-			}
-			ray.primitiveIntersectionCount[depth + 1]++;
+			ray.primitiveIntersectionCount++;
 			if (p->intersect(ray))
 			{
+				ray.successfulPrimitiveIntersectionCount++;
 				result = true;
 				if (ray.shadowRay)
 				{
@@ -79,16 +76,43 @@ bool Node::intersect(Ray& ray)
 			}
 		});
 
+
+
 	for (auto& c : children)
 	{
-		if (ray.nodeIntersectionCount.size() < depth + 2)
+		if (c->getPrimCount() == 0)
 		{
-			ray.nodeIntersectionCount.resize(depth + 2);
+			if (ray.nodeIntersectionCount.size() < depth + 2)
+			{
+				ray.nodeIntersectionCount.resize(depth + 2);
+			}
+			ray.nodeIntersectionCount[depth + 1]++;
 		}
-		ray.nodeIntersectionCount[depth + 1]++;
+		else
+		{
+			if (c->getChildCount() != 0)
+			{
+				std::cout << "TODO: implement correct counter for primitive intersection in upper nodes" << std::endl;
+			}
+			if (ray.leafIntersectionCount.size() < depth + 2)
+			{
+				ray.leafIntersectionCount.resize(depth + 2);
+			}
+			ray.leafIntersectionCount[depth + 1]++;
+		}
+
 		float dist;
 		if (c->intersectNode(ray, dist))
 		{
+			if (c->getPrimCount() == 0)
+			{
+				ray.successfulNodeIntersectionCount++;
+			}
+			else
+			{
+				ray.successfulLeafIntersectionCount++;
+			}
+			//node intersection successful: rekursion continues
 			if (c->intersect(ray))
 			{
 				result = true;
@@ -102,6 +126,7 @@ bool Node::intersect(Ray& ray)
 
 	//this has less intersections but is SLOWER (38 seconds instead of 31 seconds for rendering the shift happens 8 times)
 	//TODO: want to retest this with a larger branching factor(and probably only for nodes with depth under 5?)
+	//TODO: COUNTERS REWORKED! code needs update
 	/*
 	//idea: sort nodes by distance to them -> traverse closer ones first
 	std::vector<DistanceNode> d;

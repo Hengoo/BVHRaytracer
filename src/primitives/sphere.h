@@ -50,7 +50,7 @@ public:
 				//ray.result = {0,0,0,255};
 				auto tmp = ray.pos * 10.0f + ray.direction * dist;
 				//ray.result = { (unsigned char)tmp.x,(unsigned char)tmp.y, (unsigned char)tmp.z,255 };
-				ray.result = color;
+				ray.surfaceColor = color;
 				ray.tMax = dist;
 			}
 			return true;

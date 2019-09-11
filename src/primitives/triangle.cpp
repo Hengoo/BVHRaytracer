@@ -154,7 +154,7 @@ bool Triangle::intersect(Ray& ray)
 
 	//ray triangle intersection complete
 
-	//end if shadowRay:
+	//finished for shadowRay:
 	if (ray.shadowRay)
 	{
 		//small number to prevent self shadowing due to floating point errors
@@ -173,57 +173,16 @@ bool Triangle::intersect(Ray& ray)
 	}
 	color.scale(mesh->color);
 
-	//TODO: to this similar to derefered rendering (gather all information and solve rest later)
-	//light shading / shadowrays:
-	for (auto& l : lights)
-	{
-		float lightDistance;
-		glm::vec3 lightVector;
+	//set ray data for later shading:
 
-		//todo use light color
-		auto lightColor = l->getLightDirection(pHit, lightVector, lightDistance);
-		//those calculated triangle normals seem to be inversed right now?
-		//auto normal = -computeNormal(points[0], points[1], points[2]);
-		auto normal = glm::normalize(b0 * vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
-		//TODO this is wrong with non uniform sclaing
-		normal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
-		float f = glm::dot(normal, lightVector);
-		Ray shadowRay(pHit, lightVector, true);
-		shadowRay.tMax = lightDistance;
+	auto normal = glm::normalize(b0* vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
+	ray.surfaceNormal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
 
-		//only shoot ray when surface points in light direction
-		if (f > 0)
-		{
-			if (bvh.intersect(shadowRay))
-			{
-				f = 0;
-			}
-			//add shadowRay intersection to this ones
-			if (ray.nodeIntersectionCount.size() < shadowRay.nodeIntersectionCount.size())
-			{
-				ray.nodeIntersectionCount.resize(shadowRay.nodeIntersectionCount.size());
-			}
-			for (size_t i = 0; i < shadowRay.nodeIntersectionCount.size(); i++)
-			{
-				ray.nodeIntersectionCount[i] += shadowRay.nodeIntersectionCount[i];
-			}
-
-			if (ray.primitiveIntersectionCount.size() < shadowRay.primitiveIntersectionCount.size())
-			{
-				ray.primitiveIntersectionCount.resize(shadowRay.primitiveIntersectionCount.size());
-			}
-			for (size_t i = 0; i < shadowRay.primitiveIntersectionCount.size(); i++)
-			{
-				ray.primitiveIntersectionCount[i] += shadowRay.primitiveIntersectionCount[i];
-			}
-		}
-
-		f = std::max(0.2f, f);
-		color.scale(f);
-	}
+	//ray.surfaceNormal = -computeNormal(points[0], points[1], points[2]);
 
 	ray.tMax = t;
-	ray.result = color;
+	ray.surfaceColor = color;
+	ray.surfacePosition = pHit;
 	return true;
 }
 
@@ -240,7 +199,7 @@ bool Triangle::intersect(Node* node)
 		//	(boundMin.y <= aabb->boundMax.y && boundMax.y >= aabb->boundMin.y) &&
 		//	(boundMin.z <= aabb->boundMax.z && boundMax.z >= aabb->boundMin.z);
 		
-		//small redesign: return triangle center vs aabb colision result (this way a triangle cannot be in multiple aabbs:
+		//small redesign: return triangle center vs aabb colision result (this way a triangle is only in one Node:
 		auto c = getCenter();
 		return (c.x <= aabb->boundMax.x && c.x >= aabb->boundMin.x) &&
 			(c.y <= aabb->boundMax.y && c.y >= aabb->boundMin.y) &&

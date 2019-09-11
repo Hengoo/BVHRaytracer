@@ -25,7 +25,9 @@ public:
 	//primitives are given at creation and can only be removed(when they are "placed" in child nodes)
 	//virtual void addPrimitive(std::shared_ptr <Primitive> p);
 
+	//intersect calls the intersectNodes for all children and the similar method for all primitives
 	virtual bool intersect(Ray& ray);
+	//intersectNode is the ray collision algorithm of the specific node
 	virtual bool intersectNode(Ray& ray, float& distance) = 0;
 
 	//might want to add tree depth here?
