@@ -43,7 +43,7 @@ public:
 		invDirection = 1.0f / this->direction;
 		tMax = 222222.f;
 		surfaceColor = Color(0);
-		surfaceNormal = glm::vec3(0, 1, 0);
+		surfaceNormal = glm::vec3(0, 0, 0);
 		surfacePosition = glm::vec3(0, 0, 0);
 		primitiveIntersectionCount = 0;
 		successfulPrimitiveIntersectionCount = 0;
