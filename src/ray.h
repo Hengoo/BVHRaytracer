@@ -29,6 +29,8 @@ public:
 
 	std::vector<unsigned int> nodeIntersectionCount;
 	std::vector<unsigned int> leafIntersectionCount;
+	std::vector<unsigned int> childFullness;
+	std::vector<unsigned int> primitiveFullness;
 	unsigned int primitiveIntersectionCount;
 	unsigned int successfulPrimitiveIntersectionCount;
 	unsigned int successfulNodeIntersectionCount;

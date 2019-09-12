@@ -61,6 +61,16 @@ bool Node::intersect(Ray& ray)
 {
 	bool result = false;
 
+	if (getPrimCount() != 0)
+	{
+		//save primitivecount
+		//so we know how much we space we waste (and how efficiently we use cachelines)
+		if (ray.primitiveFullness.size() < getPrimCount() + 1)
+		{
+			ray.primitiveFullness.resize(getPrimCount() + 1);
+		}
+		ray.primitiveFullness[getPrimCount()] ++;
+	}
 	std::for_each(primitiveBegin, primitiveEnd,
 		[&](auto& p)
 		{
@@ -76,8 +86,15 @@ bool Node::intersect(Ray& ray)
 			}
 		});
 
-
-
+	if (getChildCount() != 0)
+	{
+		//save childcount of this intersection
+		if (ray.childFullness.size() < getChildCount() + 1)
+		{
+			ray.childFullness.resize(getChildCount() + 1);
+		}
+		ray.childFullness[getChildCount()] ++;
+	}
 	for (auto& c : children)
 	{
 		if (c->getPrimCount() == 0)

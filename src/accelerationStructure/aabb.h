@@ -357,7 +357,7 @@ public:
 
 	void increasePrimitives() override
 	{
-		//increment end iterator and adjust the bounds according to the new primitive;
+		//increment End iterator and adjust the bounds according to the new primitive;
 		primitiveEnd = primitiveEnd + 1;
 
 		glm::vec3 minp, maxp;

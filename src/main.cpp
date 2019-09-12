@@ -34,7 +34,7 @@ public:
 	RayTracer()
 	{
 		unsigned int branchingFactor = 8;
-		unsigned int leafCount = 16;
+		unsigned int leafCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
@@ -87,6 +87,7 @@ public:
 		for (size_t i = 1; i < 2; i++)
 		{
 			leafCount = i;
+			std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
 			std::cout << "raytraced with branching factor of " << branchingFactor << " and a maximum leaf size of " << leafCount << std::endl;
 
 

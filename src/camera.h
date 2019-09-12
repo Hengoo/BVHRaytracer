@@ -39,12 +39,16 @@ public:
 
 	std::vector<std::vector<unsigned int>> nodeIntersectionPerPixelCount;
 	std::vector<std::vector<unsigned int>> leafIntersectionPerPixelCount;
+	std::vector<std::vector<unsigned int>> childFullnessPerPixelCount;
+	std::vector<std::vector<unsigned int>> primitiveFullnessPerPixelCount;
 	std::vector<size_t> nodeIntersectionPerDepthCount;
 	std::vector<size_t> leafIntersectionPerDepthCount;
 	std::vector<size_t> primitiveIntersectionsPerPixel;
 	std::vector<size_t> successfulPrimitiveIntersectionsPerPixel;
 	std::vector<size_t> successfulNodeIntersectionsPerPixel;
 	std::vector<size_t> successfulLeafIntersectionsPerPixel;
+	std::vector<size_t> primitiveFullness;
+	std::vector<size_t> childFullness;
 	size_t nodeIntersectionCount;
 	size_t leafIntersectionCount;
 	size_t primitiveIntersections;
@@ -72,6 +76,8 @@ public:
 		renderInfos.resize(height * width);
 		nodeIntersectionPerPixelCount.resize(height * width);
 		leafIntersectionPerPixelCount.resize(height * width);
+		childFullnessPerPixelCount.resize(height * width);
+		primitiveFullnessPerPixelCount.resize(height * width);
 		primitiveIntersectionsPerPixel.resize(height * width);
 		successfulPrimitiveIntersectionsPerPixel.resize(height * width);
 		successfulNodeIntersectionsPerPixel.resize(height * width);
@@ -91,6 +97,8 @@ public:
 		renderInfos.resize(height * width);
 		nodeIntersectionPerPixelCount.resize(height * width);
 		leafIntersectionPerPixelCount.resize(height * width);
+		childFullnessPerPixelCount.resize(height * width);
+		primitiveFullnessPerPixelCount.resize(height * width);
 		primitiveIntersectionsPerPixel.resize(height * width);
 		successfulPrimitiveIntersectionsPerPixel.resize(height * width);
 		successfulNodeIntersectionsPerPixel.resize(height * width);
@@ -161,6 +169,7 @@ public:
 					Ray shadowRay(ray.surfacePosition, lightVector, true);
 					shadowRay.tMax = lightDistance;
 
+
 					//only shoot ray when surface points in light direction
 					if (f > 0)
 					{
@@ -168,6 +177,7 @@ public:
 						{
 							f = 0;
 						}
+
 						//add shadowRay intersection to this ones
 						if (ray.nodeIntersectionCount.size() < shadowRay.nodeIntersectionCount.size())
 						{
@@ -178,7 +188,6 @@ public:
 							ray.nodeIntersectionCount[i] += shadowRay.nodeIntersectionCount[i];
 						}
 
-
 						if (ray.leafIntersectionCount.size() < shadowRay.leafIntersectionCount.size())
 						{
 							ray.leafIntersectionCount.resize(shadowRay.leafIntersectionCount.size());
@@ -186,6 +195,24 @@ public:
 						for (size_t i = 0; i < shadowRay.leafIntersectionCount.size(); i++)
 						{
 							ray.leafIntersectionCount[i] += shadowRay.leafIntersectionCount[i];
+						}
+
+						if (ray.childFullness.size() < shadowRay.childFullness.size())
+						{
+							ray.childFullness.resize(shadowRay.childFullness.size());
+						}
+						for (size_t i = 0; i < shadowRay.childFullness.size(); i++)
+						{
+							ray.childFullness[i] += shadowRay.childFullness[i];
+						}
+
+						if (ray.primitiveFullness.size() < shadowRay.primitiveFullness.size())
+						{
+							ray.primitiveFullness.resize(shadowRay.primitiveFullness.size());
+						}
+						for (size_t i = 0; i < shadowRay.primitiveFullness.size(); i++)
+						{
+							ray.primitiveFullness[i] += shadowRay.primitiveFullness[i];
 						}
 
 						primitiveIntersectionsPerPixel[info.index] += shadowRay.primitiveIntersectionCount;
@@ -203,8 +230,11 @@ public:
 				image[info.index * 4 + 2] = (unsigned char)(ray.surfaceColor.b * 255);
 				image[info.index * 4 + 3] = (unsigned char)(ray.surfaceColor.a * 255);
 
+				//copy vectors
 				nodeIntersectionPerPixelCount[info.index] = ray.nodeIntersectionCount;
 				leafIntersectionPerPixelCount[info.index] = ray.leafIntersectionCount;
+				childFullnessPerPixelCount[info.index] = ray.childFullness;
+				primitiveFullnessPerPixelCount[info.index] = ray.primitiveFullness;
 
 				primitiveIntersectionsPerPixel[info.index] += ray.primitiveIntersectionCount;
 				successfulPrimitiveIntersectionsPerPixel[info.index] += ray.successfulPrimitiveIntersectionCount;
@@ -236,6 +266,30 @@ public:
 			}
 		}
 
+		for (auto& perPixel : childFullnessPerPixelCount)
+		{
+			for (size_t i = 0; i < perPixel.size(); i++)
+			{
+				if (childFullness.size() < perPixel.size())
+				{
+					childFullness.resize(perPixel.size());
+				}
+				childFullness[i] += perPixel[i];
+			}
+		}
+
+		for (auto& perPixel : primitiveFullnessPerPixelCount)
+		{
+			for (size_t i = 0; i < perPixel.size(); i++)
+			{
+				if (primitiveFullness.size() < perPixel.size())
+				{
+					primitiveFullness.resize(perPixel.size());
+				}
+				primitiveFullness[i] += perPixel[i];
+			}
+		}
+
 		//TODO: could seperate different ray types (primary, shadowray, ...)
 		leafIntersectionCount = std::accumulate(leafIntersectionPerDepthCount.begin(), leafIntersectionPerDepthCount.end(), 0);
 		nodeIntersectionCount = std::accumulate(nodeIntersectionPerDepthCount.begin(), nodeIntersectionPerDepthCount.end(), 0);
@@ -261,6 +315,19 @@ public:
 		for (size_t i = 0; i < leafIntersectionPerDepthCount.size(); i++)
 		{
 			std::cout << "leaf intersections at depth " << i << " : " << leafIntersectionPerDepthCount[i] << std::endl;
+		}
+
+		//IMPORTANT: this number is smaller than the nodecount + leafcount because the depth 0 intersections are left out
+		std::cout << std::endl;
+		for (size_t i = 0; i < childFullness.size(); i++)
+		{
+			std::cout << "intersections with nodes with " << i << " children: " << childFullness[i] << std::endl;
+		}
+
+		std::cout << std::endl;
+		for (size_t i = 0; i < primitiveFullness.size(); i++)
+		{
+			std::cout << "intersections with nodes with " << i << " primitives: " << primitiveFullness[i] << std::endl;
 		}
 
 		encodeTwoSteps("why.png", image, width, height);
