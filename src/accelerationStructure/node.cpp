@@ -189,3 +189,36 @@ unsigned int Node::getPrimCount()
 {
 	return std::distance(primitiveBegin, primitiveEnd);
 }
+
+void Node::analysis(std::vector<unsigned int>& treeDepth, int currentPos, int& minPos, int& maxPos, std::vector<unsigned int>& childCount, std::vector<unsigned int>& primCount)
+{
+	//counts: childCount[i] = number of nodes that have i children
+
+	unsigned int cc = getChildCount();
+	unsigned int pc = getPrimCount();
+	if (pc != 0 && cc == 0)
+	{
+		if (treeDepth.size() < depth + 1)
+		{
+			treeDepth.resize(depth + 1);
+		}
+		treeDepth[depth]++;
+	}
+	if (childCount.size() < cc + 1)
+	{
+		childCount.resize(cc + 1);
+	}
+	childCount[cc]++;
+	if (primCount.size() < pc + 1)
+	{
+		primCount.resize(pc + 1);
+	}
+	primCount[pc]++;
+
+	for (size_t i = 0; i < children.size(); i++)
+	{
+		//TODO: calc offset to calc positions
+		//int offset = child
+		children[i]->analysis(treeDepth, currentPos, minPos, maxPos, childCount, primCount);
+	}
+}

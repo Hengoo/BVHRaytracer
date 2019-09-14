@@ -107,10 +107,32 @@ public:
 		}
 		//need to implement special algotithm for 3, ...
 		//current idea is to reshuffle based on the ammound of primitives so the tree is kinda balanced
-		
+
 	}
 
+	void bvhAnalysis(std::string path, std::string name, std::string problem)
+	{
+		//analysis includes
+		//metric analysis: sah, the overlapp heuristic
+		//average childcount vs target
+		//average primitive count vs target
 
+		//image with 1 pixel for each leafNode -> showing depth of tree
+		//image with 1 pixel for each leafnode -> fullness of tree   (might be possible to combine both)
+
+		//create image -> go through bvh and set one pixel per node
+		
+		//position is needed to know where to place center in the image i want to draw
+		int minPos = 0;
+		int maxPos = 0;
+		//counts: childCount[i] = number of nodes that have i children
+		std::vector<unsigned int> childCount;
+		std::vector<unsigned int> primCount;
+		//depth of the leaf nodes
+		std::vector<unsigned int> treeDepth;
+		root->analysis(treeDepth, 0, minPos, maxPos, childCount, primCount);
+		int deb = 0;
+	}
 
 protected:
 	std::shared_ptr<Node> root;
@@ -195,4 +217,6 @@ private:
 		std::array<unsigned char, 4> color = { ruchar(0, 255), ruchar(0, 255), ruchar(0, 255), 255 };
 		return std::make_shared<Sphere>(glm::vec3(rfloat(-dist, dist), rfloat(-dist, dist), rfloat(-dist, dist)), rfloat(0.2f, 3.0f), color);
 	}
+
+
 };

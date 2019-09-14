@@ -1,7 +1,11 @@
 #pragma once
 #include <iostream>
+// writing on a text file
+#include <fstream>
+
 #include <algorithm>
 #include <vector>
+
 
 //for the parallel for
 #include <execution>
@@ -28,14 +32,27 @@ struct RenderInfo
 class Camera
 {
 public:
-
-	//should have more camrea parameters
-
+	//path to write the analysis results
+	std::string path;
+	//model / scenario name
+	std::string name;
+	//description for info.txt
+	std::string problem;
 	glm::vec3 position;
-
 	glm::mat4 transform;
-
 	std::vector<unsigned char> image;
+
+	//contains all info needed to spawn the ray for the specific pixel. Only needed because i dont know how to get the loop index into the unsequenced for_each
+	std::vector<RenderInfo> renderInfos;
+
+	size_t height;
+	size_t width;
+
+	//1.37f for 40 degree, 0.866f for 60 degree (horizontal fov)
+	float focalLength;
+
+	//todo not implemented (most likely not needed anyway)
+	float farPlane = 50;
 
 	//per pixel per depth counter:
 	std::vector<std::vector<unsigned int>> nodeIntersectionPerPixelCount;
@@ -77,33 +94,20 @@ public:
 	size_t shadowSuccessfulNodeIntersections;
 	size_t shadowSuccessfulLeafIntersections;
 
-	//contains all info needed to spawn the ray for the specific pixel. Only needed because i dont know how to get the loop index into the unsequenced for_each
-	std::vector<RenderInfo> renderInfos;
-
-	size_t height;
-	size_t width;
-
-	//1.37f for 40 degree, 0.866f for 60 degree (horizontal fov)
-	float focalLength;
-
-	//todo not implemented (most likely not needed anyway)
-	float farPlane = 50;
-
-
-	Camera(glm::vec3 position, glm::vec3 lookCenter, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
-		: position(position), focalLength(focalLength), height(height), width(width)
+	Camera(std::string path, std::string name,std::string problem, glm::vec3 position, glm::vec3 lookCenter, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
+		: path(path), name(name),problem(problem), position(position), focalLength(focalLength), height(height), width(width)
 	{
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
 
-		InitializeVariables();
+		initializeVariables();
 	}
 
-	Camera(glm::mat4 transform, float focalLength = 0.866f, size_t height = 1000, size_t width = 1000)
-		: transform(transform), focalLength(focalLength), height(height), width(width)
+	Camera(std::string path, std::string name,std::string problem, glm::mat4 transform, float focalLength = 0.866f, size_t height = 1000, size_t width = 1000)
+		: path(path), name(name),problem(problem), transform(transform), focalLength(focalLength), height(height), width(width)
 	{
 		position = transform * glm::vec4(0, 0, 0, 1);
 
-		InitializeVariables();
+		initializeVariables();
 	}
 
 	//spawns rays and collects results into image. Image is written on disk
@@ -161,7 +165,8 @@ public:
 						auto lightColor = l->getLightDirection(ray.surfacePosition, lightVector, lightDistance);
 
 						float f = glm::dot(ray.surfaceNormal, lightVector);
-						Ray shadowRay(ray.surfacePosition, lightVector, true);
+						//add bias to vector to prevent shadow rays hitting the surface they where created for
+						Ray shadowRay(ray.surfacePosition + lightVector * 0.001f, lightVector, true);
 						shadowRay.tMax = lightDistance;
 
 						//only shoot ray when surface points in light direction
@@ -315,7 +320,6 @@ public:
 			}
 		}
 
-		//TODO: could seperate different ray types (primary, shadowray, ...)
 		leafIntersectionCount = std::accumulate(leafIntersectionPerDepthCount.begin(), leafIntersectionPerDepthCount.end(), 0);
 		nodeIntersectionCount = std::accumulate(nodeIntersectionPerDepthCount.begin(), nodeIntersectionPerDepthCount.end(), 0);
 
@@ -331,6 +335,7 @@ public:
 		shadowSuccessfulLeafIntersections = std::accumulate(shadowSuccessfulLeafIntersectionsPerPixel.begin(), shadowSuccessfulLeafIntersectionsPerPixel.end(), 0);
 		shadowPrimitiveIntersections = std::accumulate(shadowPrimitiveIntersectionsPerPixel.begin(), shadowPrimitiveIntersectionsPerPixel.end(), 0);
 
+
 		std::cout << "node intersections: " << nodeIntersectionCount << std::endl;
 		std::cout << "node success ration: " << successfulNodeIntersections / (float)nodeIntersectionCount << std::endl;
 		std::cout << "leaf intersections: " << leafIntersectionCount << std::endl;
@@ -345,39 +350,60 @@ public:
 		std::cout << "shadow primitive intersections: " << shadowPrimitiveIntersections << std::endl;
 		std::cout << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
 
-
-		std::cout << std::endl;
-		for (size_t i = 0; i < nodeIntersectionPerDepthCount.size(); i++)
+		std::ofstream myfile(path +"/" + name +"Info.txt");
+		if (myfile.is_open())
 		{
-			std::cout << "node intersections at depth " << i << " : " << nodeIntersectionPerDepthCount[i] << std::endl;
-		}
-		std::cout << std::endl;
-		for (size_t i = 0; i < leafIntersectionPerDepthCount.size(); i++)
-		{
-			std::cout << "leaf intersections at depth " << i << " : " << leafIntersectionPerDepthCount[i] << std::endl;
-		}
+			myfile << problem << std::endl << std::endl;
+			myfile << "node intersections: " << nodeIntersectionCount << std::endl;
+			myfile << "node success ration: " << successfulNodeIntersections / (float)nodeIntersectionCount << std::endl;
+			myfile << "leaf intersections: " << leafIntersectionCount << std::endl;
+			myfile << "leaf success ration: " << successfulLeafIntersections / (float)leafIntersectionCount << std::endl;
+			myfile << "primitive intersections: " << primitiveIntersections << std::endl;
+			myfile << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
+			myfile << std::endl;
+			myfile << "shadow node intersections: " << shadowNodeIntersectionCount << std::endl;
+			myfile << "shadow node success ration: " << shadowSuccessfulNodeIntersections / (float)shadowNodeIntersectionCount << std::endl;
+			myfile << "shadow leaf intersections: " << shadowLeafIntersectionCount << std::endl;
+			myfile << "shadow leaf success ration: " << shadowSuccessfulLeafIntersections / (float)shadowLeafIntersectionCount << std::endl;
+			myfile << "shadow primitive intersections: " << shadowPrimitiveIntersections << std::endl;
+			myfile << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
+			myfile << std::endl;
+			for (size_t i = 0; i < nodeIntersectionPerDepthCount.size(); i++)
+			{
+				myfile << "node intersections at depth " << i << " : " << nodeIntersectionPerDepthCount[i] << std::endl;
+			}
+			myfile << std::endl;
+			for (size_t i = 0; i < leafIntersectionPerDepthCount.size(); i++)
+			{
+				myfile << "leaf intersections at depth " << i << " : " << leafIntersectionPerDepthCount[i] << std::endl;
+			}
 
-		//IMPORTANT: this number is smaller than the nodecount + leafcount because the depth 0 intersections are left out
-		std::cout << std::endl;
-		for (size_t i = 0; i < childFullness.size(); i++)
-		{
-			std::cout << "intersections with nodes with " << i << " children: " << childFullness[i] << std::endl;
-		}
+			//this number is smaller than the nodecount + leafcount because the depth 0 intersections are left out
+			//In addition: with shadow rays those also dont fit because shadowrays can stop when they find a tirangle
+			myfile << std::endl;
+			for (size_t i = 0; i < childFullness.size(); i++)
+			{
+				myfile << "intersections with nodes with " << i << " children: " << childFullness[i] << std::endl;
+			}
 
-		std::cout << std::endl;
-		for (size_t i = 0; i < primitiveFullness.size(); i++)
-		{
-			std::cout << "intersections with nodes with " << i << " primitives: " << primitiveFullness[i] << std::endl;
+			myfile << std::endl;
+			for (size_t i = 0; i < primitiveFullness.size(); i++)
+			{
+				myfile << "intersections with nodes with " << i << " primitives: " << primitiveFullness[i] << std::endl;
+			}
+			myfile.close();
 		}
+		else std::cout << "Unable to open file" << std::endl;
 
-		encodeTwoSteps("why.png", image, width, height);
+
+		encodeTwoSteps(path + "/" + name + ".png", image, width, height);
 	}
 
 private:
 
 	// Encode from raw pixels to an in - memory PNG file first, then write it to disk
 	//The image argument has width * height RGBA pixels or width * height * 4 bytes
-	void encodeTwoSteps(const char* encodeFilename, std::vector<unsigned char>& encodeImage, unsigned encodeWidth, unsigned encodeHeight)
+	void encodeTwoSteps(std::string encodeFilename, std::vector<unsigned char>& encodeImage, unsigned encodeWidth, unsigned encodeHeight)
 	{
 		std::vector<unsigned char> png;
 
@@ -389,7 +415,7 @@ private:
 	}
 
 
-	void InitializeVariables()
+	void initializeVariables()
 	{
 		image.resize(height * width * 4);
 		renderInfos.resize(height * width);

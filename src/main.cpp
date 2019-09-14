@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <direct.h>
 
 #include "accelerationStructure/aabb.h"
 #include "accelerationStructure/node.h"
@@ -13,6 +14,7 @@
 #include "lights/pointLight.h"
 #include "lights/directionalLight.h"
 #include "global.h"
+
 
 //#include "primitives/triangle.h"
 
@@ -40,20 +42,71 @@ public:
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
 		gameObjects[0]->hasParent = true;
 		std::vector<std::shared_ptr<Mesh>> meshes;
-		//loadGltfModel("models/OrientationTest.glb", gameObjects, meshes);
-		//loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshes);
+		std::string name;
+		std::string path;
+		std::string problem;
+		int scenario = 0;
+		glm::vec3  cameraPos;
+		glm::vec3  cameraTarget;
 
-		//loadGltfModel("models/Triangle.glb", gameObjects, meshes);
-		//loadGltfModel("models/ParentRotTransTest.glb", gameObjects, meshes);
+		switch (scenario)
+		{
+		case 0:
+			name = "lizard";
+			loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshes);
+			cameraPos = glm::vec3(3.5f, 1.5f, 5.f);
+			cameraTarget = glm::vec3(-1, -1, 1.1);
+			break;
+		case 1:
+			name = "shiftHappens";
+			loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+			cameraPos = glm::vec3(20, 10, -10);
+			cameraTarget = glm::vec3(0, 5, 0);
+			break;
+		case 2:
+			name = "gearbox";
+			//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
+			loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
+			cameraPos = glm::vec3(0, 0, 0);
+			cameraTarget = glm::vec3(50, 0, 0);
+			break;
+		case 3:
+			name = "cubes";
+			loadGltfModel("models/4Cubes.glb", gameObjects, meshes);
+			cameraPos = glm::vec3(0, 0, -3);
+			cameraTarget = glm::vec3(0, 0, 0);
+			break;
+		default:
+			break;
+		}
+		//create folder to save files:
+		//this seems to
+		//_mkdir("test");
 
-		//PS: DONT load right now with naive octree!
-		//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
-		//loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
-		//loadGltfModel("models/2CylinderEngine.glb", gameObjects, meshes);
+		//create folder (yeay windwos string shit)
+		//std::wstring stemp = std::wstring(searchParam.begin(), searchParam.end());
 
-		loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+		path = "Analysis";
+		if (CreateDirectory(path.data(), NULL) ||
+			ERROR_ALREADY_EXISTS == GetLastError())
+		{
+			path += "/" + name;
+			if (CreateDirectory(path.data(), NULL) ||
+				ERROR_ALREADY_EXISTS == GetLastError())
+			{
 
-		//loadGltfModel("models/4Cubes.glb", gameObjects, meshes);
+			}
+			else
+			{
+				std::cout << "failed to create directory" << std::endl;
+				return;
+			}
+		}
+		else
+		{
+			std::cout << "failed to create directory" << std::endl;
+			return;
+		}
 
 		//TODO: loading multiple models might have an error somehwrer?
 
@@ -84,11 +137,12 @@ public:
 		//add some lights:
 		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 
-		for (size_t i = 1; i < 2; i++)
+		for (size_t i = 3; i < 4; i++)
 		{
 			leafCount = i;
 			std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
-			std::cout << "raytraced with branching factor of " << branchingFactor << " and a maximum leaf size of " << leafCount << std::endl;
+			problem = "scenario " + name + " with branching factor of " + std::to_string(branchingFactor) + " and a maximum leaf size of " + std::to_string(leafCount);
+			std::cout << problem << std::endl;
 
 
 			//bvh of (seeded) random sphere
@@ -97,34 +151,13 @@ public:
 			//bvh of loaded model:
 			bvh = Bvh(*root);
 			bvh.recursiveOctree(branchingFactor, leafCount);
-			//bvh.collapseChilds(0);
+			bvh.collapseChilds(0);
 
 			//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
+			bvh.bvhAnalysis(path, name, problem);
 
-
-			//Camera c(0.1f, glm::vec3(-10,5,5), glm::vec3(1, -0.5, -0.5));
-
-			//the gltf model version
-			//Camera c(std::move(bvh), glm::vec3(0, 10, 0 ), glm::vec3(0, -1,0) , glm::vec3(1,0,0));
-
-			//Camera c(std::move(bvh), glm::vec3(-10, 10.f, 10.f), glm::vec3(1, -0.5, -0.5));
-			//Camera c(std::move(bvh), glm::vec3(0, 50, 0), glm::vec3(1, -0.5, -0.5));
-			//Camera c(std::move(bvh), glm::vec3(0, 10, 0), glm::vec3(0.1, -1., 0));
-
-			//good lizard camera:
-			//Camera c(glm::vec3(3.5f, 2.5f, 5.f), glm::vec3(-1, 0.3, 1.1));
-
-
-			//gearbox camera
-			//Camera c(glm::vec3(0, 0, 0), glm::vec3(50, 0, 0));
-
-			//shift happens(blender sclaed version:
-			Camera c(glm::vec3(20, 10, -10), glm::vec3(0, 5, 0));
-
-			//Camera c(glm::vec3(0,0,-10 ), glm::vec3(0, 0, 0));
-
-			//Camera c(glm::vec3(0, 0, -3), glm::vec3(0, 0, 0));
-
+			//create camera and render image
+			Camera c(path, name, problem, cameraPos, cameraTarget);
 			c.renderImage();
 
 		}
