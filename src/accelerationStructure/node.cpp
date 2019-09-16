@@ -71,7 +71,8 @@ bool Node::intersect(Ray& ray)
 		}
 		ray.primitiveFullness[getPrimCount()] ++;
 	}
-	std::for_each(primitiveBegin, primitiveEnd,
+	//std::all_of stops loop when false is returned
+	std::all_of(primitiveBegin, primitiveEnd,
 		[&](auto& p)
 		{
 			ray.primitiveIntersectionCount++;
@@ -81,10 +82,19 @@ bool Node::intersect(Ray& ray)
 				result = true;
 				if (ray.shadowRay)
 				{
-					return true;
+					return false;
 				}
 			}
+			return true;
 		});
+
+	if (ray.shadowRay)
+	{
+		if (result)
+		{
+			return result;
+		}
+	}
 
 	if (getChildCount() != 0)
 	{
@@ -128,7 +138,8 @@ bool Node::intersect(Ray& ray)
 			else
 			{
 				ray.successfulLeafIntersectionCount++;
-			}
+			}			
+
 			//node intersection successful: rekursion continues
 			if (c->intersect(ray))
 			{
@@ -176,7 +187,6 @@ bool Node::intersect(Ray& ray)
 			}
 		}
 	}*/
-
 	return result;
 }
 
@@ -188,37 +198,4 @@ unsigned int Node::getChildCount()
 unsigned int Node::getPrimCount()
 {
 	return std::distance(primitiveBegin, primitiveEnd);
-}
-
-void Node::analysis(std::vector<unsigned int>& treeDepth, int currentPos, int& minPos, int& maxPos, std::vector<unsigned int>& childCount, std::vector<unsigned int>& primCount)
-{
-	//counts: childCount[i] = number of nodes that have i children
-
-	unsigned int cc = getChildCount();
-	unsigned int pc = getPrimCount();
-	if (pc != 0 && cc == 0)
-	{
-		if (treeDepth.size() < depth + 1)
-		{
-			treeDepth.resize(depth + 1);
-		}
-		treeDepth[depth]++;
-	}
-	if (childCount.size() < cc + 1)
-	{
-		childCount.resize(cc + 1);
-	}
-	childCount[cc]++;
-	if (primCount.size() < pc + 1)
-	{
-		primCount.resize(pc + 1);
-	}
-	primCount[pc]++;
-
-	for (size_t i = 0; i < children.size(); i++)
-	{
-		//TODO: calc offset to calc positions
-		//int offset = child
-		children[i]->analysis(treeDepth, currentPos, minPos, maxPos, childCount, primCount);
-	}
 }

@@ -158,10 +158,10 @@ bool Triangle::intersect(Ray& ray)
 	if (ray.shadowRay)
 	{
 		//small number to prevent self shadowing due to floating point errors
-		//return t >= 0.001f;
+		return t >= 0.001f;
 
 		//instead of above we spawns shadowrays "above" the surface
-		return true;
+		//return true;
 	}
 
 

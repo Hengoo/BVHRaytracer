@@ -11,8 +11,8 @@
 #include <execution>
 
 #include "glmInclude.h"
-#include "lodepng/lodepng.h"
 #include "global.h"
+#include "util.h"
 
 struct RenderInfo
 {
@@ -134,7 +134,7 @@ public:
 
 		//array for 
 
-		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+		std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
 				//orthographic camera, dont think i will use it anytime soon
@@ -400,20 +400,6 @@ public:
 	}
 
 private:
-
-	// Encode from raw pixels to an in - memory PNG file first, then write it to disk
-	//The image argument has width * height RGBA pixels or width * height * 4 bytes
-	void encodeTwoSteps(std::string encodeFilename, std::vector<unsigned char>& encodeImage, unsigned encodeWidth, unsigned encodeHeight)
-	{
-		std::vector<unsigned char> png;
-
-		unsigned error = lodepng::encode(png, encodeImage, encodeWidth, encodeHeight);
-		if (!error) lodepng::save_file(png, encodeFilename);
-
-		//if there's an error, display it
-		if (error) std::cout << "encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
-	}
-
 
 	void initializeVariables()
 	{

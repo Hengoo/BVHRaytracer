@@ -52,10 +52,8 @@ public:
 	//this could be a unique pointer
 	std::vector<std::shared_ptr<Node>> children;
 
-	void analysis(std::vector<unsigned int>& treeDepth, int currentPos, int& minPos, int& maxPos, std::vector<unsigned int>& childCount, std::vector<unsigned int>& primCount);
-
 protected:
-	
+
 	//all nodes share the same vector
 	std::shared_ptr<primPointVector> primitives;
 	//begin and end iterator represent the children this node contains  (what when none???)

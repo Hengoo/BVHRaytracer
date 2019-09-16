@@ -35,7 +35,7 @@ public:
 
 	RayTracer()
 	{
-		unsigned int branchingFactor = 8;
+		unsigned int branchingFactor = 4;
 		unsigned int leafCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
@@ -137,7 +137,7 @@ public:
 		//add some lights:
 		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 
-		for (size_t i = 3; i < 4; i++)
+		for (size_t i = 5; i < 6; i++)
 		{
 			leafCount = i;
 			std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;

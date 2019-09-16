@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <array>
+#include "lodepng/lodepng.h"
 
 //for gamma
 #ifdef _MSC_VER
@@ -40,4 +41,17 @@ static  inline float gamma(int n)
 {
 	//https://github.com/mmp/pbrt-v3/blob/master/src/core/pbrt.h
 	return (float)((n * MachineEpsilon) / (1 - n * MachineEpsilon));
+}
+
+//Encode from raw pixels to an in - memory PNG file first, then write it to disk
+//The image argument has width * height RGBA pixels or width * height * 4 bytes
+static void encodeTwoSteps(std::string encodeFilename, std::vector<unsigned char>& encodeImage, unsigned encodeWidth, unsigned encodeHeight)
+{
+	std::vector<unsigned char> png;
+
+	unsigned error = lodepng::encode(png, encodeImage, encodeWidth, encodeHeight);
+	if (!error) lodepng::save_file(png, encodeFilename);
+
+	//if there's an error, display it
+	if (error) std::cout << "encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 }

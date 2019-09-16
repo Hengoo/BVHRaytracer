@@ -4,20 +4,25 @@
 #include <vector>
 #include <array>
 
-#include "../ray.h"
 #include "node.h"
+#include "nodeAnalysis.h"
 #include "aabb.h"
+#include "../ray.h"
 #include "../primitives/sphere.h"
 #include "../gameobject.h"
 #include "../primitives/triangle.h"
 
 #include "../util.h"
 #include "../typedef.h"
-
+#include "../glmInclude.h"
+#include "../lodepng/lodepng.h"
 
 class Bvh
 {
 public:
+
+	int branchingFactor;
+	int leafCount;
 
 	Bvh()
 	{
@@ -91,6 +96,8 @@ public:
 
 	void recursiveOctree(const unsigned int branchingFactor, const unsigned int leafCount)
 	{
+		this->branchingFactor = branchingFactor;
+		this->leafCount = leafCount;
 		//root->recursiveOctree(leafCount);
 		root->recursiveBvh(branchingFactor, leafCount);
 
@@ -121,7 +128,7 @@ public:
 		//image with 1 pixel for each leafnode -> fullness of tree   (might be possible to combine both)
 
 		//create image -> go through bvh and set one pixel per node
-		
+
 		//position is needed to know where to place center in the image i want to draw
 		int minPos = 0;
 		int maxPos = 0;
@@ -130,7 +137,58 @@ public:
 		std::vector<unsigned int> primCount;
 		//depth of the leaf nodes
 		std::vector<unsigned int> treeDepth;
-		root->analysis(treeDepth, 0, minPos, maxPos, childCount, primCount);
+		std::vector<NodeAnalysis*> leafNodes;
+		NodeAnalysis analysisRoot(&*root, branchingFactor, leafCount);
+		analysisRoot.analysis(leafNodes, treeDepth, childCount, primCount);
+
+		//create image
+
+		int height = treeDepth.size();
+		int width = std::accumulate(treeDepth.begin(), treeDepth.end(), 0);
+		std::vector<unsigned char> image(height * width * 4, 255);
+
+		int x, y;
+		int id;
+		float factor = 0;
+		std::vector<NodeAnalysis*> parents;
+		for (size_t i = 0; i < leafNodes.size(); i++)
+		{
+			x = i;
+			leafNodes[i]->printLeaf(factor, parents, x, y);
+			id = x + y * width;
+			image[id * 4 + 0] = (unsigned char)(factor * 255);
+			image[id * 4 + 1] = (unsigned char)(factor * 255);
+			image[id * 4 + 2] = (unsigned char)(factor * 255);
+			image[id * 4 + 3] = (unsigned char)255;
+
+		}
+		bool finished = false;
+		std::vector<NodeAnalysis*> newParents;
+		while (!finished)
+		{
+			finished = true;
+			for (auto& p : parents)
+			{
+				if (p->printNode(factor, newParents, x, y))
+				{
+					id = x + y * width;
+					image[id * 4 + 0] = (unsigned char)(factor * 255);
+					image[id * 4 + 1] = (unsigned char)0;
+					image[id * 4 + 2] = (unsigned char)0;
+					image[id * 4 + 3] = (unsigned char)255;
+				}
+				else
+				{
+					finished = false;
+				}
+			}
+			//TODO remove duplicats
+			parents = newParents;
+			newParents.clear();
+		}
+
+		//encodeTwoSteps(path + "/" + name + ".png", image, width, height);
+		encodeTwoSteps("test.png", image, width, height);
 		int deb = 0;
 	}
 

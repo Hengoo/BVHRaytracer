@@ -29,6 +29,7 @@
     <ClInclude Include="src\accelerationStructure\aabb.h" />
     <ClInclude Include="src\accelerationStructure\bvh.h" />
     <ClInclude Include="src\accelerationStructure\node.h" />
+    <ClInclude Include="src\accelerationStructure\nodeAnalysis.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\color.h" />
     <ClInclude Include="src\gameobject.h" />
