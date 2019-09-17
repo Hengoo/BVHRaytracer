@@ -35,7 +35,7 @@ public:
 
 	RayTracer()
 	{
-		unsigned int branchingFactor = 4;
+		unsigned int branchingFactor = 0;
 		unsigned int leafCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
@@ -45,7 +45,7 @@ public:
 		std::string name;
 		std::string path;
 		std::string problem;
-		int scenario = 0;
+		int scenario = 1;
 		glm::vec3  cameraPos;
 		glm::vec3  cameraTarget;
 
@@ -137,29 +137,36 @@ public:
 		//add some lights:
 		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 
-		for (size_t i = 5; i < 6; i++)
+		for (size_t l = 1; l < 5; l ++)
 		{
-			leafCount = i;
-			std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
-			problem = "scenario " + name + " with branching factor of " + std::to_string(branchingFactor) + " and a maximum leaf size of " + std::to_string(leafCount);
-			std::cout << problem << std::endl;
+			for (size_t b = 1; b < 2; b++)
+			{
+				leafCount = l;
+				branchingFactor = std::exp2(b);
+				std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
+				problem = "_b" + std::to_string(branchingFactor) + "_l" + std::to_string(leafCount);
+				std::cout << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
 
 
-			//bvh of (seeded) random sphere
-			//auto bvh = std::make_unique<Bvh>();
+				//bvh of (seeded) random sphere
+				//auto bvh = std::make_unique<Bvh>();
 
-			//bvh of loaded model:
-			bvh = Bvh(*root);
-			bvh.recursiveOctree(branchingFactor, leafCount);
-			bvh.collapseChilds(0);
+				//bvh of loaded model:
+				bvh = Bvh(*root);
+				bvh.recursiveOctree(branchingFactor, leafCount);
 
-			//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
-			bvh.bvhAnalysis(path, name, problem);
+				//collapses the next b child hierarchies to this node
+				bvh.collapseChilds(b - 1);
+				//for other branching factors we need an other algorithm
 
-			//create camera and render image
-			Camera c(path, name, problem, cameraPos, cameraTarget);
-			c.renderImage();
 
+				//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
+				bvh.bvhAnalysis(path, name, problem);
+
+				//create camera and render image
+				Camera c(path, name, problem, cameraPos, cameraTarget);
+				c.renderImage();
+			}
 		}
 	}
 

@@ -78,8 +78,6 @@ public:
 		//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
 		if (getPrimCount() <= leafCount)
 		{
-			//TODO i think i should create an aabb for those triangles IF the leafcount > 1
-			//not sure about this. the benefit of NOT doing it would be that in theory we could load all primitives together
 			return;
 		}
 
@@ -107,6 +105,7 @@ public:
 		//stop when triangle centers are at the same position (when this happens to often i might try the real center instead of the aabb center????
 		if (centerDistance[axis] <= 0.00002)
 		{
+			//TODO: just pick random direction? this would allow bigger leafs than intended
 			//std::cout << "all triangles at same pos" << std::endl;
 			return;
 		}
@@ -126,72 +125,83 @@ public:
 		unsigned int size = getPrimCount();
 		primPointVector::iterator currentSplit = primitiveBegin + 1;
 
-		//Split by "heuristic"
+		//Split by metric (in our case sah)
 		std::vector<float> metric(size - 1);
-		if (depth < 3 && getPrimCount() > 5000)
+		if (true)
 		{
-			//parallel version: (calculate the metric for different intervals parallel)
-			//-> usefull for the first few nodes because after all nodes work parallel
-
-			//the reason why its faster to have this large is because there are clusters that require a node bound recalculation for each decreasePrimitives
-			int parallelCount = 64;
-			std::vector<NodePair> work(parallelCount);
-			for (size_t i = 0; i < parallelCount; i++)
+			//only do parallel versionf or first few nodes (with enought primitives) --> TODO try out values
+			if (depth < 3 && size > 5000)
 			{
-				int start = (size / parallelCount) * i;
-				int end = (size / parallelCount) * (i + 1);
-				if (i == parallelCount - 1)
-				{
-					end = size - 1;
-				}
-				work[i].node1 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin, primitiveBegin + start);
-				work[i].node2 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin + start, primitiveEnd);
-				work[i].metricBegin = metric.begin() + start;
-				work[i].metricEnd = metric.begin() + end;
-				work[i].index = i;
-				//std::cout << "worklaod: " << std::distance(work[i].metricBegin, work[i].metricEnd) << std::endl;
-			}
+				//parallel version: (calculate the metric for different intervals parallel)
+				//-> usefull for the first few nodes because after all nodes work parallel
 
-			std::for_each(std::execution::par_unseq, work.begin(), work.end(),
-				[&](auto& w)
+				//the reason why its faster to have this large is because there are clusters that require a node bound recalculation for each decreasePrimitives
+				int parallelCount = 64;
+				std::vector<NodePair> work(parallelCount);
+				for (size_t i = 0; i < parallelCount; i++)
 				{
-					std::for_each(std::execution::seq, w.metricBegin, w.metricEnd,
-						[&](auto& met)
-						{
-							float m = 0;
-							w.node1->increasePrimitives();
-							w.node2->decreasePrimitives();
-							//m = abs((int)w.node1->getPrimCount() - (int)w.node2->getPrimCount());
-							m = sah(*w.node1.get(), *w.node2.get());
-							met = m;
-						});
-					//std::cout << "work " << w.index << " finished" <<std::endl;
-				});
-			//std::cout << depth << std::endl;
+					int start = (size / parallelCount) * i;
+					int end = (size / parallelCount) * (i + 1);
+					if (i == parallelCount - 1)
+					{
+						end = size - 1;
+					}
+					work[i].node1 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin, primitiveBegin + start);
+					work[i].node2 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin + start, primitiveEnd);
+					work[i].metricBegin = metric.begin() + start;
+					work[i].metricEnd = metric.begin() + end;
+					work[i].index = i;
+					//std::cout << "worklaod: " << std::distance(work[i].metricBegin, work[i].metricEnd) << std::endl;
+				}
+
+				std::for_each(std::execution::par_unseq, work.begin(), work.end(),
+					[&](auto& w)
+					{
+						std::for_each(std::execution::seq, w.metricBegin, w.metricEnd,
+							[&](auto& met)
+							{
+								float m = 0;
+								w.node1->increasePrimitives();
+								w.node2->decreasePrimitives();
+								//m = abs((int)w.node1->getPrimCount() - (int)w.node2->getPrimCount());
+								m = sah(*w.node1.get(), *w.node2.get());
+								met = m;
+							});
+						//std::cout << "work " << w.index << " finished" <<std::endl;
+					});
+				//std::cout << depth << std::endl;
+			}
+			else
+			{
+				//full sequential version:
+				Aabb node1(depth + 1, primitives, primitiveBegin, primitiveBegin);
+				Aabb node2(depth + 1, primitives, primitiveBegin, primitiveEnd);
+
+				std::for_each(std::execution::seq, metric.begin(), metric.end(),
+					[&](auto& met)
+					{
+						float m = 0;
+						node1.increasePrimitives();
+						node2.decreasePrimitives();
+						m = abs((int)node1.getPrimCount() - (int)node2.getPrimCount());
+
+						m = sah(node1, node2);
+						met = m;
+					});
+			}
+			//make the split with the best metric:
+			currentSplit = primitiveBegin + std::distance(metric.begin(), std::min_element(metric.begin(), metric.end())) + 1;
 		}
 		else
 		{
-			//full sequential version:
-			Aabb node1(depth + 1, primitives, primitiveBegin, primitiveBegin);
-			Aabb node2(depth + 1, primitives, primitiveBegin, primitiveEnd);
+			//TODO try something that produces "full" leaf nodes (splitting by multiplicatives of leafsize?)
 
-			std::for_each(std::execution::seq, metric.begin(), metric.end(),
-				[&](auto& met)
-				{
-					float m = 0;
-					node1.increasePrimitives();
-					node2.decreasePrimitives();
-					m = abs((int)node1.getPrimCount() - (int)node2.getPrimCount());
-
-					m = sah(node1, node2);
-					met = m;
-				});
+			//split by half
+			currentSplit = primitiveBegin + size / 2;
 		}
-		//make the split with the best metric:
-		currentSplit = primitiveBegin + std::distance(metric.begin(), std::min_element(metric.begin(), metric.end())) + 1;
 
-		//lazy split by half
-		//currentSplit = primitiveBegin + size / 2;
+
+		
 		addNode(std::make_shared<Aabb>(depth + 1, primitives, primitiveBegin, currentSplit));
 		addNode(std::make_shared<Aabb>(depth + 1, primitives, currentSplit, primitiveEnd));
 

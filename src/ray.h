@@ -33,8 +33,8 @@ public:
 	std::vector<unsigned int> primitiveFullness;
 	unsigned int primitiveIntersectionCount;
 	unsigned int successfulPrimitiveIntersectionCount;
-	unsigned int successfulNodeIntersectionCount;
-	unsigned int successfulLeafIntersectionCount;
+	unsigned int successfulAabbIntersectionCount;
+	unsigned int aabbIntersectionCount;
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
 
 	Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false) : pos(pos), direction(direction), shadowRay(shadowRay)
@@ -47,8 +47,8 @@ public:
 		surfacePosition = glm::vec3(0, 0, 0);
 		primitiveIntersectionCount = 0;
 		successfulPrimitiveIntersectionCount = 0;
-		successfulNodeIntersectionCount = 0;
-		successfulLeafIntersectionCount = 0;
+		successfulAabbIntersectionCount = 0;
+		aabbIntersectionCount = 0;
 	}
 
 	~Ray()

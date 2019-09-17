@@ -53,40 +53,14 @@ public:
 
 	bool intersect(Ray& ray)
 	{
-		if (root->getPrimCount() == 0)
-		{
-			if (ray.nodeIntersectionCount.size() < 1)
-			{
-				ray.nodeIntersectionCount.resize(1);
-			}
-			ray.nodeIntersectionCount[0]++;
-		}
-		else
-		{
-			if (root->getChildCount() != 0)
-			{
-				std::cout << "TODO: implement correct counter for primitive intersection in upper nodes" << std::endl;
-			}
-			if (ray.leafIntersectionCount.size() < 1)
-			{
-				ray.leafIntersectionCount.resize(1);
-			}
-			ray.leafIntersectionCount[0]++;
-		}
-
 		float dist = 0;
+		ray.aabbIntersectionCount++;
 		if (root->intersectNode(ray, dist))
 		{
-			if (root->getPrimCount() == 0)
-			{
-				ray.successfulNodeIntersectionCount++;
-			}
-			else
-			{
-				ray.successfulLeafIntersectionCount++;
-			}
+			ray.successfulAabbIntersectionCount++;
 			return root->intersect(ray);
 		}
+		return false;
 	}
 
 	// copy constructor -> called when an already existing object is overwritten by an other
@@ -104,17 +78,13 @@ public:
 		//for better performance: could go trough all nodes and recreate primitives in the order they are in the tree (also with minimal needed data)
 	}
 
-	//doubles the childen in a way that childcount children are in each node
-	void collapseChilds(int childCount)
+	//collapses the next collapeCount child hierarchies to this node
+	void collapseChilds(int collapeCount)
 	{
-		//default
-		if (childCount == 0)
+		if (collapeCount > 0)
 		{
-			collapseChilds(root);
+			collapseChilds(root, collapeCount);
 		}
-		//need to implement special algotithm for 3, ...
-		//current idea is to reshuffle based on the ammound of primitives so the tree is kinda balanced
-
 	}
 
 	void bvhAnalysis(std::string path, std::string name, std::string problem)
@@ -188,7 +158,7 @@ public:
 		}
 
 		//encodeTwoSteps(path + "/" + name + ".png", image, width, height);
-		encodeTwoSteps("test.png", image, width, height);
+		encodeTwoSteps(path + "/" + name + problem + "_BvhAnalysis.png", image, width, height);
 		int deb = 0;
 	}
 
@@ -197,33 +167,40 @@ protected:
 
 private:
 
-	//doubles the ammound of children in each node by merging each node with its own children
-	void collapseChilds(std::shared_ptr<Node> node)
+	//collapses the next collapeCount child hierarchies to this node
+	void collapseChilds(std::shared_ptr<Node> node, int collapseCount)
 	{
-		//this assumes there are only primitives in the leaf nodes
+		//TODO: this method assumes there are only primitives in the leaf nodes
+		//(we only collapse nodes that have no primitives because otherwise it could lead to larger primcount than planned)
+
+		//not collapse leaf nodes
 		if (node->getPrimCount() != 0)
 		{
 			return;
 		}
 		std::vector<std::shared_ptr<Node>> newChildren;
-		for (auto& child : node->children)
+		for (size_t i = 0; i < collapseCount; i++)
 		{
-			if (child->getPrimCount() == 0)
+			for (auto& child : node->children)
 			{
-				newChildren.insert(newChildren.end(), child->children.begin(), child->children.end());
+				if (child->getPrimCount() == 0)
+				{
+					newChildren.insert(newChildren.end(), child->children.begin(), child->children.end());
+				}
+				else
+				{
+					newChildren.push_back(child);
+				}
 			}
-			else
-			{
-				newChildren.push_back(child);
-			}
-
+			node->children = newChildren;
+			newChildren.clear();
 		}
-		node->children = newChildren;
+
 		//this could be parrallel (i dont think its needed)
 		for (auto& child : node->children)
 		{
 			child->depth = node->depth + 1;
-			collapseChilds(child);
+			collapseChilds(child, collapseCount);
 		}
 	}
 

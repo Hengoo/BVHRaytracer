@@ -66,11 +66,11 @@ public:
 	std::vector<size_t> primitiveIntersectionsPerPixel;
 	std::vector<size_t> shadowPrimitiveIntersectionsPerPixel;
 	std::vector<size_t> successfulPrimitiveIntersectionsPerPixel;
-	std::vector<size_t> successfulNodeIntersectionsPerPixel;
-	std::vector<size_t> successfulLeafIntersectionsPerPixel;
+	std::vector<size_t> successfulAabbIntersectionsPerPixel;
+	std::vector<size_t> aabbIntersectionsPerPixel;
 	std::vector<size_t> shadowSuccessfulPrimitiveIntersectionsPerPixel;
-	std::vector<size_t> shadowSuccessfulNodeIntersectionsPerPixel;
-	std::vector<size_t> shadowSuccessfulLeafIntersectionsPerPixel;
+	std::vector<size_t> shadowSuccessfulAabbIntersectionsPerPixel;
+	std::vector<size_t> shadowAabbIntersectionsPerPixel;
 
 	//per depth counter:
 	std::vector<size_t> primitiveFullness;
@@ -88,22 +88,22 @@ public:
 	size_t primitiveIntersections;
 	size_t shadowPrimitiveIntersections;
 	size_t successfulPrimitiveIntersections;
-	size_t successfulNodeIntersections;
-	size_t successfulLeafIntersections;
+	size_t successfulAabbIntersections;
+	size_t aabbIntersections;
 	size_t shadowSuccessfulPrimitiveIntersections;
-	size_t shadowSuccessfulNodeIntersections;
-	size_t shadowSuccessfulLeafIntersections;
+	size_t shadowSuccessfulAabbIntersections;
+	size_t shadowAabbIntersections;
 
-	Camera(std::string path, std::string name,std::string problem, glm::vec3 position, glm::vec3 lookCenter, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
-		: path(path), name(name),problem(problem), position(position), focalLength(focalLength), height(height), width(width)
+	Camera(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
+		: path(path), name(name), problem(problem), position(position), focalLength(focalLength), height(height), width(width)
 	{
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
 
 		initializeVariables();
 	}
 
-	Camera(std::string path, std::string name,std::string problem, glm::mat4 transform, float focalLength = 0.866f, size_t height = 1000, size_t width = 1000)
-		: path(path), name(name),problem(problem), transform(transform), focalLength(focalLength), height(height), width(width)
+	Camera(std::string path, std::string name, std::string problem, glm::mat4 transform, float focalLength = 0.866f, size_t height = 1000, size_t width = 1000)
+		: path(path), name(name), problem(problem), transform(transform), focalLength(focalLength), height(height), width(width)
 	{
 		position = transform * glm::vec4(0, 0, 0, 1);
 
@@ -134,7 +134,7 @@ public:
 
 		//array for 
 
-		std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
+		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
 				//orthographic camera, dont think i will use it anytime soon
@@ -220,8 +220,8 @@ public:
 								std::cout << "error: more than 1 successful shadowray primitive intersection for one light" << std::endl;
 							}
 							shadowSuccessfulPrimitiveIntersectionsPerPixel[info.index] += shadowRay.successfulPrimitiveIntersectionCount;
-							shadowSuccessfulNodeIntersectionsPerPixel[info.index] += shadowRay.successfulNodeIntersectionCount;
-							shadowSuccessfulLeafIntersectionsPerPixel[info.index] += shadowRay.successfulLeafIntersectionCount;
+							shadowSuccessfulAabbIntersectionsPerPixel[info.index] += shadowRay.successfulAabbIntersectionCount;
+							shadowAabbIntersectionsPerPixel[info.index] += shadowRay.aabbIntersectionCount;
 
 						}
 
@@ -244,8 +244,8 @@ public:
 
 				primitiveIntersectionsPerPixel[info.index] += ray.primitiveIntersectionCount;
 				successfulPrimitiveIntersectionsPerPixel[info.index] += ray.successfulPrimitiveIntersectionCount;
-				successfulNodeIntersectionsPerPixel[info.index] += ray.successfulNodeIntersectionCount;
-				successfulLeafIntersectionsPerPixel[info.index] += ray.successfulLeafIntersectionCount;
+				successfulAabbIntersectionsPerPixel[info.index] += ray.successfulAabbIntersectionCount;
+				aabbIntersectionsPerPixel[info.index] += ray.aabbIntersectionCount;
 			});
 
 		for (auto& perPixel : leafIntersectionPerPixelCount)
@@ -328,68 +328,104 @@ public:
 
 		primitiveIntersections = std::accumulate(primitiveIntersectionsPerPixel.begin(), primitiveIntersectionsPerPixel.end(), 0);
 		successfulPrimitiveIntersections = std::accumulate(successfulPrimitiveIntersectionsPerPixel.begin(), successfulPrimitiveIntersectionsPerPixel.end(), 0);
-		successfulNodeIntersections = std::accumulate(successfulNodeIntersectionsPerPixel.begin(), successfulNodeIntersectionsPerPixel.end(), 0);
-		successfulLeafIntersections = std::accumulate(successfulLeafIntersectionsPerPixel.begin(), successfulLeafIntersectionsPerPixel.end(), 0);
+		successfulAabbIntersections = std::accumulate(successfulAabbIntersectionsPerPixel.begin(), successfulAabbIntersectionsPerPixel.end(), 0);
+		aabbIntersections = std::accumulate(aabbIntersectionsPerPixel.begin(), aabbIntersectionsPerPixel.end(), 0);
 		shadowSuccessfulPrimitiveIntersections = std::accumulate(shadowSuccessfulPrimitiveIntersectionsPerPixel.begin(), shadowSuccessfulPrimitiveIntersectionsPerPixel.end(), 0);
-		shadowSuccessfulNodeIntersections = std::accumulate(shadowSuccessfulNodeIntersectionsPerPixel.begin(), shadowSuccessfulNodeIntersectionsPerPixel.end(), 0);
-		shadowSuccessfulLeafIntersections = std::accumulate(shadowSuccessfulLeafIntersectionsPerPixel.begin(), shadowSuccessfulLeafIntersectionsPerPixel.end(), 0);
+		shadowSuccessfulAabbIntersections = std::accumulate(shadowSuccessfulAabbIntersectionsPerPixel.begin(), shadowSuccessfulAabbIntersectionsPerPixel.end(), 0);
+		shadowAabbIntersections = std::accumulate(shadowAabbIntersectionsPerPixel.begin(), shadowAabbIntersectionsPerPixel.end(), 0);
 		shadowPrimitiveIntersections = std::accumulate(shadowPrimitiveIntersectionsPerPixel.begin(), shadowPrimitiveIntersectionsPerPixel.end(), 0);
 
-
-		std::cout << "node intersections: " << nodeIntersectionCount << std::endl;
-		std::cout << "node success ration: " << successfulNodeIntersections / (float)nodeIntersectionCount << std::endl;
-		std::cout << "leaf intersections: " << leafIntersectionCount << std::endl;
-		std::cout << "leaf success ration: " << successfulLeafIntersections / (float)leafIntersectionCount << std::endl;
-		std::cout << "primitive intersections: " << primitiveIntersections << std::endl;
+		//normalize by pixel
+		float factor = 1 / (float)(width * height);
+		//shadowfactor for now the same. Could normalize it per shadowrays but that would ruin the scale and fullness
+		float shadowFactor = 1 / (float)(width * height);
+		std::cout << "intersections counts are per pixel" << std::endl << std::endl;
+		std::cout << "node intersections: " << nodeIntersectionCount * factor << std::endl;
+		std::cout << "aabb intersections: " << aabbIntersections * factor << std::endl;
+		std::cout << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
+		std::cout << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
+		std::cout << "primitive intersections: " << primitiveIntersections * factor << std::endl;
 		std::cout << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
-
-		std::cout << "shadow node intersections: " << shadowNodeIntersectionCount << std::endl;
-		std::cout << "shadow node success ration: " << shadowSuccessfulNodeIntersections / (float)shadowNodeIntersectionCount << std::endl;
-		std::cout << "shadow leaf intersections: " << shadowLeafIntersectionCount << std::endl;
-		std::cout << "shadow leaf success ration: " << shadowSuccessfulLeafIntersections / (float)shadowLeafIntersectionCount << std::endl;
-		std::cout << "shadow primitive intersections: " << shadowPrimitiveIntersections << std::endl;
+		std::cout << std::endl;
+		std::cout << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
+		std::cout << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
+		std::cout << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
+		std::cout << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
+		std::cout << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
 		std::cout << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
 
-		std::ofstream myfile(path +"/" + name +"Info.txt");
+		std::ofstream myfile(path + "/" + name + problem + "_Info.txt");
 		if (myfile.is_open())
 		{
-			myfile << problem << std::endl << std::endl;
-			myfile << "node intersections: " << nodeIntersectionCount << std::endl;
-			myfile << "node success ration: " << successfulNodeIntersections / (float)nodeIntersectionCount << std::endl;
-			myfile << "leaf intersections: " << leafIntersectionCount << std::endl;
-			myfile << "leaf success ration: " << successfulLeafIntersections / (float)leafIntersectionCount << std::endl;
-			myfile << "primitive intersections: " << primitiveIntersections << std::endl;
+			myfile << "scenario " << name << " with branching factor of " << std::to_string(bvh.branchingFactor) << " and leafsize of " << bvh.leafCount << std::endl;
+			myfile << "intersections counts are per pixel" << std::endl << std::endl;
+
+			myfile << "node intersections: " << nodeIntersectionCount * factor << std::endl;
+			myfile << "aabb intersections: " << aabbIntersections * factor << std::endl;
+			myfile << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
+			myfile << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
+			myfile << "primitive intersections: " << primitiveIntersections * factor << std::endl;
 			myfile << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
 			myfile << std::endl;
-			myfile << "shadow node intersections: " << shadowNodeIntersectionCount << std::endl;
-			myfile << "shadow node success ration: " << shadowSuccessfulNodeIntersections / (float)shadowNodeIntersectionCount << std::endl;
-			myfile << "shadow leaf intersections: " << shadowLeafIntersectionCount << std::endl;
-			myfile << "shadow leaf success ration: " << shadowSuccessfulLeafIntersections / (float)shadowLeafIntersectionCount << std::endl;
-			myfile << "shadow primitive intersections: " << shadowPrimitiveIntersections << std::endl;
+			myfile << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
+			myfile << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
+			myfile << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
+			myfile << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
+			myfile << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
 			myfile << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
-			myfile << std::endl;
-			for (size_t i = 0; i < nodeIntersectionPerDepthCount.size(); i++)
-			{
-				myfile << "node intersections at depth " << i << " : " << nodeIntersectionPerDepthCount[i] << std::endl;
-			}
-			myfile << std::endl;
-			for (size_t i = 0; i < leafIntersectionPerDepthCount.size(); i++)
-			{
-				myfile << "leaf intersections at depth " << i << " : " << leafIntersectionPerDepthCount[i] << std::endl;
-			}
 
 			//this number is smaller than the nodecount + leafcount because the depth 0 intersections are left out
 			//In addition: with shadow rays those also dont fit because shadowrays can stop when they find a tirangle
 			myfile << std::endl;
+			myfile << "intersections with nodes with x children :" << std::endl;
+			float sum = 0;
 			for (size_t i = 0; i < childFullness.size(); i++)
 			{
-				myfile << "intersections with nodes with " << i << " children: " << childFullness[i] << std::endl;
+				sum += childFullness[i] * i;
+			}
+			sum /= std::accumulate(childFullness.begin(), childFullness.end(), 0);
+			myfile << "average: : " << std::to_string(sum) << std::endl;
+			for (size_t i = 0; i < childFullness.size(); i++)
+			{
+				myfile << i << " : " << childFullness[i] * factor << std::endl;
 			}
 
 			myfile << std::endl;
+			myfile << "intersections with leaf nodes with x primitives :" << std::endl;
 			for (size_t i = 0; i < primitiveFullness.size(); i++)
 			{
-				myfile << "intersections with nodes with " << i << " primitives: " << primitiveFullness[i] << std::endl;
+				sum += primitiveFullness[i] * i;
+			}
+			sum /= std::accumulate(primitiveFullness.begin(), primitiveFullness.end(), 0);
+			myfile << "average: : " << std::to_string(sum) << std::endl;
+			for (size_t i = 0; i < primitiveFullness.size(); i++)
+			{
+				myfile << i << " : " << primitiveFullness[i] * factor << std::endl;
+			}
+
+			myfile << std::endl;
+			myfile << "primaryRay node intersections at depth x :" << std::endl;
+			for (size_t i = 0; i < nodeIntersectionPerDepthCount.size(); i++)
+			{
+				myfile << i << " : " << nodeIntersectionPerDepthCount[i] * factor << std::endl;
+			}
+			myfile << std::endl;
+			myfile << "primaryRay leaf intersections at depth x :" << std::endl;
+			for (size_t i = 0; i < leafIntersectionPerDepthCount.size(); i++)
+			{
+				myfile << i << " : " << leafIntersectionPerDepthCount[i] * factor << std::endl;
+			}
+			myfile << std::endl;
+			myfile << "shadowRay node intersections at depth x :" << std::endl;
+			for (size_t i = 0; i < shadowNodeIntersectionPerDepthCount.size(); i++)
+			{
+				myfile << i << " : " << shadowNodeIntersectionPerDepthCount[i] * factor << std::endl;
+			}
+			myfile << std::endl;
+			myfile << "shadowRay leaf intersections at depth x :" << std::endl;
+			for (size_t i = 0; i < shadowLeafIntersectionPerDepthCount.size(); i++)
+			{
+				myfile << i << " : " << shadowLeafIntersectionPerDepthCount[i] * factor << std::endl;
 			}
 			myfile.close();
 		}
@@ -413,10 +449,10 @@ private:
 		primitiveFullnessPerPixelCount.resize(height * width);
 		primitiveIntersectionsPerPixel.resize(height * width);
 		successfulPrimitiveIntersectionsPerPixel.resize(height * width);
-		successfulNodeIntersectionsPerPixel.resize(height * width);
-		successfulLeafIntersectionsPerPixel.resize(height * width);
-		shadowSuccessfulNodeIntersectionsPerPixel.resize(height * width);
-		shadowSuccessfulLeafIntersectionsPerPixel.resize(height * width);
+		successfulAabbIntersectionsPerPixel.resize(height * width);
+		aabbIntersectionsPerPixel.resize(height * width);
+		shadowSuccessfulAabbIntersectionsPerPixel.resize(height * width);
+		shadowAabbIntersectionsPerPixel.resize(height * width);
 		shadowPrimitiveIntersectionsPerPixel.resize(height * width);
 		shadowSuccessfulPrimitiveIntersectionsPerPixel.resize(height * width);
 
@@ -425,10 +461,10 @@ private:
 		primitiveIntersections = 0;
 		shadowPrimitiveIntersections = 0;
 		successfulPrimitiveIntersections = 0;
-		successfulNodeIntersections = 0;
-		successfulLeafIntersections = 0;
-		shadowSuccessfulNodeIntersections = 0;
-		shadowSuccessfulLeafIntersections = 0;
+		successfulAabbIntersections = 0;
+		aabbIntersections = 0;
+		shadowSuccessfulAabbIntersections = 0;
+		shadowAabbIntersections = 0;
 		shadowSuccessfulPrimitiveIntersections = 0;
 	}
 

@@ -70,24 +70,30 @@ bool Node::intersect(Ray& ray)
 			ray.primitiveFullness.resize(getPrimCount() + 1);
 		}
 		ray.primitiveFullness[getPrimCount()] ++;
-	}
-	//std::all_of stops loop when false is returned
-	std::all_of(primitiveBegin, primitiveEnd,
-		[&](auto& p)
-		{
-			ray.primitiveIntersectionCount++;
-			if (p->intersect(ray))
-			{
-				ray.successfulPrimitiveIntersectionCount++;
-				result = true;
-				if (ray.shadowRay)
-				{
-					return false;
-				}
-			}
-			return true;
-		});
 
+		if (ray.leafIntersectionCount.size() < depth + 1)
+		{
+			ray.leafIntersectionCount.resize(depth + 1);
+		}
+		ray.leafIntersectionCount[depth]++;
+
+		//std::all_of stops loop when false is returned
+		std::all_of(primitiveBegin, primitiveEnd,
+			[&](auto& p)
+			{
+				ray.primitiveIntersectionCount++;
+				if (p->intersect(ray))
+				{
+					ray.successfulPrimitiveIntersectionCount++;
+					result = true;
+					if (ray.shadowRay)
+					{
+						return false;
+					}
+				}
+				return true;
+			});
+	}
 	if (ray.shadowRay)
 	{
 		if (result)
@@ -104,49 +110,34 @@ bool Node::intersect(Ray& ray)
 			ray.childFullness.resize(getChildCount() + 1);
 		}
 		ray.childFullness[getChildCount()] ++;
-	}
-	for (auto& c : children)
-	{
-		if (c->getPrimCount() == 0)
+		//increment node intersection counter
+		if (ray.nodeIntersectionCount.size() < depth + 1)
 		{
-			if (ray.nodeIntersectionCount.size() < depth + 2)
-			{
-				ray.nodeIntersectionCount.resize(depth + 2);
-			}
-			ray.nodeIntersectionCount[depth + 1]++;
+			ray.nodeIntersectionCount.resize(depth + 1);
 		}
-		else
+		ray.nodeIntersectionCount[depth]++;
+
+		if (getPrimCount() > 0)
 		{
-			if (c->getChildCount() != 0)
-			{
-				std::cout << "TODO: implement correct counter for primitive intersection in upper nodes" << std::endl;
-			}
-			if (ray.leafIntersectionCount.size() < depth + 2)
-			{
-				ray.leafIntersectionCount.resize(depth + 2);
-			}
-			ray.leafIntersectionCount[depth + 1]++;
+			std::cout << "TODO: implement correct counter for primitive intersection in upper nodes" << std::endl;
 		}
 
-		float dist;
-		if (c->intersectNode(ray, dist))
+		for (auto& c : children)
 		{
-			if (c->getPrimCount() == 0)
+			ray.aabbIntersectionCount++;
+			float dist;
+			if (c->intersectNode(ray, dist))
 			{
-				ray.successfulNodeIntersectionCount++;
-			}
-			else
-			{
-				ray.successfulLeafIntersectionCount++;
-			}			
+				ray.successfulAabbIntersectionCount++;
 
-			//node intersection successful: rekursion continues
-			if (c->intersect(ray))
-			{
-				result = true;
-				if (ray.shadowRay)
+				//node intersection successful: rekursion continues
+				if (c->intersect(ray))
 				{
-					return true;
+					result = true;
+					if (ray.shadowRay)
+					{
+						return true;
+					}
 				}
 			}
 		}
