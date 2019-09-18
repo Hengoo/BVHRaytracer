@@ -164,8 +164,10 @@ public:
 								w.node1->increasePrimitives();
 								w.node2->decreasePrimitives();
 								//m = abs((int)w.node1->getPrimCount() - (int)w.node2->getPrimCount());
+
 								m = sah(*w.node1.get(), *w.node2.get());
 								met = m;
+
 							});
 						//std::cout << "work " << w.index << " finished" <<std::endl;
 					});
@@ -187,6 +189,14 @@ public:
 
 						m = sah(node1, node2);
 						met = m;
+
+
+						//experimental: strongly encourages  splits in a way that it produces full leafes
+						if (node1.getPrimCount() % leafCount > getPrimCount() % leafCount
+							|| node2.getPrimCount() % leafCount > getPrimCount() % leafCount)
+						{
+							met *= 2.f;
+						}
 					});
 			}
 			//make the split with the best metric:
@@ -201,7 +211,7 @@ public:
 		}
 
 
-		
+
 		addNode(std::make_shared<Aabb>(depth + 1, primitives, primitiveBegin, currentSplit));
 		addNode(std::make_shared<Aabb>(depth + 1, primitives, currentSplit, primitiveEnd));
 
