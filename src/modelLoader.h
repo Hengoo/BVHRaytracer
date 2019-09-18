@@ -6,6 +6,7 @@
 #include "gameobject.h"
 #include "vertex.h"
 #include "mesh.h"
+#include "meshBin.h"
 #include "texture.h"
 #include "util.h"
 #include "color.h"
@@ -19,7 +20,7 @@
 // #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
 #include "tinyGltf/tiny_gltf.h"
 
-void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject>>& gameObjects, std::vector<std::shared_ptr<Mesh>>& meshes)
+void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject>>& gameObjects, std::vector<std::shared_ptr<MeshBin>>& meshBins)
 {
 	//TODO: update tinygltf form time to time (or wait for next release?) https://github.com/syoyo/tinygltf
 	tinygltf::Model gltfModel;
@@ -57,7 +58,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 	std::vector<std::shared_ptr<Texture>> textures;
 
 	//offset to the modelUID of gltf
-	size_t modelIndexOffset = meshes.size();
+	size_t modelIndexOffset = meshBins.size();
 	//offset to the gameobject uid of gltf (needed to reference the right children)
 	size_t gameObjectOffset = gameObjects.size();
 
@@ -118,138 +119,139 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 	for (size_t i = 0; i < gltfModel.meshes.size(); i++)
 	{
 		auto& m = gltfModel.meshes[i];
-		size_t primitiveId = 0;
+		std::shared_ptr<MeshBin>meshBin = std::make_shared<MeshBin>(m.name);
 
-		auto& primitive = m.primitives[primitiveId];
-		if (m.primitives.size() != 1)
+		for (size_t primitiveId = 0; primitiveId < m.primitives.size(); primitiveId++)
 		{
-			//TODO do something else here ;(
-			std::cout << "primtive count is not 1 but " << m.primitives.size() << std::endl;
-		}
 
-		size_t meshVertexId = 0;
-		size_t meshIndexId = 0;
+			auto& primitive = m.primitives[primitiveId];
 
-		//i use the id that is used to get the accessor for testing if its unique
+			size_t meshVertexId = 0;
+			size_t meshIndexId = 0;
 
-		auto positionAccId = primitive.attributes["POSITION"];
-		auto normalAccId = primitive.attributes["NORMAL"];
-		auto uvAccId = primitive.attributes["TEXCOORD_0"];
+			//i use the id that is used to get the accessor for testing if its unique
 
-		//check if we already loaded this combination of position,normal,and uv
-		VertexId vId = VertexId(positionAccId, normalAccId, uvAccId);
-		auto vertexResult = std::find(vertexIds.begin(), vertexIds.end(), vId);
-		meshVertexId = vertexResult - vertexIds.begin();
-		if (vertexResult == vertexIds.end())
-		{
-			//add the next combination:
-			vertexIds.push_back(vId);
+			auto positionAccId = primitive.attributes["POSITION"];
+			auto normalAccId = primitive.attributes["NORMAL"];
+			auto uvAccId = primitive.attributes["TEXCOORD_0"];
 
-			//load into memory
-
-			//position
-			auto& accessor = gltfModel.accessors[positionAccId];
-			tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
-			tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
-			glm::vec3* positionArray = reinterpret_cast<glm::vec3*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-
-			//normal
-			auto& normalAccessor = gltfModel.accessors[normalAccId];
-			auto& normalBufferView = gltfModel.bufferViews[normalAccessor.bufferView];
-			auto& normalBuffer = gltfModel.buffers[normalBufferView.buffer];
-			glm::vec3* normalArray = reinterpret_cast<glm::vec3*>(&normalBuffer.data[normalBufferView.byteOffset + normalAccessor.byteOffset]);
-
-			//texture coord
-			auto& uvAccessor = gltfModel.accessors[uvAccId];
-			auto& uvBufferView = gltfModel.bufferViews[uvAccessor.bufferView];
-			auto& uvBuffer = gltfModel.buffers[uvBufferView.buffer];
-			glm::vec2* uvArray = reinterpret_cast<glm::vec2*>(&uvBuffer.data[uvBufferView.byteOffset + uvAccessor.byteOffset]);
-
-			//im confused about the uvBufferView.bytelength   its with stride 8 (vec2).   the normal and position have stride 12 and triple the bytelength than the uv list????
-
-			//store into vertex vector
-			//initialize sharedptr
-			vertices.push_back(std::make_shared<std::vector<Vertex>>());
-			vertices[meshVertexId]->reserve(vertices.size() + accessor.count);
-			for (size_t j = 0; j < accessor.count; ++j) {
-				//go trough each vertex variable we have. (pos, normal, uvcoordinate)
-				vertices[meshVertexId]->push_back(Vertex(positionArray[j], normalArray[j], uvArray[j]));
-			}
-		}
-		else
-		{
-			auto deb = 0;
-			//this combination is already loeaded into memory.
-		}
-
-		//indexBuffer
-		auto& indexAccessor = gltfModel.accessors[primitive.indices];
-
-		//check if we already loaded this indexBuffer (neccessary since we iterate trough meshes which could share index and vertex buffer but just have a differnt texture)
-		int iId = primitive.indices;
-		auto indexResult = std::find(indexIds.begin(), indexIds.end(), iId);
-		meshIndexId = indexResult - indexIds.begin();
-		if (indexResult == indexIds.end())
-		{
-			indexIds.push_back(iId);
-
-			auto& indexBufferView = gltfModel.bufferViews[indexAccessor.bufferView];
-			auto& indexBuffer = gltfModel.buffers[indexBufferView.buffer];
-
-			//depending on component type: (vertex.insert converts corretly)
-			if (indexAccessor.componentType == 5125)
+			//check if we already loaded this combination of position,normal,and uv
+			VertexId vId = VertexId(positionAccId, normalAccId, uvAccId);
+			auto vertexResult = std::find(vertexIds.begin(), vertexIds.end(), vId);
+			meshVertexId = vertexResult - vertexIds.begin();
+			if (vertexResult == vertexIds.end())
 			{
-				//unsigned int
-				uint32_t* indexArray = reinterpret_cast<uint32_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
-				//directly copy to vector:
-				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
-			}
-			else if (indexAccessor.componentType == 5123)
-			{
-				//unsigned short
-				uint16_t* indexArray = reinterpret_cast<uint16_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
-				//directly copy to vector:
-				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
-			}
-			else if (indexAccessor.componentType == 5121)
-			{
-				//unsigned byte
-				uint8_t* indexArray = reinterpret_cast<uint8_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
-				//directly copy to vector:
-				indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
+				//add the next combination:
+				vertexIds.push_back(vId);
+
+				//load into memory
+
+				//position
+				auto& accessor = gltfModel.accessors[positionAccId];
+				tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
+				tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
+				glm::vec3* positionArray = reinterpret_cast<glm::vec3*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+
+				//normal
+				auto& normalAccessor = gltfModel.accessors[normalAccId];
+				auto& normalBufferView = gltfModel.bufferViews[normalAccessor.bufferView];
+				auto& normalBuffer = gltfModel.buffers[normalBufferView.buffer];
+				glm::vec3* normalArray = reinterpret_cast<glm::vec3*>(&normalBuffer.data[normalBufferView.byteOffset + normalAccessor.byteOffset]);
+
+				//texture coord
+				auto& uvAccessor = gltfModel.accessors[uvAccId];
+				auto& uvBufferView = gltfModel.bufferViews[uvAccessor.bufferView];
+				auto& uvBuffer = gltfModel.buffers[uvBufferView.buffer];
+				glm::vec2* uvArray = reinterpret_cast<glm::vec2*>(&uvBuffer.data[uvBufferView.byteOffset + uvAccessor.byteOffset]);
+
+				//im confused about the uvBufferView.bytelength   its with stride 8 (vec2).   the normal and position have stride 12 and triple the bytelength than the uv list????
+
+				//store into vertex vector
+				//initialize sharedptr
+				vertices.push_back(std::make_shared<std::vector<Vertex>>());
+				vertices[meshVertexId]->reserve(vertices.size() + accessor.count);
+				for (size_t j = 0; j < accessor.count; ++j) {
+					//go trough each vertex variable we have. (pos, normal, uvcoordinate)
+					vertices[meshVertexId]->push_back(Vertex(positionArray[j], normalArray[j], uvArray[j]));
+				}
 			}
 			else
 			{
-				std::cout << "index component type not known?" << std::endl;
+				//this combination is already loeaded into memory.
 			}
-		}
-		else
-		{
-			auto debug = 0;
-			//index already loaded
-		}
 
-		int matId = m.primitives[primitiveId].material;
+			//indexBuffer
+			auto& indexAccessor = gltfModel.accessors[primitive.indices];
 
-		//TODO: load all textures correctly:
+			//check if we already loaded this indexBuffer (neccessary since we iterate trough meshes which could share index and vertex buffer but just have a differnt texture)
+			int iId = primitive.indices;
+			auto indexResult = std::find(indexIds.begin(), indexIds.end(), iId);
+			meshIndexId = indexResult - indexIds.begin();
+			if (indexResult == indexIds.end())
+			{
+				indexIds.push_back(iId);
 
-		int texId = -1;
-		if (gltfModel.materials[matId].pbrMetallicRoughness.baseColorTexture.index != -1)
-		{
-			texId = gltfModel.materials[matId].pbrMetallicRoughness.baseColorTexture.index;
-		}
-		else if (gltfModel.materials[matId].emissiveTexture.index != -1)
-		{
-			texId = gltfModel.materials[matId].emissiveTexture.index;
-		}
-		auto color = gltfModel.materials[matId].pbrMetallicRoughness.baseColorFactor;
-		meshes.push_back(std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], Color(color), m.name));
+				auto& indexBufferView = gltfModel.bufferViews[indexAccessor.bufferView];
+				auto& indexBuffer = gltfModel.buffers[indexBufferView.buffer];
 
-		//add the different textures if they are specified
-		if (texId != -1)
-		{
-			meshes[i + modelIndexOffset]->texture = textures[texId];
+				//depending on component type: (vertex.insert converts corretly)
+				if (indexAccessor.componentType == 5125)
+				{
+					//unsigned int
+					uint32_t* indexArray = reinterpret_cast<uint32_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
+					//directly copy to vector:
+					indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
+				}
+				else if (indexAccessor.componentType == 5123)
+				{
+					//unsigned short
+					uint16_t* indexArray = reinterpret_cast<uint16_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
+					//directly copy to vector:
+					indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
+				}
+				else if (indexAccessor.componentType == 5121)
+				{
+					//unsigned byte
+					uint8_t* indexArray = reinterpret_cast<uint8_t*>(&indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset]);
+					//directly copy to vector:
+					indices.push_back(std::make_shared<std::vector<uint32_t>>(indexArray, indexArray + indexAccessor.count));
+				}
+				else
+				{
+					std::cout << "index component type not known?" << std::endl;
+				}
+			}
+			else
+			{
+				auto debug = 0;
+				//index already loaded
+			}
+
+			int matId = m.primitives[primitiveId].material;
+
+			//TODO: load all textures correctly:
+
+			int texId = -1;
+			if (gltfModel.materials[matId].pbrMetallicRoughness.baseColorTexture.index != -1)
+			{
+				texId = gltfModel.materials[matId].pbrMetallicRoughness.baseColorTexture.index;
+			}
+			else if (gltfModel.materials[matId].emissiveTexture.index != -1)
+			{
+				texId = gltfModel.materials[matId].emissiveTexture.index;
+			}
+			auto color = gltfModel.materials[matId].pbrMetallicRoughness.baseColorFactor;
+			//gltfModel.materials[matId].name might be right here instead of m.name. m is the name of the hole mesh
+			auto mesh = std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], Color(color), m.name);
+
+			//add the different textures if they are specified
+			if (texId != -1)
+			{
+				mesh->texture = textures[texId];
+			}
+			meshBin->addMesh(mesh);
 		}
+		meshBins.push_back(meshBin);
 	}
 
 	size_t vertexCount = 0;
@@ -310,13 +312,13 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 		}
 
 		//TODO node.mesh is not correct when i only save unique models
-		//auto go = GameObject(std::make_shared<Mesh>(meshes[node.mesh + modelIndexOffset]), tran, rot, scale, node.name);
+		//auto go = GameObject(std::make_shared<Mesh>(meshBins[node.mesh + modelIndexOffset]), tran, rot, scale, node.name);
 		//gameobjects.push_back(go);
 
 		int meshId = node.mesh;
 		if (node.mesh != -1)
 		{
-			gameObjects[id + gameObjectOffset] = std::make_shared<GameObject>(meshes[node.mesh + modelIndexOffset], childIds, tran, rot, scale, node.name);
+			gameObjects[id + gameObjectOffset] = std::make_shared<GameObject>(meshBins[node.mesh + modelIndexOffset], childIds, tran, rot, scale, node.name);
 		}
 		else
 		{

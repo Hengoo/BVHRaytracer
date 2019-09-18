@@ -17,6 +17,9 @@
 #include "../glmInclude.h"
 #include "../lodepng/lodepng.h"
 
+#include"../mesh.h"
+#include"../meshBin.h"
+
 class Bvh
 {
 public:
@@ -207,17 +210,20 @@ private:
 	void iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& primitives)
 	{
 		//for (auto& p : (*go.mesh->vertices))
-		if (go.mesh)
+		if (go.meshBin)
 		{
-			for (int i = 0; i < go.mesh->indices->size(); i += 3)
+			for (auto& m : go.meshBin->meshes)
 			{
-				//triangle version:
-				primitives->push_back(std::make_shared<Triangle>(&go, &*go.mesh, i));
+				for (int i = 0; i < m->indices->size(); i += 3)
+				{
+					//triangle version:
+					primitives->push_back(std::make_shared<Triangle>(&go, &*m, i));
 
-				//sphere version (one sphere for each triangle?
-				//std::array<unsigned char, 4> color = { ruchar(0, 255), ruchar(0, 255), ruchar(0, 255), 255 };
-				//auto p = std::make_shared<Sphere>(go.pos, 0.5f, color);
-				//root->addPrimitive(p);
+					//sphere version (one sphere for each triangle?
+					//std::array<unsigned char, 4> color = { ruchar(0, 255), ruchar(0, 255), ruchar(0, 255), 255 };
+					//auto p = std::make_shared<Sphere>(go.pos, 0.5f, color);
+					//root->addPrimitive(p);
+				}
 			}
 		}
 		for (auto& g : go.children)

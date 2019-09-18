@@ -41,6 +41,7 @@
     <ClInclude Include="src\lights\pointLight.h" />
     <ClInclude Include="src\lodepng\lodepng.h" />
     <ClInclude Include="src\mesh.h" />
+    <ClInclude Include="src\meshBin.h" />
     <ClInclude Include="src\modelLoader.h" />
     <ClInclude Include="src\primitives\primitive.h" />
     <ClInclude Include="src\primitives\sphere.h" />

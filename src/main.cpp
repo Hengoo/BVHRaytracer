@@ -41,11 +41,11 @@ public:
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
 		gameObjects[0]->hasParent = true;
-		std::vector<std::shared_ptr<Mesh>> meshes;
+		std::vector<std::shared_ptr<MeshBin>> meshBins;
 		std::string name;
 		std::string path;
 		std::string problem;
-		int scenario = 1;
+		int scenario = 4;
 		glm::vec3  cameraPos;
 		glm::vec3  cameraTarget;
 
@@ -53,28 +53,44 @@ public:
 		{
 		case 0:
 			name = "lizard";
-			loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshes);
+			loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshBins);
 			cameraPos = glm::vec3(3.5f, 1.5f, 5.f);
 			cameraTarget = glm::vec3(-1, -1, 1.1);
+			
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
 		case 1:
 			name = "shiftHappens";
-			loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshes);
+			loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshBins);
 			cameraPos = glm::vec3(20, 10, -10);
 			cameraTarget = glm::vec3(0, 5, 0);
+
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
 		case 2:
 			name = "gearbox";
-			//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshes);
-			loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshes);
+			//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshBins);
+			loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshBins);
 			cameraPos = glm::vec3(0, 0, 0);
 			cameraTarget = glm::vec3(50, 0, 0);
+
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
 		case 3:
 			name = "cubes";
-			loadGltfModel("models/4Cubes.glb", gameObjects, meshes);
+			loadGltfModel("models/4Cubes.glb", gameObjects, meshBins);
 			cameraPos = glm::vec3(0, 0, -3);
 			cameraTarget = glm::vec3(0, 0, 0);
+
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
+			break;
+		case 4:
+			name = "sponza";
+			loadGltfModel("models/CasualEffect/sponzaColorful/sponzaColorful.glb", gameObjects, meshBins);
+			cameraPos = glm::vec3(-1100, 300, 0);
+			cameraTarget = glm::vec3(-900, 290, 0);
+
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
 		default:
 			break;
@@ -132,12 +148,11 @@ public:
 
 		//dont need those anymore
 		//gameObjects.clear();
-		//meshes.clear();
+		//meshBins.clear();
 
-		//add some lights:
-		lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 
-		for (size_t l = 1; l < 5; l ++)
+
+		for (size_t l = 2; l < 3; l ++)
 		{
 			for (size_t b = 1; b < 2; b++)
 			{

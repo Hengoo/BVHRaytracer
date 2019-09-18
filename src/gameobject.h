@@ -7,14 +7,17 @@
 
 
 #include "glmInclude.h"
-#include "mesh.h"
+//#include "mesh.h"
+//#include "meshBin.h"
+
+class MeshBin;
 
 //gameobject, contains a mesh and ifferent transforms
 class GameObject
 {
 public:
 	//pointer to mesh. one mesh can be used by multiple gameobjects
-	std::shared_ptr<Mesh> mesh;
+	std::shared_ptr<MeshBin> meshBin;
 
 	std::vector<int> childIds;
 	std::vector<std::shared_ptr<GameObject>> children;
@@ -31,8 +34,8 @@ public:
 	glm::mat4 globalTransform;
 	glm::mat4 invGlobalTransform;
 
-	GameObject(std::shared_ptr<Mesh> mesh, std::vector<int> childIds, glm::vec3 pos, glm::quat rot, glm::vec3 scale, std::string name)
-		:mesh(mesh), childIds(childIds), pos(pos), rot(rot), scale(scale), name(name)
+	GameObject(std::shared_ptr<MeshBin> meshBin, std::vector<int> childIds, glm::vec3 pos, glm::quat rot, glm::vec3 scale, std::string name)
+		:meshBin(meshBin), childIds(childIds), pos(pos), rot(rot), scale(scale), name(name)
 	{
 		globalTransform = glm::mat4(1);
 		invGlobalTransform = glm::mat4(1);

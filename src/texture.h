@@ -17,9 +17,10 @@ public:
 	Color getColor(const glm::vec2& uv)
 	{
 		//for now super ugly without interpolation:
-		size_t u = (int)(uv.x * width);
-		size_t v = (int)(uv.y * height);
+		size_t u = (int)(uv.x * width) % width;
+		size_t v = (int)(uv.y * height) % height;
 		size_t index = (u + v * width) * 4;
+		//dex = index % (colors.size()-4);
 		return Color(colors[index], colors[index + 1], colors[index + 2], colors[index + 3]);
 	}
 

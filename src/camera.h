@@ -49,6 +49,7 @@ public:
 	size_t width;
 
 	//1.37f for 40 degree, 0.866f for 60 degree (horizontal fov)
+	//This focallength has most likely nothing to do with real life focal length
 	float focalLength;
 
 	//todo not implemented (most likely not needed anyway)
