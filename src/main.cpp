@@ -56,7 +56,7 @@ public:
 			loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshBins);
 			cameraPos = glm::vec3(3.5f, 1.5f, 5.f);
 			cameraTarget = glm::vec3(-1, -1, 1.1);
-			
+
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
 		case 1:
@@ -152,7 +152,7 @@ public:
 
 
 
-		for (size_t l = 2; l < 3; l ++)
+		for (size_t l = 1; l < 2; l++)
 		{
 			for (size_t b = 1; b < 2; b++)
 			{
@@ -180,7 +180,7 @@ public:
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage();
+				c.renderImage(true);
 			}
 		}
 	}

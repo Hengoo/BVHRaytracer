@@ -101,14 +101,13 @@ public:
 		//choose axis to split:
 		//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
 		axis = maxDimension(centerDistance);
+		sortAxis = axis;
 
 		//stop when triangle centers are at the same position (when this happens to often i might try the real center instead of the aabb center????
-		if (centerDistance[axis] <= 0.00002)
-		{
-			//TODO: just pick random direction? this would allow bigger leafs than intended
-			//std::cout << "all triangles at same pos" << std::endl;
-			return;
-		}
+		//if (centerDistance[axis] <= 0.00002)
+		//{
+		//	return;
+		//}
 
 
 		//sort primitive array along axis:
@@ -130,7 +129,7 @@ public:
 		if (true)
 		{
 			//only do parallel versionf or first few nodes (with enought primitives) --> TODO try out values
-			if (depth < 3 && size > 5000)
+			if ( false )//depth < 3 && size > 5000)
 			{
 				//parallel version: (calculate the metric for different intervals parallel)
 				//-> usefull for the first few nodes because after all nodes work parallel
@@ -177,26 +176,20 @@ public:
 			{
 				//full sequential version:
 				Aabb node1(depth + 1, primitives, primitiveBegin, primitiveBegin);
-				Aabb node2(depth + 1, primitives, primitiveBegin, primitiveEnd);
-
+				Aabb node2(depth + 1, primitives, primitiveEnd, primitiveEnd);
+				float invArea = 1 / getSurfaceArea();
+				int  a = 0;
 				std::for_each(std::execution::seq, metric.begin(), metric.end(),
 					[&](auto& met)
 					{
-						float m = 0;
-						node1.increasePrimitives();
-						node2.decreasePrimitives();
-						m = abs((int)node1.getPrimCount() - (int)node2.getPrimCount());
-
-						m = sah(node1, node2);
-						met = m;
-
-
-						//experimental: strongly encourages  splits in a way that it produces full leafes
-						if (node1.getPrimCount() % leafCount > getPrimCount() % leafCount
-							|| node2.getPrimCount() % leafCount > getPrimCount() % leafCount)
-						{
-							met *= 2.f;
-						}
+						node1.sweepRight();
+						met += sah(node1, invArea, leafCount);
+					});
+				std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
+					[&](auto& met)
+					{
+						node2.sweepLeft();
+						met += sah(node2, invArea, leafCount);
 					});
 			}
 			//make the split with the best metric:
@@ -400,5 +393,24 @@ public:
 		boundMin = glm::min(boundMin, minp);
 		boundMax = glm::max(boundMax, maxp);
 		primitiveBegin = primitiveBegin + 1;
+	}
+
+	void Node::sweepRight()
+	{
+		primitiveEnd = primitiveEnd + 1;
+
+		glm::vec3 minp, maxp;
+		(*primitiveEnd)->getBounds(minp, maxp);
+		boundMin = glm::min(boundMin, minp);
+		boundMax = glm::max(boundMax, maxp);
+	}
+	void Node::sweepLeft()
+	{
+		primitiveBegin = primitiveBegin - 1;
+
+		glm::vec3 minp, maxp;
+		(*primitiveBegin)->getBounds(minp, maxp);
+		boundMin = glm::min(boundMin, minp);
+		boundMax = glm::max(boundMax, maxp);
 	}
 };

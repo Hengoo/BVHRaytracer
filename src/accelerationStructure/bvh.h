@@ -84,6 +84,7 @@ public:
 	//collapses the next collapeCount child hierarchies to this node
 	void collapseChilds(int collapeCount)
 	{
+		std::cout << "TODO: before using collapse : fix ray intersection order so it uses the sorting" << std::endl;
 		if (collapeCount > 0)
 		{
 			collapseChilds(root, collapeCount);

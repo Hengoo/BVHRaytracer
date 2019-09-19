@@ -78,28 +78,37 @@ bool Node::intersect(Ray& ray)
 		ray.leafIntersectionCount[depth]++;
 
 		//std::all_of stops loop when false is returned
-		std::all_of(primitiveBegin, primitiveEnd,
-			[&](auto& p)
-			{
-				ray.primitiveIntersectionCount++;
-				if (p->intersect(ray))
-				{
-					ray.successfulPrimitiveIntersectionCount++;
-					result = true;
-					if (ray.shadowRay)
-					{
-						return false;
-					}
-				}
-				return true;
-			});
-	}
-	if (ray.shadowRay)
-	{
-		if (result)
+		if (!ray.shadowRay)
 		{
-			return result;
+			std::for_each(primitiveBegin, primitiveEnd,
+				[&](auto& p)
+				{
+					ray.primitiveIntersectionCount++;
+					if (p->intersect(ray))
+					{
+						ray.successfulPrimitiveIntersectionCount++;
+						result = true;
+					}
+				});
 		}
+		else
+		{
+			return std::any_of(primitiveBegin, primitiveEnd,
+				[&](auto& p)
+				{
+					ray.primitiveIntersectionCount++;
+					if (p->intersect(ray))
+					{
+						ray.successfulPrimitiveIntersectionCount++;
+						if (ray.shadowRay)
+						{
+							return true;
+						}
+					}
+					return false;
+				});
+		}
+
 	}
 
 	if (getChildCount() != 0)
@@ -122,62 +131,95 @@ bool Node::intersect(Ray& ray)
 			std::cout << "TODO: implement correct counter for primitive intersection in upper nodes" << std::endl;
 		}
 
-		for (auto& c : children)
-		{
-			ray.aabbIntersectionCount++;
-			float dist;
-			if (c->intersectNode(ray, dist))
-			{
-				ray.successfulAabbIntersectionCount++;
+		std::vector<std::shared_ptr<Node>>::iterator begin = children.begin();
+		std::vector<std::shared_ptr<Node>>::iterator end = children.end();
 
-				//node intersection successful: rekursion continues
-				if (c->intersect(ray))
-				{
-					result = true;
-					if (ray.shadowRay)
+		//code duplication because it is about 10% faster to do it this way instead of calling a method in lambda or using std::bind
+		if (ray.direction[sortAxis] > 0)
+		{
+			if (!ray.shadowRay)
+			{
+				std::for_each(children.begin(), children.end(),
+					[&](auto& c)
 					{
-						return true;
-					}
-				}
+						ray.aabbIntersectionCount++;
+						float dist;
+						if (c->intersectNode(ray, dist))
+						{
+							ray.successfulAabbIntersectionCount++;
+
+							//node intersection successful: rekursion continues
+							if (c->intersect(ray))
+							{
+								result = true;
+							}
+						}
+					});
 			}
-		}
-	}
-
-	//this has less intersections but is SLOWER (38 seconds instead of 31 seconds for rendering the shift happens 8 times)
-	//TODO: want to retest this with a larger branching factor(and probably only for nodes with depth under 5?)
-	//TODO: COUNTERS REWORKED! code needs update
-	/*
-	//idea: sort nodes by distance to them -> traverse closer ones first
-	std::vector<DistanceNode> d;
-	//TODO: need to check if its faster to reserve or not
-	//d.reserve(children.size());
-
-	for (size_t i = 0; i < children.size(); i++)
-	{
-		if (ray.nodeIntersectionCount.size() < depth + 2)
-		{
-			ray.nodeIntersectionCount.resize(depth + 2);
-		}
-		ray.nodeIntersectionCount[depth + 1]++;
-		float dist;
-		if (children[i]->intersectNode(ray, dist))
-		{
-			d.push_back(DistanceNode(i, dist));
-		}
-	}
-
-	std::sort(d.begin(), d.end(), sortDistanceNode);
-	for (auto& di : d)
-	{
-		if (children[di.id]->intersect(ray))
-		{
-			result = true;
-			if (ray.shadowRay)
+			else
 			{
-				return true;
+				return std::any_of(children.begin(), children.end(),
+					[&](auto& c)
+					{
+						ray.aabbIntersectionCount++;
+						float dist;
+						if (c->intersectNode(ray, dist))
+						{
+							ray.successfulAabbIntersectionCount++;
+
+							//node intersection successful: rekursion continues
+							if (c->intersect(ray))
+							{
+								return true;
+							}
+						}
+						return false;
+					});
 			}
 		}
-	}*/
+		else
+		{
+			if (!ray.shadowRay)
+			{
+				std::for_each(children.rbegin(), children.rend(),
+					[&](auto& c)
+					{
+						ray.aabbIntersectionCount++;
+						float dist;
+						if (c->intersectNode(ray, dist))
+						{
+							ray.successfulAabbIntersectionCount++;
+
+							//node intersection successful: rekursion continues
+							if (c->intersect(ray))
+							{
+								result = true;
+							}
+						}
+					});
+			}
+			else
+			{
+				return std::any_of(children.rbegin(), children.rend(),
+					[&](auto& c)
+					{
+						ray.aabbIntersectionCount++;
+						float dist;
+						if (c->intersectNode(ray, dist))
+						{
+							ray.successfulAabbIntersectionCount++;
+
+							//node intersection successful: rekursion continues
+							if (c->intersect(ray))
+							{
+								return true;
+							}
+						}
+						return false;
+					});
+			}
+		}
+	}
 	return result;
 }
 

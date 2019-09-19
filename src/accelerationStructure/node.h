@@ -18,7 +18,7 @@ public:
 	{
 		//update bounds in derived classes
 	}
-
+	int sortAxis;
 	unsigned int depth;
 	virtual void addNode(std::shared_ptr<Node> n);
 
@@ -40,13 +40,25 @@ public:
 	virtual unsigned int getPrimCount();
 	virtual void increasePrimitives() = 0;
 	virtual void decreasePrimitives() = 0;
+
+	virtual void sweepRight() = 0;
+	virtual void sweepLeft() = 0;
 	virtual float getSurfaceArea() = 0;
 
 	//using sah approach from pbrt http://www.pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies.html
-	//TODO : currently also use their cost of 1/8
 	inline float sah(Node& n1, Node& n2)
 	{
-		return 0.125 * ((n1.getPrimCount() * n1.getSurfaceArea() + n2.getPrimCount() * n2.getSurfaceArea()) / getSurfaceArea());
+		return (n1.getPrimCount() * n1.getSurfaceArea() + n2.getPrimCount() * n2.getSurfaceArea()) / getSurfaceArea();
+	}
+
+	//using sah approach from pbrt http://www.pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies.html
+	//TODO: what is this cost factor sometimes used? either + const or * constant or both
+	//		since we search for the min value it doesnt change anything????
+	inline float sah(Node& n, float invArea, int leafSize)
+	{
+		return (n.getPrimCount() * n.getSurfaceArea()) * invArea;
+		//return (((n.getPrimCount() - 1) / leafSize) +1) * n.getSurfaceArea() * invArea;
+		//return (((n.getPrimCount() - 1) / leafSize)*7 + 7 + n.getPrimCount()) * n.getSurfaceArea() * invArea;
 	}
 
 	//this could be a unique pointer
@@ -61,5 +73,4 @@ protected:
 	primPointVector::iterator primitiveEnd;
 
 private:
-
 };

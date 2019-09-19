@@ -69,6 +69,7 @@ public:
 	std::vector<size_t> successfulPrimitiveIntersectionsPerPixel;
 	std::vector<size_t> successfulAabbIntersectionsPerPixel;
 	std::vector<size_t> aabbIntersectionsPerPixel;
+	std::vector<size_t> shadowRayCounter;
 	std::vector<size_t> shadowSuccessfulPrimitiveIntersectionsPerPixel;
 	std::vector<size_t> shadowSuccessfulAabbIntersectionsPerPixel;
 	std::vector<size_t> shadowAabbIntersectionsPerPixel;
@@ -91,6 +92,7 @@ public:
 	size_t successfulPrimitiveIntersections;
 	size_t successfulAabbIntersections;
 	size_t aabbIntersections;
+	size_t shadowRayCount;
 	size_t shadowSuccessfulPrimitiveIntersections;
 	size_t shadowSuccessfulAabbIntersections;
 	size_t shadowAabbIntersections;
@@ -112,7 +114,7 @@ public:
 	}
 
 	//spawns rays and collects results into image. Image is written on disk
-	void renderImage()
+	void renderImage(bool renderImage)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -173,6 +175,7 @@ public:
 						//only shoot ray when surface points in light direction
 						if (f > 0)
 						{
+							shadowRayCounter[info.index] ++;
 							if (bvh.intersect(shadowRay))
 							{
 								f = 0;
@@ -331,6 +334,7 @@ public:
 		successfulPrimitiveIntersections = std::accumulate(successfulPrimitiveIntersectionsPerPixel.begin(), successfulPrimitiveIntersectionsPerPixel.end(), 0);
 		successfulAabbIntersections = std::accumulate(successfulAabbIntersectionsPerPixel.begin(), successfulAabbIntersectionsPerPixel.end(), 0);
 		aabbIntersections = std::accumulate(aabbIntersectionsPerPixel.begin(), aabbIntersectionsPerPixel.end(), 0);
+		shadowRayCount = std::accumulate(shadowRayCounter.begin(), shadowRayCounter.end(), 0);
 		shadowSuccessfulPrimitiveIntersections = std::accumulate(shadowSuccessfulPrimitiveIntersectionsPerPixel.begin(), shadowSuccessfulPrimitiveIntersectionsPerPixel.end(), 0);
 		shadowSuccessfulAabbIntersections = std::accumulate(shadowSuccessfulAabbIntersectionsPerPixel.begin(), shadowSuccessfulAabbIntersectionsPerPixel.end(), 0);
 		shadowAabbIntersections = std::accumulate(shadowAabbIntersectionsPerPixel.begin(), shadowAabbIntersectionsPerPixel.end(), 0);
@@ -339,8 +343,9 @@ public:
 		//normalize by pixel
 		float factor = 1 / (float)(width * height);
 		//shadowfactor for now the same. Could normalize it per shadowrays but that would ruin the scale and fullness
-		float shadowFactor = 1 / (float)(width * height);
-		std::cout << "intersections counts are per pixel" << std::endl << std::endl;
+		float shadowFactor = 1 / (float)shadowRayCount;
+		float bothFactor = 1 / (float)(width * height + shadowRayCount);
+		std::cout << "intersections counts are normalized per Ray" << std::endl << std::endl;
 		std::cout << "node intersections: " << nodeIntersectionCount * factor << std::endl;
 		std::cout << "aabb intersections: " << aabbIntersections * factor << std::endl;
 		std::cout << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
@@ -359,7 +364,7 @@ public:
 		if (myfile.is_open())
 		{
 			myfile << "scenario " << name << " with branching factor of " << std::to_string(bvh.branchingFactor) << " and leafsize of " << bvh.leafCount << std::endl;
-			myfile << "intersections counts are per pixel" << std::endl << std::endl;
+			myfile << "intersections counts are normalized per Ray" << std::endl << std::endl;
 
 			myfile << "node intersections: " << nodeIntersectionCount * factor << std::endl;
 			myfile << "aabb intersections: " << aabbIntersections * factor << std::endl;
@@ -388,7 +393,7 @@ public:
 			myfile << "average: : " << std::to_string(sum) << std::endl;
 			for (size_t i = 0; i < childFullness.size(); i++)
 			{
-				myfile << i << " : " << childFullness[i] * factor << std::endl;
+				myfile << i << " : " << childFullness[i] * bothFactor << std::endl;
 			}
 
 			myfile << std::endl;
@@ -401,7 +406,7 @@ public:
 			myfile << "average: : " << std::to_string(sum) << std::endl;
 			for (size_t i = 0; i < primitiveFullness.size(); i++)
 			{
-				myfile << i << " : " << primitiveFullness[i] * factor << std::endl;
+				myfile << i << " : " << primitiveFullness[i] * bothFactor << std::endl;
 			}
 
 			myfile << std::endl;
@@ -420,20 +425,23 @@ public:
 			myfile << "shadowRay node intersections at depth x :" << std::endl;
 			for (size_t i = 0; i < shadowNodeIntersectionPerDepthCount.size(); i++)
 			{
-				myfile << i << " : " << shadowNodeIntersectionPerDepthCount[i] * factor << std::endl;
+				myfile << i << " : " << shadowNodeIntersectionPerDepthCount[i] * shadowFactor << std::endl;
 			}
 			myfile << std::endl;
 			myfile << "shadowRay leaf intersections at depth x :" << std::endl;
 			for (size_t i = 0; i < shadowLeafIntersectionPerDepthCount.size(); i++)
 			{
-				myfile << i << " : " << shadowLeafIntersectionPerDepthCount[i] * factor << std::endl;
+				myfile << i << " : " << shadowLeafIntersectionPerDepthCount[i] * shadowFactor << std::endl;
 			}
 			myfile.close();
 		}
 		else std::cout << "Unable to open file" << std::endl;
 
 
-		encodeTwoSteps(path + "/" + name + ".png", image, width, height);
+		if (renderImage)
+		{
+			encodeTwoSteps(path + "/" + name + ".png", image, width, height);
+		}
 	}
 
 private:
@@ -453,6 +461,7 @@ private:
 		successfulAabbIntersectionsPerPixel.resize(height * width);
 		aabbIntersectionsPerPixel.resize(height * width);
 		shadowSuccessfulAabbIntersectionsPerPixel.resize(height * width);
+		shadowRayCounter.resize(height * width);
 		shadowAabbIntersectionsPerPixel.resize(height * width);
 		shadowPrimitiveIntersectionsPerPixel.resize(height * width);
 		shadowSuccessfulPrimitiveIntersectionsPerPixel.resize(height * width);
@@ -467,6 +476,7 @@ private:
 		shadowSuccessfulAabbIntersections = 0;
 		shadowAabbIntersections = 0;
 		shadowSuccessfulPrimitiveIntersections = 0;
+		shadowRayCount = 0;
 	}
 
 };
