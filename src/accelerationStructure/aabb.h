@@ -26,6 +26,8 @@ struct NodePair
 	std::unique_ptr<Node> node2;
 	std::vector<float>::iterator metricBegin;
 	std::vector<float>::iterator metricEnd;
+	std::vector<float>::reverse_iterator metricRevBegin;
+	std::vector<float>::reverse_iterator metricRevEnd;
 	int index;
 };
 
@@ -129,26 +131,50 @@ public:
 		if (true)
 		{
 			//only do parallel versionf or first few nodes (with enought primitives) --> TODO try out values
-			if ( false )//depth < 3 && size > 5000)
+			//its faster without parallel since the left / right sweep
+			if (false && size > 5000 && depth < 2)//depth < 3 && size > 50)
 			{
 				//parallel version: (calculate the metric for different intervals parallel)
 				//-> usefull for the first few nodes because after all nodes work parallel
 
 				//the reason why its faster to have this large is because there are clusters that require a node bound recalculation for each decreasePrimitives
-				int parallelCount = 64;
+				int parallelCount = 8;
 				std::vector<NodePair> work(parallelCount);
 				for (size_t i = 0; i < parallelCount; i++)
 				{
 					int start = (size / parallelCount) * i;
 					int end = (size / parallelCount) * (i + 1);
+
+					work[i].node1 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin, primitiveBegin + start);
+					work[i].node2 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin + end, primitiveEnd);
+					work[i].metricBegin = metric.begin() + start;
 					if (i == parallelCount - 1)
 					{
-						end = size - 1;
+						work[i].metricEnd = metric.end();
 					}
-					work[i].node1 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin, primitiveBegin + start);
-					work[i].node2 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin + start, primitiveEnd);
-					work[i].metricBegin = metric.begin() + start;
-					work[i].metricEnd = metric.begin() + end;
+					else
+					{
+						work[i].metricEnd = metric.begin() + end;
+					}
+
+
+					if (i == parallelCount - 1)
+					{
+						work[i].metricRevBegin = metric.rbegin();
+					}
+					else
+					{
+						work[i].metricRevBegin = metric.rbegin() + (size - end);
+					}
+					if (i == 0)
+					{
+						work[i].metricRevEnd = metric.rend();
+					}
+					else
+					{
+						work[i].metricRevEnd = metric.rbegin() + (size - start);
+					}
+
 					work[i].index = i;
 					//std::cout << "worklaod: " << std::distance(work[i].metricBegin, work[i].metricEnd) << std::endl;
 				}
@@ -156,44 +182,49 @@ public:
 				std::for_each(std::execution::par_unseq, work.begin(), work.end(),
 					[&](auto& w)
 					{
+						float invArea = 1 / getSurfaceArea();
+						int  a = 0;
 						std::for_each(std::execution::seq, w.metricBegin, w.metricEnd,
 							[&](auto& met)
 							{
-								float m = 0;
-								w.node1->increasePrimitives();
-								w.node2->decreasePrimitives();
-								//m = abs((int)w.node1->getPrimCount() - (int)w.node2->getPrimCount());
-
-								m = sah(*w.node1.get(), *w.node2.get());
-								met = m;
-
+								w.node1->sweepRight();
+								met += sah(*w.node1.get(), invArea, leafCount);
+							});
+						std::for_each(std::execution::seq, w.metricRevBegin, w.metricRevEnd,
+							[&](auto& met)
+							{
+								w.node2->sweepLeft();
+								met += sah(*w.node2.get(), invArea, leafCount);
 							});
 						//std::cout << "work " << w.index << " finished" <<std::endl;
 					});
-				//std::cout << depth << std::endl;
 			}
 			else
 			{
 				//full sequential version:
-				Aabb node1(depth + 1, primitives, primitiveBegin, primitiveBegin);
-				Aabb node2(depth + 1, primitives, primitiveEnd, primitiveEnd);
+				Aabb node(depth + 1, primitives, primitiveBegin, primitiveBegin);
 				float invArea = 1 / getSurfaceArea();
 				int  a = 0;
 				std::for_each(std::execution::seq, metric.begin(), metric.end(),
 					[&](auto& met)
 					{
-						node1.sweepRight();
-						met += sah(node1, invArea, leafCount);
+						node.sweepRight();
+						met += sah(node, invArea, leafCount);
 					});
+				node = Aabb(depth + 1, primitives, primitiveEnd, primitiveEnd);
 				std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
 					[&](auto& met)
 					{
-						node2.sweepLeft();
-						met += sah(node2, invArea, leafCount);
+						node.sweepLeft();
+						met += sah(node, invArea, leafCount);
 					});
 			}
 			//make the split with the best metric:
 			currentSplit = primitiveBegin + std::distance(metric.begin(), std::min_element(metric.begin(), metric.end())) + 1;
+			//if (depth < 5)
+			//{
+			//	std::cout << depth << " depth , split number:" << std::distance(primitiveBegin, currentSplit) << std::endl;
+			//}
 		}
 		else
 		{
@@ -356,16 +387,11 @@ public:
 		{
 			return false;
 		}
-
 		//ray.result.g += 0.002f;
 
 		//tmax gives less triangle intersections when sorting
 		distance = tmax;
 		return true;
-
-		//intersection occured:
-		//intersect all primitves and nodes:
-		//return Node::intersect(ray);
 	}
 
 	void increasePrimitives() override

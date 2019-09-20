@@ -118,8 +118,44 @@ public:
 		int nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 		int leafs = leafNodes.size();
 		//int leafs = std::accumulate(treeDepth.begin(), treeDepth.end(), 0);
-		
-		
+
+		std::cout << "BVH Analysis:" << std::endl;
+		std::cout << "Tree depth: " << treeDepth.size() - 1 << std::endl;
+		std::cout << "number of nodes: " << nodes - leafs << std::endl;
+		std::cout << "nodes with x childen:" << std::endl;
+		float sum = 0;
+		float sum2 = 0;
+		for (size_t i = 1; i < childCount.size(); i++)
+		{
+			sum += childCount[i] * i;
+			sum2 += childCount[i];
+		}
+		//sum /= std::accumulate(childCount.begin(), childCount.end(), 0);
+		sum /= sum2;
+		std::cout << "average: " << std::to_string(sum) << std::endl;
+		for (size_t i = 2; i < childCount.size(); i++)
+		{
+			std::cout << i << " : " << childCount[i] << std::endl;
+		}
+
+		std::cout << "number of leafnodes: " << leafs << std::endl;
+		std::cout << "leafnodes with x primitives:" << std::endl;
+		sum = 0;
+		sum2 = 0;
+		for (size_t i = 1; i < primCount.size(); i++)
+		{
+			sum += primCount[i] * i;
+			sum2 += primCount[i];
+		}
+		//sum /= std::accumulate(primCount.begin(), primCount.end(), 0);
+		sum /= sum2;
+		std::cout << "average: : " << std::to_string(sum) << std::endl;
+		for (size_t i = 1; i < primCount.size(); i++)
+		{
+			std::cout << i << " : " << primCount[i] << std::endl;
+		}
+		std::cout << std::endl;
+
 		//create image
 		int height = treeDepth.size();
 		int width = leafs;

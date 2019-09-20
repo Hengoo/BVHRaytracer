@@ -152,7 +152,7 @@ public:
 
 
 
-		for (size_t l = 5; l < 6; l++)
+		for (size_t l = 4; l < 5; l++)
 		{
 			for (size_t b = 2; b < 3; b++)
 			{
@@ -180,7 +180,7 @@ public:
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(true, true);
+				c.renderImage(true, false);
 			}
 		}
 	}
