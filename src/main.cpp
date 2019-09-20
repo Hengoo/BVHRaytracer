@@ -152,9 +152,9 @@ public:
 
 
 
-		for (size_t l = 1; l < 2; l++)
+		for (size_t l = 5; l < 6; l++)
 		{
-			for (size_t b = 1; b < 2; b++)
+			for (size_t b = 2; b < 3; b++)
 			{
 				leafCount = l;
 				branchingFactor = std::exp2(b);
@@ -180,7 +180,7 @@ public:
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(true);
+				c.renderImage(true, true);
 			}
 		}
 	}

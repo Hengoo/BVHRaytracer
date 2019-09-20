@@ -114,7 +114,7 @@ public:
 	}
 
 	//spawns rays and collects results into image. Image is written on disk
-	void renderImage(bool renderImage)
+	void renderImage(bool saveImage, bool saveDepthDebugImage)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -438,9 +438,48 @@ public:
 		else std::cout << "Unable to open file" << std::endl;
 
 
-		if (renderImage)
+		if (saveImage)
 		{
 			encodeTwoSteps(path + "/" + name + ".png", image, width, height);
+		}
+		if (saveDepthDebugImage)
+		{
+			//save an image with all the aabb intersections for every depth
+			for (size_t d = 0; d < nodeIntersectionPerDepthCount.size(); d++)
+			{
+				std::vector<unsigned int> maxDepth;
+				//find max element first to normalise to;
+				std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
+					[&](auto& info)
+					{
+						if (d < nodeIntersectionPerPixelCount[info.index].size())
+						{
+							if (maxDepth.size() < d + 1)
+							{
+								maxDepth.resize(d + 1);
+							}
+							maxDepth[d] = std::max(nodeIntersectionPerPixelCount[info.index][d], maxDepth[d]);
+						}
+					});
+				//go trough RenderInfo vector and use the stored nodeIntersectionPerPixelCount
+				std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+					[&](auto& info)
+					{
+						int sum = 0;
+						if (d < nodeIntersectionPerPixelCount[info.index].size())
+						{
+							sum = nodeIntersectionPerPixelCount[info.index][d];
+						}
+
+						//Color c(sum * 0.01f);
+						Color c(sum * (1 / (float)maxDepth[d]));
+						image[info.index * 4 + 0] = (unsigned char)(c.r * 255);
+						image[info.index * 4 + 1] = (unsigned char)(c.g * 255);
+						image[info.index * 4 + 2] = (unsigned char)(c.b * 255);
+						image[info.index * 4 + 3] = (unsigned char)(c.a * 255);
+					});
+				encodeTwoSteps(path + "/" + name + problem + "NodeDepth" + std::to_string(d) + ".png", image, width, height);
+			}
 		}
 	}
 

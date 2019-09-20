@@ -23,17 +23,14 @@ void Triangle::update()
 	glm::vec4 pos1((*mesh->vertices)[(*mesh->indices)[(size_t)index + 1]].pos, 1);
 	glm::vec4 pos2((*mesh->vertices)[(*mesh->indices)[(size_t)index + 2]].pos, 1);
 
-	glm::vec3 pos00 = gameObject->globalTransform * pos0;
-	glm::vec3 pos11 = gameObject->globalTransform * pos1;
-	glm::vec3 pos22 = gameObject->globalTransform * pos2;
-	points[0] = pos00;
-	points[1] = pos11;
-	points[2] = pos22;
+	points[0] = gameObject->globalTransform * pos0;
+	points[1] = gameObject->globalTransform * pos1;
+	points[2] = gameObject->globalTransform * pos2;
 
-	boundMin = glm::min(pos00, pos11);
-	boundMax = glm::max(pos00, pos11);
-	boundMin = glm::min(boundMin, pos22);
-	boundMax = glm::max(boundMax, pos22);
+	boundMin = glm::min(points[0], points[1]);
+	boundMax = glm::max(points[0], points[1]);
+	boundMin = glm::min(boundMin, points[2]);
+	boundMax = glm::max(boundMax, points[2]);
 
 	center = (boundMax * 0.5f + boundMin * 0.5f);
 }
@@ -50,7 +47,8 @@ bool Triangle::intersect(Ray& ray)
 	vertices[1] = (*mesh->vertices)[(*mesh->indices)[(size_t)index + 1]];
 	vertices[2] = (*mesh->vertices)[(*mesh->indices)[(size_t)index + 2]];
 
-	/* this version calculates the transformed vertices for each ray. -> its significantly faster to transform once and save the result
+	/*
+	//this version calculates the transformed vertices for each ray. -> its significantly faster to transform once and save the result
 	//vec4 for transform:
 	glm::vec4 pos0(vertices[0].pos, 1);
 	glm::vec4 pos1(vertices[1].pos, 1);

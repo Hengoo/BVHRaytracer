@@ -16,6 +16,7 @@ class Triangle : public Primitive
 	const GameObject* gameObject;
 	const Mesh* mesh;
 
+	//transformed point coordinates (its faster to save than to recompute)
 	std::array<glm::vec3, 3> points = {};
 
 	//id to first indexbuffer (in mesh)
