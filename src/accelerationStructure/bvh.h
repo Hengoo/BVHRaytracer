@@ -115,10 +115,14 @@ public:
 		NodeAnalysis analysisRoot(&*root, branchingFactor, leafCount);
 		analysisRoot.analysis(leafNodes, treeDepth, childCount, primCount);
 
+		int nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
+		int leafs = leafNodes.size();
+		//int leafs = std::accumulate(treeDepth.begin(), treeDepth.end(), 0);
+		
+		
 		//create image
-
 		int height = treeDepth.size();
-		int width = std::accumulate(treeDepth.begin(), treeDepth.end(), 0);
+		int width = leafs;
 		std::vector<unsigned char> image(height * width * 4, 255);
 
 		int x, y;
@@ -259,6 +263,4 @@ private:
 		std::array<unsigned char, 4> color = { ruchar(0, 255), ruchar(0, 255), ruchar(0, 255), 255 };
 		return std::make_shared<Sphere>(glm::vec3(rfloat(-dist, dist), rfloat(-dist, dist), rfloat(-dist, dist)), rfloat(0.2f, 3.0f), color);
 	}
-
-
 };

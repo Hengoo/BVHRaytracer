@@ -6,6 +6,8 @@
 
 #include "glmInclude.h"
 #include "color.h"
+#include "../glmUtil.h"
+#include "../util.h"
 
 class Ray
 {
@@ -37,6 +39,11 @@ public:
 	unsigned int aabbIntersectionCount;
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
 
+	//int kz;
+	//int kx;
+	//int ky;
+	//glm::vec3 d;
+
 	Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false) : pos(pos), direction(direction), shadowRay(shadowRay)
 	{
 		this->direction = glm::normalize(direction);
@@ -49,8 +56,14 @@ public:
 		successfulPrimitiveIntersectionCount = 0;
 		successfulAabbIntersectionCount = 0;
 		aabbIntersectionCount = 0;
-	}
 
+		/*
+		glm::vec3 tmp = glm::abs(direction);
+		int kz = maxDimension(tmp);
+		int kx = kz + 1; if (kx == 3) kx = 0;
+		int ky = kx + 1; if (ky == 3) ky = 0;
+		glm::vec3 d = permute(direction, kx, ky, kz);*/
+	}
 	~Ray()
 	{
 	}

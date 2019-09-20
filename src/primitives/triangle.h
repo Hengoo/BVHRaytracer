@@ -16,6 +16,8 @@ class Triangle : public Primitive
 	const GameObject* gameObject;
 	const Mesh* mesh;
 
+	std::array<glm::vec3, 3> points = {};
+
 	//id to first indexbuffer (in mesh)
 	int index;
 

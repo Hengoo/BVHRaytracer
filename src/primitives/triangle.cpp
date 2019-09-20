@@ -26,6 +26,9 @@ void Triangle::update()
 	glm::vec3 pos00 = gameObject->globalTransform * pos0;
 	glm::vec3 pos11 = gameObject->globalTransform * pos1;
 	glm::vec3 pos22 = gameObject->globalTransform * pos2;
+	points[0] = pos00;
+	points[1] = pos11;
+	points[2] = pos22;
 
 	boundMin = glm::min(pos00, pos11);
 	boundMax = glm::max(pos00, pos11);
@@ -47,6 +50,7 @@ bool Triangle::intersect(Ray& ray)
 	vertices[1] = (*mesh->vertices)[(*mesh->indices)[(size_t)index + 1]];
 	vertices[2] = (*mesh->vertices)[(*mesh->indices)[(size_t)index + 2]];
 
+	/* this version calculates the transformed vertices for each ray. -> its significantly faster to transform once and save the result
 	//vec4 for transform:
 	glm::vec4 pos0(vertices[0].pos, 1);
 	glm::vec4 pos1(vertices[1].pos, 1);
@@ -56,7 +60,7 @@ bool Triangle::intersect(Ray& ray)
 	std::array<glm::vec3, 3> points = {};
 	points[0] = gameObject->globalTransform * pos0;
 	points[1] = gameObject->globalTransform * pos1;
-	points[2] = gameObject->globalTransform * pos2;
+	points[2] = gameObject->globalTransform * pos2;*/
 
 	//transform vertex positions to ray coordinate space:
 	glm::vec3 p0t = points[0] - ray.pos;
@@ -178,7 +182,7 @@ bool Triangle::intersect(Ray& ray)
 
 	//set ray data for later shading:
 
-	auto normal = glm::normalize(b0* vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
+	auto normal = glm::normalize(b0 * vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
 	ray.surfaceNormal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
 
 	//ray.surfaceNormal = -computeNormal(points[0], points[1], points[2]);
@@ -201,7 +205,7 @@ bool Triangle::intersect(Node* node)
 		//return (boundMin.x <= aabb->boundMax.x && boundMax.x >= aabb->boundMin.x) &&
 		//	(boundMin.y <= aabb->boundMax.y && boundMax.y >= aabb->boundMin.y) &&
 		//	(boundMin.z <= aabb->boundMax.z && boundMax.z >= aabb->boundMin.z);
-		
+
 		//small redesign: return triangle center vs aabb colision result (this way a triangle is only in one Node:
 		auto c = getCenter();
 		return (c.x <= aabb->boundMax.x && c.x >= aabb->boundMin.x) &&
