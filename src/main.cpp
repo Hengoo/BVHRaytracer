@@ -152,12 +152,12 @@ public:
 
 
 
-		for (size_t l = 4; l < 5; l++)
+		for (size_t l = 4; l <5; l++)
 		{
-			for (size_t b = 2; b < 3; b++)
+			for (size_t b = 4; b < 5; b++)
 			{
 				leafCount = l;
-				branchingFactor = std::exp2(b);
+				branchingFactor = b; // std::exp2(b);
 				std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
 				problem = "_b" + std::to_string(branchingFactor) + "_l" + std::to_string(leafCount);
 				std::cout << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
@@ -169,9 +169,11 @@ public:
 				//bvh of loaded model:
 				bvh = Bvh(*root);
 				bvh.recursiveOctree(branchingFactor, leafCount);
+				//bvh.recursiveOctree(2, leafCount);
 
 				//collapses the next b child hierarchies to this node
-				bvh.collapseChilds(b - 1);
+				//bvh.collapseChilds(b - 1);
+				//bvh.collapseChilds(1);
 				//for other branching factors we need an other algorithm
 
 

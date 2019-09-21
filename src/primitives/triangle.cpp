@@ -156,17 +156,6 @@ bool Triangle::intersect(Ray& ray)
 
 	//ray triangle intersection complete
 
-	//finished for shadowRay:
-	if (ray.shadowRay)
-	{
-		//small number to prevent self shadowing due to floating point errors
-		return t >= 0.001f;
-
-		//instead of above we spawns shadowrays "above" the surface
-		//return true;
-	}
-
-
 	// Interpolate $(u,v)$ parametric coordinates and hit point
 	glm::vec3 pHit = b0 * points[0] + b1 * points[1] + b2 * points[2];
 	glm::vec2 uvHit = b0 * vertices[0].texCoord + b1 * vertices[1].texCoord + b2 * vertices[2].texCoord;
@@ -178,8 +167,23 @@ bool Triangle::intersect(Ray& ray)
 	}
 	color.scale(mesh->color);
 
-	//set ray data for later shading:
+	//transparency 
+	if (color.a < 0.1f)
+	{
+		return false;
+	}
 
+	//finished for shadowRay:
+	if (ray.shadowRay)
+	{
+		//small number to prevent self shadowing due to floating point errors
+		//return t >= 0.001f;
+
+		//instead of above we spawns shadowrays "above" the surface
+		return true;
+	}
+
+	//set ray data for later shading:
 	auto normal = glm::normalize(b0 * vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
 	ray.surfaceNormal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
 

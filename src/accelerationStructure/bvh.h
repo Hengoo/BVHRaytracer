@@ -26,6 +26,7 @@ public:
 
 	int branchingFactor;
 	int leafCount;
+	std::shared_ptr<primPointVector> primitives;
 
 	Bvh()
 	{
@@ -44,9 +45,9 @@ public:
 	Bvh(GameObject& gameObject)
 	{
 		//iterate trough gameobject root and add all triangles to the aabb
-		std::shared_ptr<primPointVector> primitives = std::make_shared<primPointVector>();
+		primitives = std::make_shared<primPointVector>();
 		iterateGo(gameObject, primitives);
-		root = std::make_shared<Aabb>(0, primitives, primitives->begin(), primitives->end());
+		root = std::make_shared<Aabb>(0, primitives->begin(), primitives->end());
 
 	}
 

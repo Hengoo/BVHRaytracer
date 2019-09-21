@@ -37,6 +37,52 @@ static bool sortPrimitive(std::shared_ptr<Primitive>& p1, std::shared_ptr<Primit
 }
 class Aabb : public Node
 {
+	struct PrimIntervall
+	{
+		primPointVector::iterator primitiveBegin;
+		primPointVector::iterator primitiveEnd;
+
+		//assumes primitives are sorted (axis doesnt matter). Calculates bestSplit and bestSplitMetric
+		PrimIntervall(primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
+			:primitiveBegin(primitiveBegin), primitiveEnd(primitiveEnd)
+		{
+		}
+
+		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget)
+		{
+			//approach: test all versions
+			//test all combos with heuristic  (save results in array and take the one with best result;
+			//greedy approach would be with buckets
+
+			int size = getPrimCount();
+			// Split by metric(in our case sah)
+			std::vector<float> metric(size - 1);
+
+			Aabb node(0.f, primitiveBegin, primitiveBegin);
+			int  a = 0;
+			std::for_each(std::execution::seq, metric.begin(), metric.end(),
+				[&](auto& met)
+				{
+					node.sweepRight();
+					met += node.sah(node, invSurfaceArea, leafTarget);
+				});
+			node = Aabb(0, primitiveEnd, primitiveEnd);
+			std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
+				[&](auto& met)
+				{
+					node.sweepLeft();
+					met += node.sah(node, invSurfaceArea, leafTarget);
+				});
+			//make the split with the best metric:
+			auto bestElement = std::min_element(metric.begin(), metric.end());
+			return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
+		}
+
+		int getPrimCount()
+		{
+			return std::distance(primitiveBegin, primitiveEnd);
+		}
+	};
 
 public:
 	//edge with smallest value in each dimension
@@ -44,8 +90,8 @@ public:
 	glm::vec3 boundMax;
 	//possible rotation??? -> since its just a bvh tester it doesnt really matter
 
-	Aabb(unsigned int depth, std::shared_ptr<primPointVector> primitives, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
-		: Node(depth, primitives, primitiveBegin, primitiveEnd)
+	Aabb(unsigned int depth, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
+		: Node(depth, primitiveBegin, primitiveEnd)
 	{
 		calculateBounds();
 	}
@@ -75,10 +121,10 @@ public:
 		return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
 	}
 
-	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
+	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget)
 	{
 		//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
-		if (getPrimCount() <= leafCount)
+		if (getPrimCount() <= leafTarget)
 		{
 			return;
 		}
@@ -86,7 +132,7 @@ public:
 		//TODO: if i want to keep primitives in this node i have to spawn them to primitiveBegin BEFORE the sort
 		//also dont forget to set primitiveBegin and primitiveEnd correctly before end of method
 
-		int axis = 0;
+
 		//calculate distance of centers along each axis -> largest distance is the axis we want to split
 		glm::vec3 min = glm::vec3(222222.0f);
 		glm::vec3 max = glm::vec3(-222222.0f);
@@ -102,8 +148,7 @@ public:
 
 		//choose axis to split:
 		//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
-		axis = maxDimension(centerDistance);
-		sortAxis = axis;
+		sortAxis = maxDimension(centerDistance);
 
 		//stop when triangle centers are at the same position (when this happens to often i might try the real center instead of the aabb center????
 		//if (centerDistance[axis] <= 0.00002)
@@ -114,130 +159,48 @@ public:
 
 		//sort primitive array along axis:
 		//its faster to first check if its sorted
-		if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, axis)))
+		if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
 		{
 			//TODO test what parallel stuff like std::execution::seq or unseqpar does here
-			std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, axis));
+			std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
 		}
 
-		//approach: test all versions (go trough sorted primitives and with each iteration add one more to the second node until we tried all.
-		//test all combos with heuristic  (save results in array and take the one with best result;
 
-		unsigned int size = getPrimCount();
-		primPointVector::iterator currentSplit = primitiveBegin + 1;
+		std::vector<PrimIntervall> workIntervall;
+		workIntervall.push_back(PrimIntervall(primitiveBegin, primitiveEnd));
+		int bestI = 0;
+		float primCounter = 0;
 
-		//Split by metric (in our case sah)
-		std::vector<float> metric(size - 1);
-		if (true)
+		for (size_t b = 0; b < branchingFactor - 1; b++)
 		{
-			//only do parallel versionf or first few nodes (with enought primitives) --> TODO try out values
-			//its faster without parallel since the left / right sweep
-			if (false && size > 5000 && depth < 2)//depth < 3 && size > 50)
+			primCounter = 0;
+			for (size_t i = 0; i < workIntervall.size(); i++)
 			{
-				//parallel version: (calculate the metric for different intervals parallel)
-				//-> usefull for the first few nodes because after all nodes work parallel
+				//choose the PrimIntervall with most primitives
 
-				//the reason why its faster to have this large is because there are clusters that require a node bound recalculation for each decreasePrimitives
-				int parallelCount = 8;
-				std::vector<NodePair> work(parallelCount);
-				for (size_t i = 0; i < parallelCount; i++)
+				if (primCounter < workIntervall[i].getPrimCount())
 				{
-					int start = (size / parallelCount) * i;
-					int end = (size / parallelCount) * (i + 1);
-
-					work[i].node1 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin, primitiveBegin + start);
-					work[i].node2 = std::make_unique<Aabb>(depth + 1, primitives, primitiveBegin + end, primitiveEnd);
-					work[i].metricBegin = metric.begin() + start;
-					if (i == parallelCount - 1)
-					{
-						work[i].metricEnd = metric.end();
-					}
-					else
-					{
-						work[i].metricEnd = metric.begin() + end;
-					}
-
-
-					if (i == parallelCount - 1)
-					{
-						work[i].metricRevBegin = metric.rbegin();
-					}
-					else
-					{
-						work[i].metricRevBegin = metric.rbegin() + (size - end);
-					}
-					if (i == 0)
-					{
-						work[i].metricRevEnd = metric.rend();
-					}
-					else
-					{
-						work[i].metricRevEnd = metric.rbegin() + (size - start);
-					}
-
-					work[i].index = i;
-					//std::cout << "worklaod: " << std::distance(work[i].metricBegin, work[i].metricEnd) << std::endl;
+					primCounter = workIntervall[i].getPrimCount();
+					bestI = i;
 				}
-
-				std::for_each(std::execution::par_unseq, work.begin(), work.end(),
-					[&](auto& w)
-					{
-						float invArea = 1 / getSurfaceArea();
-						int  a = 0;
-						std::for_each(std::execution::seq, w.metricBegin, w.metricEnd,
-							[&](auto& met)
-							{
-								w.node1->sweepRight();
-								met += sah(*w.node1.get(), invArea, leafCount);
-							});
-						std::for_each(std::execution::seq, w.metricRevBegin, w.metricRevEnd,
-							[&](auto& met)
-							{
-								w.node2->sweepLeft();
-								met += sah(*w.node2.get(), invArea, leafCount);
-							});
-						//std::cout << "work " << w.index << " finished" <<std::endl;
-					});
 			}
-			else
+			if (primCounter <= leafTarget)
 			{
-				//full sequential version:
-				Aabb node(depth + 1, primitives, primitiveBegin, primitiveBegin);
-				float invArea = 1 / getSurfaceArea();
-				int  a = 0;
-				std::for_each(std::execution::seq, metric.begin(), metric.end(),
-					[&](auto& met)
-					{
-						node.sweepRight();
-						met += sah(node, invArea, leafCount);
-					});
-				node = Aabb(depth + 1, primitives, primitiveEnd, primitiveEnd);
-				std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
-					[&](auto& met)
-					{
-						node.sweepLeft();
-						met += sah(node, invArea, leafCount);
-					});
+				break;
 			}
-			//make the split with the best metric:
-			currentSplit = primitiveBegin + std::distance(metric.begin(), std::min_element(metric.begin(), metric.end())) + 1;
-			//if (depth < 5)
-			//{
-			//	std::cout << depth << " depth , split number:" << std::distance(primitiveBegin, currentSplit) << std::endl;
-			//}
+			auto bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
+			//split at bestSplit of best intervall:
+			PrimIntervall p1(workIntervall[bestI].primitiveBegin, bestSplit);
+			PrimIntervall p2(bestSplit, workIntervall[bestI].primitiveEnd);
+			workIntervall[bestI] = p1;
+			workIntervall.insert(workIntervall.begin() + bestI + 1, p2);
 		}
-		else
+		//create childNodes of every workIntervall;
+		//Order has to be sorted!
+		for (auto& i : workIntervall)
 		{
-			//TODO try something that produces "full" leaf nodes (splitting by multiplicatives of leafsize?)
-
-			//split by half
-			currentSplit = primitiveBegin + size / 2;
+			addNode(std::make_shared<Aabb>(depth + 1, i.primitiveBegin, i.primitiveEnd));
 		}
-
-
-
-		addNode(std::make_shared<Aabb>(depth + 1, primitives, primitiveBegin, currentSplit));
-		addNode(std::make_shared<Aabb>(depth + 1, primitives, currentSplit, primitiveEnd));
 
 		//just a debug output to get warned abount eventual loop
 		if (depth >= 35)
@@ -248,97 +211,8 @@ public:
 		primitiveBegin = primitiveEnd;
 
 		//constructs bvh of all children:
-		Node::recursiveBvh(branchingFactor, leafCount);
+		Node::recursiveBvh(branchingFactor, leafTarget);
 	}
-
-	/* todo: this is broken since i dont have a primitive array anymore
-	//rekursive octreetree build
-	virtual void recursiveOctree(const unsigned int leafCount) override
-	{
-		//currently very basic octree approach
-
-		//first update bounds of current aabb according to primitive:
-		glm::vec3 min(222222.0f), max(-222222.0f);
-		glm::vec3 minp, maxp;
-		//for (auto& p : primitives)
-		std::for_each(std::execution::par_unseq, primitiveBegin, primitiveEnd,
-			[&](auto& info)
-			{
-				p->getBounds(minp, maxp);
-				min = glm::min(min, minp);
-				max = glm::max(max, maxp);
-			});
-
-		boundMin = min;
-		boundMax = max;
-
-		//check primitive count. if less than x primitives, stop.
-		if ((*primitives).size() <= leafCount)
-		{
-			return;
-		}
-
-		//approach: construct multiple aabb and check all primitives against it. -> if center is in it then add it
-		//in theory i could try out different factors (replace 0.5 with vector with different values and check how good resulting aabb are)
-		//but this would have to be done for all axis
-
-		//octree:
-		auto dim = (boundMax - boundMin) * 0.5f;
-		std::vector<std::shared_ptr<Node>> boxes;
-
-		auto minx = glm::vec3(dim.x, 0, 0);
-		auto miny = glm::vec3(0, dim.y, 0);
-		auto minz = glm::vec3(0, 0, dim.z);
-
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin, boundMin + dim));
-
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + minx, boundMin + minx + dim));
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + miny, boundMin + miny + dim));
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + minz, boundMin + minz + dim));
-
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + minx + minz, boundMin + minx + minz + dim));
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + miny + minz, boundMin + miny + minz + dim));
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + minx + miny, boundMin + minx + miny + dim));
-
-		boxes.push_back(std::make_shared<Aabb>(depth + 1, boundMin + minx + miny + minz, boundMin + minx + miny + minz + dim));
-
-		for (auto& prim : primitives)
-		{
-			for (auto& box : boxes)
-			{
-				if (prim->intersect(&*box))
-				{
-					//i probably should remove this primitive so it cannot be added do another node?
-					box->addPrimitive(prim);
-				}
-			}
-		}
-
-		//check if one box has all primitives this node has (prevents loops caused by dumb octree splitting)
-		for (auto& b : boxes)
-		{
-			if (b->getPrimCount() == getPrimCount())
-			{
-				return;
-			}
-		}
-
-		//only add not empty nodes to the children.
-		for (auto& b : boxes)
-		{
-			if (b->getPrimCount() != 0)
-			{
-				addNode(b);
-			}
-		}
-
-		primitives.clear();
-		primitives.shrink_to_fit();
-
-		//constructs bvh of all children:
-		Node::recursiveOctree(leafCount);
-	}
-	*/
 
 	virtual bool intersectNode(Ray& ray, float& distance) override
 	{

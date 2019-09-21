@@ -13,8 +13,8 @@ class Ray;
 class Node
 {
 public:
-	Node(unsigned int depth, std::shared_ptr<primPointVector> primitives, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
-		:depth(depth), primitives(primitives), primitiveBegin(primitiveBegin), primitiveEnd(primitiveEnd)
+	Node(unsigned int depth, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
+		:depth(depth), primitiveBegin(primitiveBegin), primitiveEnd(primitiveEnd)
 	{
 		//update bounds in derived classes
 	}
@@ -65,9 +65,6 @@ public:
 	std::vector<std::shared_ptr<Node>> children;
 
 protected:
-
-	//all nodes share the same vector
-	std::shared_ptr<primPointVector> primitives;
 	//begin and end iterator represent the children this node contains  (what when none???)
 	primPointVector::iterator primitiveBegin;
 	primPointVector::iterator primitiveEnd;
