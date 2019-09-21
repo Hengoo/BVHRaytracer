@@ -50,6 +50,33 @@ class Aabb : public Node
 
 		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget)
 		{
+			//idea to sort each intervall itself -> mixed result, (without implementing correct traversal)
+			/*
+			glm::vec3 min = glm::vec3(222222.0f);
+			glm::vec3 max = glm::vec3(-222222.0f);
+			glm::vec3 centerDistance;
+			std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
+				[&](auto& p)
+				{
+					centerDistance = p->getCenter();
+					min = glm::min(min, centerDistance);
+					max = glm::max(max, centerDistance);
+				});
+			centerDistance = max - min;
+
+			//choose axis to split:
+			//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
+			int sortAxis = maxDimension(centerDistance);
+
+			//sort primitive array along axis:
+			//its faster to first check if its sorted
+			if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
+			{
+				//TODO test what parallel stuff like std::execution::seq or unseqpar does here
+				std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
+			}
+			*/
+
 			//approach: test all versions
 			//test all combos with heuristic  (save results in array and take the one with best result;
 			//greedy approach would be with buckets

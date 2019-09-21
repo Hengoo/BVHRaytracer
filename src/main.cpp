@@ -45,7 +45,7 @@ public:
 		std::string name;
 		std::string path;
 		std::string problem;
-		int scenario = 4;
+		int scenario = 1;
 		glm::vec3  cameraPos;
 		glm::vec3  cameraTarget;
 
@@ -182,7 +182,7 @@ public:
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(true, false);
+				c.renderImage(true, true);
 			}
 		}
 	}

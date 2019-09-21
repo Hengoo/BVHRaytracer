@@ -56,9 +56,30 @@ public:
 	//		since we search for the min value it doesnt change anything????
 	inline float sah(Node& n, float invArea, int leafSize)
 	{
-		return (n.getPrimCount() * n.getSurfaceArea()) * invArea;
-		//return (((n.getPrimCount() - 1) / leafSize) +1) * n.getSurfaceArea() * invArea;
-		//return (((n.getPrimCount() - 1) / leafSize)*7 + 7 + n.getPrimCount()) * n.getSurfaceArea() * invArea;
+		/*
+		*overall its x * getSurfaceArea * invArea
+		*the x is related to primitive count
+		*c produces most compact tree.
+		*intersection counts seem to depend on the scene and branching factor.
+		*for sponza:	branch 4 is overall better with c
+		*				branch 2 normal rays are better with a and shadowray heavily prefer c
+		*					(but the counts only change for leafnodes not for overall node itnersections for b=2)
+		*for shift happens:
+		*				a is best for leaf intersections (and therefor even more for aabb intersections)
+		*/
+
+		//TODO: test different scenes
+
+		//a: linear scaling: -> problem: produces half empty leaf nodes
+		//return (n.getPrimCount() * n.getSurfaceArea()) * invArea;
+
+		//b: half step, half linear
+		//return ((((n.getPrimCount() - 1) / leafSize) + 1) * leafSize / 2.f + n.getPrimCount() / 2.f) * n.getSurfaceArea() * invArea;
+
+		//c: step function: Mostly produces full leafs 
+		return (((n.getPrimCount() - 1) / leafSize) + 1) * n.getSurfaceArea() * invArea;
+
+
 	}
 
 	//this could be a unique pointer
