@@ -478,8 +478,36 @@ public:
 						image[info.index * 4 + 2] = (unsigned char)(c.b * 255);
 						image[info.index * 4 + 3] = (unsigned char)(c.a * 255);
 					});
-				encodeTwoSteps(path + "/" + name + problem + "NodeDepth" + std::to_string(d) + ".png", image, width, height);
+				encodeTwoSteps(path + "/" + name + problem + "_NodeDepth" + std::to_string(d) + ".png", image, width, height);
 			}
+
+			float normalisation = nodeIntersectionPerDepthCount.size();
+			std::cout << normalisation << std::endl;
+			int minDepth = normalisation;
+			//find minimum:
+			std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
+				[&](auto& info)
+				{
+					//int sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
+					minDepth = std::min(minDepth, (int)nodeIntersectionPerPixelCount[info.index].size());
+				});
+			normalisation = 1 / (normalisation - minDepth);
+			//pixel bvh depth
+			std::cout << normalisation << std::endl;
+			std::cout << minDepth << std::endl;
+			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+				[&](auto& info)
+				{
+					//int sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
+					int sum = nodeIntersectionPerPixelCount[info.index].size() - minDepth;
+					//Color c(sum * 0.01f);
+					Color c(sum * normalisation);
+					image[info.index * 4 + 0] = (unsigned char)(c.r * 255);
+					image[info.index * 4 + 1] = (unsigned char)(c.g * 255);
+					image[info.index * 4 + 2] = (unsigned char)(c.b * 255);
+					image[info.index * 4 + 3] = (unsigned char)(c.a * 255);
+				});
+			encodeTwoSteps(path + "/" + name + problem + "_PixelDepth.png", image, width, height);
 		}
 	}
 

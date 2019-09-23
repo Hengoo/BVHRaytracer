@@ -1,6 +1,9 @@
 #pragma once
 
 #include <iostream>
+// writing on a text file
+#include <fstream>
+
 #include <vector>
 #include <array>
 
@@ -138,7 +141,7 @@ public:
 		{
 			std::cout << i << " : " << childCount[i] << std::endl;
 		}
-
+		std::cout << std::endl;
 		std::cout << "number of leafnodes: " << leafs << std::endl;
 		std::cout << "leafnodes with x primitives:" << std::endl;
 		sum = 0;
@@ -156,6 +159,73 @@ public:
 			std::cout << i << " : " << primCount[i] << std::endl;
 		}
 		std::cout << std::endl;
+
+		//different metrics analysis:
+		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0;
+		for (auto& l : leafNodes)
+		{
+			leafSah += l->sah;
+			leafVolume += l->volume;
+			leafSurfaceArea += l->surfaceArea;
+		}
+		leafVolume = leafVolume / analysisRoot.volume;
+		leafSurfaceArea = leafSurfaceArea / analysisRoot.surfaceArea;
+		//think volume and surface area need to be normalised by roof values
+		std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
+		std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << std::to_string(leafVolume / (double)leafs) << std::endl;
+		std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << std::to_string(leafSurfaceArea / (double)leafs) << std::endl;
+		std::cout << std::endl;
+
+		//write to file
+		std::ofstream myfile(path + "/" + name + problem + "_BVHInfo.txt");
+		if (myfile.is_open())
+		{
+			myfile << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
+
+			myfile << "BVH Analysis:" << std::endl;
+			myfile << "Tree depth: " << treeDepth.size() - 1 << std::endl;
+			myfile << "number of nodes: " << nodes - leafs << std::endl;
+			myfile << "nodes with x childen:" << std::endl;
+			float sum = 0;
+			float sum2 = 0;
+			for (size_t i = 1; i < childCount.size(); i++)
+			{
+				sum += childCount[i] * i;
+				sum2 += childCount[i];
+			}
+			//sum /= std::accumulate(childCount.begin(), childCount.end(), 0);
+			sum /= sum2;
+			myfile << "average: " << std::to_string(sum) << std::endl;
+			for (size_t i = 2; i < childCount.size(); i++)
+			{
+				myfile << i << " : " << childCount[i] << std::endl;
+			}
+
+			myfile << std::endl << "number of leafnodes: " << leafs << std::endl;
+			myfile << "leafnodes with x primitives:" << std::endl;
+			sum = 0;
+			sum2 = 0;
+			for (size_t i = 1; i < primCount.size(); i++)
+			{
+				sum += primCount[i] * i;
+				sum2 += primCount[i];
+			}
+			//sum /= std::accumulate(primCount.begin(), primCount.end(), 0);
+			sum /= sum2;
+			myfile << "average: : " << std::to_string(sum) << std::endl;
+			for (size_t i = 1; i < primCount.size(); i++)
+			{
+				myfile << i << " : " << primCount[i] << std::endl;
+			}
+			myfile << std::endl;
+			myfile << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
+			myfile << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << std::to_string(leafVolume / (double)leafs) << std::endl;
+			myfile << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << std::to_string(leafSurfaceArea / (double)leafs) << std::endl;
+			myfile << std::endl;
+		}
+		else std::cout << "Unable to open file" << std::endl;
+
+
 
 		//create image
 		int height = treeDepth.size();

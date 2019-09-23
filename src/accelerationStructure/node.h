@@ -44,6 +44,7 @@ public:
 	virtual void sweepRight() = 0;
 	virtual void sweepLeft() = 0;
 	virtual float getSurfaceArea() = 0;
+	virtual float getVolume() = 0;
 
 	//using sah approach from pbrt http://www.pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies.html
 	inline float sah(Node& n1, Node& n2)

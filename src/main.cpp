@@ -45,7 +45,7 @@ public:
 		std::string name;
 		std::string path;
 		std::string problem;
-		int scenario = 1;
+		int scenario = 4;
 		glm::vec3  cameraPos;
 		glm::vec3  cameraTarget;
 
@@ -152,16 +152,16 @@ public:
 
 
 
-		for (size_t l = 4; l <5; l++)
+		for (size_t l = 1; l < 5; l++)
 		{
-			for (size_t b = 4; b < 5; b++)
+			for (size_t b = 2; b < 5; b++)
 			{
 				leafCount = l;
 				branchingFactor = b; // std::exp2(b);
 				std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
 				problem = "_b" + std::to_string(branchingFactor) + "_l" + std::to_string(leafCount);
 				std::cout << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
-
+				std::cout << std::endl;
 
 				//bvh of (seeded) random sphere
 				//auto bvh = std::make_unique<Bvh>();
@@ -177,12 +177,12 @@ public:
 				//for other branching factors we need an other algorithm
 
 
-				//TODO: gather some bvh stats: node count, average branching factor, average leaf size, tree depth
+				//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 				bvh.bvhAnalysis(path, name, problem);
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(true, true);
+				c.renderImage(false, false);
 			}
 		}
 	}

@@ -19,6 +19,10 @@ public:
 
 	unsigned int branchingFactor;
 	unsigned int targetPrimitiveCount;
+	float volume;
+	float surfaceArea;
+	float sah;
+	//x -> -1 for non leafs, for leafs its the id
 	int x;
 
 	NodeAnalysis(Node* node, int branchingFactor, int targetPrimitiveCount)
@@ -27,6 +31,9 @@ public:
 		parent = nullptr;
 		depth = node->depth;
 		primitiveCount = node->getPrimCount();
+		volume = node->getVolume();
+		surfaceArea = node->getSurfaceArea();
+		sah = 0;
 		for (auto& n : node->children)
 		{
 			children.push_back(std::make_unique<NodeAnalysis>(&*n, this, branchingFactor, targetPrimitiveCount));
@@ -38,6 +45,9 @@ public:
 	{
 		depth = node->depth;
 		primitiveCount = node->getPrimCount();
+		volume = node->getVolume();
+		surfaceArea = node->getSurfaceArea();
+		sah = node->sah(*node, 1 / parent->surfaceArea, targetPrimitiveCount);
 		for (auto& n : node->children)
 		{
 			children.push_back(std::make_unique<NodeAnalysis>(&*n, this, branchingFactor, targetPrimitiveCount));

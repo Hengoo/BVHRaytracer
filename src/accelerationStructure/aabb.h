@@ -50,7 +50,7 @@ class Aabb : public Node
 
 		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget)
 		{
-			//idea to sort each intervall itself -> mixed result, (without implementing correct traversal)
+			//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
 			/*
 			glm::vec3 min = glm::vec3(222222.0f);
 			glm::vec3 max = glm::vec3(-222222.0f);
@@ -146,6 +146,12 @@ public:
 	{
 		auto d = boundMax - boundMin;
 		return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
+	}
+
+	float getVolume() override
+	{
+		auto d = boundMax - boundMin;
+		return d.x * d.y * d.z;
 	}
 
 	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget)
