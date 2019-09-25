@@ -35,8 +35,18 @@ public:
 
 	RayTracer()
 	{
-		unsigned int branchingFactor = 0;
-		unsigned int leafCount = 0;
+		//all settings:  TODO: move this into a txt
+		int minLeafSize = 1;
+		int maxLeafSize = 1;
+		int minBranch = 4;
+		int maxBranch = 4;
+
+		bool saveImage = true;
+		bool saveDepthDetailedImage = true;
+		bool bvhAnalysis = true;
+
+		int scenario = 4;
+		int bucketCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
@@ -45,9 +55,10 @@ public:
 		std::string name;
 		std::string path;
 		std::string problem;
-		int scenario = 4;
 		glm::vec3  cameraPos;
 		glm::vec3  cameraTarget;
+		unsigned int branchingFactor = 0;
+		unsigned int leafCount = 0;
 
 		switch (scenario)
 		{
@@ -152,9 +163,9 @@ public:
 
 
 
-		for (size_t l = 1; l < 5; l++)
+		for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
 		{
-			for (size_t b = 2; b < 5; b++)
+			for (size_t b = minBranch; b < maxBranch + 1; b++)
 			{
 				leafCount = l;
 				branchingFactor = b; // std::exp2(b);
@@ -168,7 +179,7 @@ public:
 
 				//bvh of loaded model:
 				bvh = Bvh(*root);
-				bvh.recursiveOctree(branchingFactor, leafCount);
+				bvh.recursiveOctree(branchingFactor, leafCount, bucketCount);
 				//bvh.recursiveOctree(2, leafCount);
 
 				//collapses the next b child hierarchies to this node
@@ -176,13 +187,20 @@ public:
 				//bvh.collapseChilds(1);
 				//for other branching factors we need an other algorithm
 
+				//construct compact tree representation:
+				//4 versions i want to test: level, depth first, breadth first, and bvh version but for level
+
 
 				//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
-				bvh.bvhAnalysis(path, name, problem);
+				if (bvhAnalysis)
+				{
+					bvh.bvhAnalysis(path, name, problem);
+				}
+
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(false, false);
+				c.renderImage(saveImage, saveDepthDetailedImage);
 			}
 		}
 	}

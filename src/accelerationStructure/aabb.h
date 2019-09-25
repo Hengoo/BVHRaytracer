@@ -37,6 +37,7 @@ static bool sortPrimitive(std::shared_ptr<Primitive>& p1, std::shared_ptr<Primit
 }
 class Aabb : public Node
 {
+	//Used for bvh sweeping
 	struct PrimIntervall
 	{
 		primPointVector::iterator primitiveBegin;
@@ -48,8 +49,11 @@ class Aabb : public Node
 		{
 		}
 
-		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget)
+		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget, int bucketCount)
 		{
+			//method should be usable for all nodes?
+
+
 			//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
 			/*
 			glm::vec3 min = glm::vec3(222222.0f);
@@ -77,35 +81,74 @@ class Aabb : public Node
 			}
 			*/
 
-			//approach: test all versions
-			//test all combos with heuristic  (save results in array and take the one with best result;
-			//greedy approach would be with buckets
-
 			int size = getPrimCount();
-			// Split by metric(in our case sah)
-			std::vector<float> metric(size - 1);
 
-			Aabb node(0.f, primitiveBegin, primitiveBegin);
-			int  a = 0;
-			std::for_each(std::execution::seq, metric.begin(), metric.end(),
-				[&](auto& met)
+			if (bucketCount <= 0 || size < bucketCount)
+			{
+				//test all combos with heuristic:
+				//save results in array and take the one with best result
+
+				// Split by metric (currently SAH)
+				std::vector<float> metric(size - 1);
+
+				Aabb node(0.f, primitiveBegin, primitiveBegin);
+				std::for_each(std::execution::seq, metric.begin(), metric.end(),
+					[&](auto& met)
+					{
+						node.sweepRight();
+						met += node.sah(invSurfaceArea, leafTarget);
+					});
+				node = Aabb(0, primitiveEnd, primitiveEnd);
+				std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
+					[&](auto& met)
+					{
+						node.sweepLeft();
+						met += node.sah(invSurfaceArea, leafTarget);
+					});
+				//make the split with the best metric:
+				auto bestElement = std::min_element(metric.begin(), metric.end());
+				return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
+			}
+			else
+			{
+				//greedy approach with buckets:
+				std::vector<float> metric(bucketCount - 1);
+				std::vector<float> metric2(bucketCount - 1);
+				//split primitives into buckets:
+				std::vector<std::unique_ptr<Aabb>> buckets;
+				//easy version:
+				for (size_t i = 0; i < bucketCount - 1; i++)
 				{
-					node.sweepRight();
-					met += node.sah(node, invSurfaceArea, leafTarget);
-				});
-			node = Aabb(0, primitiveEnd, primitiveEnd);
-			std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
-				[&](auto& met)
+					buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * i, primitiveBegin + (size / bucketCount) * (i + 1)));
+				}
+				buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * (bucketCount - 1), primitiveEnd));
+
+				//better spacial version:
+				//TODO
+
+				//iterate trough buckets
+				Aabb node(0.f, primitiveBegin, primitiveBegin);
+				for (size_t i = 0; i < bucketCount - 1; i++)
 				{
-					node.sweepLeft();
-					met += node.sah(node, invSurfaceArea, leafTarget);
-				});
-			//make the split with the best metric:
-			auto bestElement = std::min_element(metric.begin(), metric.end());
-			return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
+					//use all but the first bucket
+					node.sweepRight(&*buckets[i + 1]);
+					metric[i] = node.sah(invSurfaceArea, leafTarget);
+				}
+				node = Aabb(0.f, primitiveEnd, primitiveEnd);
+				for (int i = bucketCount - 2; i >= 0; i--)
+				{
+					//use all but the last bucket
+					node.sweepLeft(&*buckets[i]);
+					metric[i] += node.sah(invSurfaceArea, leafTarget);
+				}
+				//make the split with the best metric:
+				auto bestElement = std::min_element(metric.begin(), metric.end());
+				//return best cut position:
+				return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
+			}
 		}
 
-		int getPrimCount()
+		size_t getPrimCount()
 		{
 			return std::distance(primitiveBegin, primitiveEnd);
 		}
@@ -154,7 +197,7 @@ public:
 		return d.x * d.y * d.z;
 	}
 
-	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget)
+	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount)
 	{
 		//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
 		if (getPrimCount() <= leafTarget)
@@ -221,7 +264,7 @@ public:
 			{
 				break;
 			}
-			auto bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
+			auto bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget, bucketCount);
 			//split at bestSplit of best intervall:
 			PrimIntervall p1(workIntervall[bestI].primitiveBegin, bestSplit);
 			PrimIntervall p2(bestSplit, workIntervall[bestI].primitiveEnd);
@@ -244,7 +287,7 @@ public:
 		primitiveBegin = primitiveEnd;
 
 		//constructs bvh of all children:
-		Node::recursiveBvh(branchingFactor, leafTarget);
+		Node::recursiveBvh(branchingFactor, leafTarget, bucketCount);
 	}
 
 	virtual bool intersectNode(Ray& ray, float& distance) override
@@ -300,35 +343,7 @@ public:
 		distance = tmax;
 		return true;
 	}
-
-	void increasePrimitives() override
-	{
-		//increment End iterator and adjust the bounds according to the new primitive;
-		primitiveEnd = primitiveEnd + 1;
-
-		glm::vec3 minp, maxp;
-		(*primitiveEnd)->getBounds(minp, maxp);
-		boundMin = glm::min(boundMin, minp);
-		boundMax = glm::max(boundMax, maxp);
-	}
-
-	void decreasePrimitives() override
-	{
-		//increment Begin iterator and recalculate the bounds when the "lost" primitive was part of the bounds;
-		glm::vec3 minp, maxp;
-		(*primitiveBegin)->getBounds(minp, maxp);
-		if (minp.x == boundMin.x || minp.y == boundMin.y || minp.z == boundMin.z
-			|| maxp.x == boundMax.x || maxp.y == boundMax.y || maxp.z == boundMax.z)
-		{
-			//recalc bounds
-			calculateBounds();
-		}
-		boundMin = glm::min(boundMin, minp);
-		boundMax = glm::max(boundMax, maxp);
-		primitiveBegin = primitiveBegin + 1;
-	}
-
-	void Node::sweepRight()
+	void Node::sweepRight() override
 	{
 		primitiveEnd = primitiveEnd + 1;
 
@@ -337,7 +352,7 @@ public:
 		boundMin = glm::min(boundMin, minp);
 		boundMax = glm::max(boundMax, maxp);
 	}
-	void Node::sweepLeft()
+	void Node::sweepLeft()override
 	{
 		primitiveBegin = primitiveBegin - 1;
 
@@ -345,5 +360,22 @@ public:
 		(*primitiveBegin)->getBounds(minp, maxp);
 		boundMin = glm::min(boundMin, minp);
 		boundMax = glm::max(boundMax, maxp);
+	}
+
+	void Node::sweepRight(Node* n) override
+	{
+		Aabb* aabb = (Aabb*)n;
+		primitiveEnd = aabb->primitiveEnd;
+
+		boundMin = glm::min(boundMin, aabb->boundMin);
+		boundMax = glm::max(boundMax, aabb->boundMax);
+	}
+	void Node::sweepLeft(Node* n) override
+	{
+		Aabb* aabb = (Aabb*)n;
+		primitiveBegin = aabb->primitiveBegin;
+
+		boundMin = glm::min(boundMin, aabb->boundMin);
+		boundMax = glm::max(boundMax, aabb->boundMax);
 	}
 };

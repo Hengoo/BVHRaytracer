@@ -482,7 +482,6 @@ public:
 			}
 
 			float normalisation = nodeIntersectionPerDepthCount.size();
-			std::cout << normalisation << std::endl;
 			int minDepth = normalisation;
 			//find minimum:
 			std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),

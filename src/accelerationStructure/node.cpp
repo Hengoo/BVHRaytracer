@@ -9,26 +9,6 @@
 #include "../primitives/primitive.h"
 #include "../ray.h"
 
-struct DistanceNode
-{
-	int id;
-	float distance;
-
-	DistanceNode()
-	{
-		id = -1;
-		distance = -1;
-	}
-	DistanceNode(int id, float distance)
-		:id(id), distance(distance)
-	{
-	}
-};
-static bool sortDistanceNode(DistanceNode& d1, DistanceNode& d2)
-{
-	return d1.distance < d2.distance;
-}
-
 void Node::addNode(std::shared_ptr<Node> n)
 {
 	children.push_back(n);
@@ -39,12 +19,12 @@ void Node::addNode(std::shared_ptr<Node> n)
 //	primitives.push_back(p);
 //}
 
-void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount)
+void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount)
 {
 	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
 		[&](auto& c)
 		{
-			c->recursiveBvh(branchingFactor, leafCount);
+			c->recursiveBvh(branchingFactor, leafCount, bucketCount);
 		});
 }
 
@@ -223,12 +203,12 @@ bool Node::intersect(Ray& ray)
 	return result;
 }
 
-unsigned int Node::getChildCount()
+size_t Node::getChildCount()
 {
 	return children.size();
 }
 
-unsigned int Node::getPrimCount()
+size_t Node::getPrimCount()
 {
 	return std::distance(primitiveBegin, primitiveEnd);
 }

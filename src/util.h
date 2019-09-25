@@ -5,6 +5,8 @@
 #include <array>
 #include "lodepng/lodepng.h"
 
+#include <iomanip>
+#include <sstream>
 //for gamma
 #ifdef _MSC_VER
 #define MachineEpsilon (std::numeric_limits<float>::epsilon() * 0.5)
@@ -54,4 +56,18 @@ static void encodeTwoSteps(std::string encodeFilename, std::vector<unsigned char
 
 	//if there's an error, display it
 	if (error) std::cout << "encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+}
+
+static std::string customToString(double d, int digits)
+{
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(digits) << d;
+	return ss.str();
+}
+
+static std::string customToString(float f, int digits)
+{
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(digits) << f;
+	return ss.str();
 }

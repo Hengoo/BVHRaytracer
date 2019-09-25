@@ -13,6 +13,7 @@ class  NodeAnalysis
 {
 public:
 	unsigned int depth;
+	Node* node;
 	NodeAnalysis* parent;
 	std::vector<std::unique_ptr<NodeAnalysis>> children;
 	unsigned int primitiveCount;
@@ -25,8 +26,11 @@ public:
 	//x -> -1 for non leafs, for leafs its the id
 	int x;
 
+	//node id
+	int id;
+
 	NodeAnalysis(Node* node, int branchingFactor, int targetPrimitiveCount)
-		:branchingFactor(branchingFactor), targetPrimitiveCount(targetPrimitiveCount)
+		:node(node), branchingFactor(branchingFactor), targetPrimitiveCount(targetPrimitiveCount)
 	{
 		parent = nullptr;
 		depth = node->depth;
@@ -41,13 +45,13 @@ public:
 		x = -1;
 	}
 	NodeAnalysis(Node* node, NodeAnalysis* parent, int branchingFactor, int targetPrimitiveCount)
-		:parent(parent), branchingFactor(branchingFactor), targetPrimitiveCount(targetPrimitiveCount)
+		:node(node), parent(parent), branchingFactor(branchingFactor), targetPrimitiveCount(targetPrimitiveCount)
 	{
 		depth = node->depth;
 		primitiveCount = node->getPrimCount();
 		volume = node->getVolume();
 		surfaceArea = node->getSurfaceArea();
-		sah = node->sah(*node, 1 / parent->surfaceArea, targetPrimitiveCount);
+		sah = node->sah(1 / parent->surfaceArea, targetPrimitiveCount);
 		for (auto& n : node->children)
 		{
 			children.push_back(std::make_unique<NodeAnalysis>(&*n, this, branchingFactor, targetPrimitiveCount));
@@ -58,8 +62,8 @@ public:
 	//traverses tree from left to right
 	void analysis(std::vector<NodeAnalysis*>& leafNodes, std::vector<unsigned int>& treeDepth, std::vector<unsigned int>& childCount, std::vector<unsigned int>& primCount)
 	{
-		unsigned int cc = children.size();
-		unsigned int pc = primitiveCount;
+		size_t cc = children.size();
+		size_t pc = primitiveCount;
 		if (pc != 0 && cc == 0)
 		{
 			if (treeDepth.size() < depth + 1)
@@ -85,6 +89,7 @@ public:
 		}
 	}
 
+	//used to print bvh image
 	void printLeaf(float& factor, std::vector<NodeAnalysis*>& parents, int& x, int& y)
 	{
 		parents.push_back(parent);
@@ -93,6 +98,7 @@ public:
 		factor = 1 - primitiveCount / (float)targetPrimitiveCount;
 	}
 
+	//used to print bvh image
 	bool printNode(float& factor, std::vector<NodeAnalysis*>& parents, int& x, int& y)
 	{
 		if (depth != 0)

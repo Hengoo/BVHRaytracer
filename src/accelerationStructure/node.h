@@ -34,15 +34,15 @@ public:
 	virtual void recursiveOctree(const unsigned int leafCount);
 
 	//unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount
-	virtual  void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount);
+	virtual  void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount);
 
-	virtual unsigned int getChildCount();
-	virtual unsigned int getPrimCount();
-	virtual void increasePrimitives() = 0;
-	virtual void decreasePrimitives() = 0;
+	virtual size_t getChildCount();
+	virtual size_t getPrimCount();
 
 	virtual void sweepRight() = 0;
 	virtual void sweepLeft() = 0;
+	virtual void sweepRight(Node* n) = 0;
+	virtual void sweepLeft(Node* n) = 0;
 	virtual float getSurfaceArea() = 0;
 	virtual float getVolume() = 0;
 
@@ -55,7 +55,7 @@ public:
 	//using sah approach from pbrt http://www.pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies.html
 	//TODO: what is this cost factor sometimes used? either + const or * constant or both
 	//		since we search for the min value it doesnt change anything????
-	inline float sah(Node& n, float invArea, int leafSize)
+	inline float sah(float invArea, int leafSize)
 	{
 		/*
 		*overall its x * getSurfaceArea * invArea
@@ -72,13 +72,13 @@ public:
 		//TODO: test different scenes
 
 		//a: linear scaling: -> problem: produces half empty leaf nodes
-		//return (n.getPrimCount() * n.getSurfaceArea()) * invArea;
+		//return (getPrimCount() * getSurfaceArea()) * invArea;
 
 		//b: half step, half linear
-		//return ((((n.getPrimCount() - 1) / leafSize) + 1) * leafSize / 2.f + n.getPrimCount() / 2.f) * n.getSurfaceArea() * invArea;
+		//return ((((getPrimCount() - 1) / leafSize) + 1) * leafSize / 2.f + getPrimCount() / 2.f) * getSurfaceArea() * invArea;
 
 		//c: step function: Mostly produces full leafs 
-		return (((n.getPrimCount() - 1) / leafSize) + 1) * n.getSurfaceArea() * invArea;
+		return (((getPrimCount() - 1) / leafSize) + 1) * getSurfaceArea() * invArea;
 
 
 	}

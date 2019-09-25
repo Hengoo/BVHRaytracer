@@ -75,12 +75,12 @@ public:
 	// copy assignment -> called when an already existing object is used to create a new object
 	//Bvh& operator=(const Bvh& other) = delete;
 
-	void recursiveOctree(const unsigned int branchingFactor, const unsigned int leafCount)
+	void recursiveOctree(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount)
 	{
 		this->branchingFactor = branchingFactor;
 		this->leafCount = leafCount;
 		//root->recursiveOctree(leafCount);
-		root->recursiveBvh(branchingFactor, leafCount);
+		root->recursiveBvh(branchingFactor, leafCount, bucketCount);
 
 		//for better performance: could go trough all nodes and recreate primitives in the order they are in the tree (also with minimal needed data)
 	}
@@ -121,10 +121,16 @@ public:
 
 		int nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 		int leafs = leafNodes.size();
-		//int leafs = std::accumulate(treeDepth.begin(), treeDepth.end(), 0);
+		float averageTreeDepth = 0;
+		for (size_t i = 0; i < treeDepth.size(); i++)
+		{
+			averageTreeDepth += treeDepth[i] * i;
+		}
+		averageTreeDepth /= (float)leafs;
 
 		std::cout << "BVH Analysis:" << std::endl;
 		std::cout << "Tree depth: " << treeDepth.size() - 1 << std::endl;
+		std::cout << "average leaf depth: " << averageTreeDepth << std::endl;
 		std::cout << "number of nodes: " << nodes - leafs << std::endl;
 		std::cout << "nodes with x childen:" << std::endl;
 		float sum = 0;
@@ -172,8 +178,8 @@ public:
 		leafSurfaceArea = leafSurfaceArea / analysisRoot.surfaceArea;
 		//think volume and surface area need to be normalised by roof values
 		std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
-		std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << std::to_string(leafVolume / (double)leafs) << std::endl;
-		std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << std::to_string(leafSurfaceArea / (double)leafs) << std::endl;
+		std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << customToString(leafVolume / (double)leafs, 10) << std::endl;
+		std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
 		std::cout << std::endl;
 
 		//write to file
@@ -219,8 +225,8 @@ public:
 			}
 			myfile << std::endl;
 			myfile << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
-			myfile << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << std::to_string(leafVolume / (double)leafs) << std::endl;
-			myfile << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << std::to_string(leafSurfaceArea / (double)leafs) << std::endl;
+			myfile << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << customToString(leafVolume / (double)leafs, 10) << std::endl;
+			myfile << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
 			myfile << std::endl;
 		}
 		else std::cout << "Unable to open file" << std::endl;
