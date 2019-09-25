@@ -37,6 +37,7 @@ void Node::recursiveOctree(const unsigned int leafCount)
 		});
 }
 
+//recursive node/ray intersect
 bool Node::intersect(Ray& ray)
 {
 	bool result = false;

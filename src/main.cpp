@@ -5,6 +5,7 @@
 #include "accelerationStructure/aabb.h"
 #include "accelerationStructure/node.h"
 #include "accelerationStructure/bvh.h"
+#include "accelerationStructure/compactNode.h"
 #include "camera.h"
 
 #include "glmInclude.h"
@@ -45,7 +46,7 @@ public:
 		bool saveDepthDetailedImage = true;
 		bool bvhAnalysis = true;
 
-		int scenario = 4;
+		int scenario = 0;
 		int bucketCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
@@ -192,11 +193,10 @@ public:
 
 
 				//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
-				if (bvhAnalysis)
-				{
-					bvh.bvhAnalysis(path, name, problem);
-				}
+				//This also duplicates the node system. the copy is used for the compact nodes
+				bvh.bvhAnalysis(path, bvhAnalysis, name, problem);
 
+				CompactNodeManager manager(bvh);
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);

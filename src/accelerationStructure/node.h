@@ -86,10 +86,9 @@ public:
 	//this could be a unique pointer
 	std::vector<std::shared_ptr<Node>> children;
 
-protected:
 	//begin and end iterator represent the children this node contains  (what when none???)
 	primPointVector::iterator primitiveBegin;
 	primPointVector::iterator primitiveEnd;
-
+protected:
 private:
 };

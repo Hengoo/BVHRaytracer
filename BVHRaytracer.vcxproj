@@ -28,6 +28,7 @@
   <ItemGroup>
     <ClInclude Include="src\accelerationStructure\aabb.h" />
     <ClInclude Include="src\accelerationStructure\bvh.h" />
+    <ClInclude Include="src\accelerationStructure\compactNode.h" />
     <ClInclude Include="src\accelerationStructure\node.h" />
     <ClInclude Include="src\accelerationStructure\nodeAnalysis.h" />
     <ClInclude Include="src\camera.h" />

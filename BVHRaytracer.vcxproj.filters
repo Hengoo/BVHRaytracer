@@ -119,5 +119,8 @@
     <ClInclude Include="src\meshBin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\accelerationStructure\compactNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
