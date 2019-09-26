@@ -114,7 +114,7 @@ public:
 	}
 
 	//spawns rays and collects results into image. Image is written on disk
-	void renderImage(bool saveImage, bool saveDepthDebugImage)
+	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager* nodeManager)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -151,9 +151,11 @@ public:
 
 				glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
 				glm::vec3 pos = position + glm::vec3(transform * centerOffset);
+
 				auto ray = Ray(position, pos - position);
 
-				auto result = bvh.intersect(ray);
+				//auto result = bvh.intersect(ray);
+				auto result = nodeManager->intersect(ray);
 
 				//check shadows if ray hit something
 				if (result)
@@ -176,7 +178,11 @@ public:
 						if (f > 0)
 						{
 							shadowRayCounter[info.index] ++;
-							if (bvh.intersect(shadowRay))
+							//if (bvh.intersect(shadowRay))
+							//{
+							//	f = 0;
+							//}
+							if (nodeManager->intersect(shadowRay))
 							{
 								f = 0;
 							}

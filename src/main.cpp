@@ -37,16 +37,16 @@ public:
 	RayTracer()
 	{
 		//all settings:  TODO: move this into a txt
-		int minLeafSize = 1;
-		int maxLeafSize = 1;
+		int minLeafSize = 3;
+		int maxLeafSize = 3;
 		int minBranch = 4;
 		int maxBranch = 4;
 
-		bool saveImage = true;
-		bool saveDepthDetailedImage = true;
-		bool bvhAnalysis = true;
+		bool saveImage = false;
+		bool saveDepthDetailedImage = false;
+		bool bvhAnalysis = false;
 
-		int scenario = 0;
+		int scenario = 4;
 		int bucketCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
@@ -200,7 +200,7 @@ public:
 
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage);
+				c.renderImage(saveImage, saveDepthDetailedImage, &manager);
 			}
 		}
 	}

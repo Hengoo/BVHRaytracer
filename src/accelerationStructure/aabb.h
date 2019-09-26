@@ -364,7 +364,7 @@ public:
 
 	void Node::sweepRight(Node* n) override
 	{
-		Aabb* aabb = (Aabb*)n;
+		Aabb* aabb = static_cast<Aabb*>(n);
 		primitiveEnd = aabb->primitiveEnd;
 
 		boundMin = glm::min(boundMin, aabb->boundMin);
@@ -372,7 +372,7 @@ public:
 	}
 	void Node::sweepLeft(Node* n) override
 	{
-		Aabb* aabb = (Aabb*)n;
+		Aabb* aabb = static_cast<Aabb*>(n);
 		primitiveBegin = aabb->primitiveBegin;
 
 		boundMin = glm::min(boundMin, aabb->boundMin);
