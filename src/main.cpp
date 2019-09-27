@@ -37,16 +37,16 @@ public:
 	RayTracer()
 	{
 		//all settings:  TODO: move this into a txt
-		int minLeafSize = 3;
-		int maxLeafSize = 3;
+		int minLeafSize = 4;
+		int maxLeafSize = 4;
 		int minBranch = 4;
 		int maxBranch = 4;
 
-		bool saveImage = false;
+		bool saveImage = true;
 		bool saveDepthDetailedImage = false;
 		bool bvhAnalysis = false;
 
-		int scenario = 4;
+		int scenario = 3;
 		int bucketCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;

@@ -156,9 +156,10 @@ public:
 
 				//auto result = bvh.intersect(ray);
 				auto result = nodeManager->intersect(ray);
+				//auto result = nodeManager->intersectTest(ray);
 
 				//check shadows if ray hit something
-				if (result)
+				if (false && result)
 				{
 					//resolve shadows, ez:
 					for (auto& l : lights)
@@ -179,10 +180,8 @@ public:
 						{
 							shadowRayCounter[info.index] ++;
 							//if (bvh.intersect(shadowRay))
-							//{
-							//	f = 0;
-							//}
-							if (nodeManager->intersect(shadowRay))
+							//if (nodeManager->intersect(shadowRay))
+							if (nodeManager->intersectTest(shadowRay))
 							{
 								f = 0;
 							}
@@ -258,74 +257,51 @@ public:
 				aabbIntersectionsPerPixel[info.index] += ray.aabbIntersectionCount;
 			});
 
+		leafIntersectionPerDepthCount.resize(bvh.bvhDepth);
 		for (auto& perPixel : leafIntersectionPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
 			{
-				if (leafIntersectionPerDepthCount.size() < perPixel.size())
-				{
-					leafIntersectionPerDepthCount.resize(perPixel.size());
-				}
 				leafIntersectionPerDepthCount[i] += perPixel[i];
 			}
 		}
-
+		nodeIntersectionPerDepthCount.resize(bvh.bvhDepth);
 		for (auto& perPixel : nodeIntersectionPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
 			{
-				if (nodeIntersectionPerDepthCount.size() < perPixel.size())
-				{
-					nodeIntersectionPerDepthCount.resize(perPixel.size());
-				}
 				nodeIntersectionPerDepthCount[i] += perPixel[i];
 			}
 		}
-
+		shadowLeafIntersectionPerDepthCount.resize(bvh.bvhDepth);
 		for (auto& perPixel : shadowLeafIntersectionPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
 			{
-				if (shadowLeafIntersectionPerDepthCount.size() < perPixel.size())
-				{
-					shadowLeafIntersectionPerDepthCount.resize(perPixel.size());
-				}
 				shadowLeafIntersectionPerDepthCount[i] += perPixel[i];
 			}
 		}
-
+		shadowNodeIntersectionPerDepthCount.resize(bvh.bvhDepth);
 		for (auto& perPixel : shadowNodeIntersectionPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
 			{
-				if (shadowNodeIntersectionPerDepthCount.size() < perPixel.size())
-				{
-					shadowNodeIntersectionPerDepthCount.resize(perPixel.size());
-				}
 				shadowNodeIntersectionPerDepthCount[i] += perPixel[i];
 			}
 		}
-
+		childFullness.resize(bvh.branchingFactor + 1);
 		for (auto& perPixel : childFullnessPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
 			{
-				if (childFullness.size() < perPixel.size())
-				{
-					childFullness.resize(perPixel.size());
-				}
 				childFullness[i] += perPixel[i];
 			}
 		}
-
+		primitiveFullness.resize(bvh.leafCount + 1);
 		for (auto& perPixel : primitiveFullnessPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
 			{
-				if (primitiveFullness.size() < perPixel.size())
-				{
-					primitiveFullness.resize(perPixel.size());
-				}
 				primitiveFullness[i] += perPixel[i];
 			}
 		}

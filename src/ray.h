@@ -1,3 +1,4 @@
+
 #pragma once
 #include <iostream>
 #include <vector>
@@ -6,8 +7,9 @@
 
 #include "glmInclude.h"
 #include "color.h"
-#include "../glmUtil.h"
-#include "../util.h"
+//#include "glmUtil.h"
+//#include "util.h"
+//#include "global.h"
 
 class Ray
 {
@@ -39,19 +41,8 @@ public:
 	unsigned int aabbIntersectionCount;
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
 
-	Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false) : pos(pos), direction(direction), shadowRay(shadowRay)
-	{
-		this->direction = glm::normalize(direction);
-		invDirection = 1.0f / this->direction;
-		tMax = 222222.f;
-		surfaceColor = Color(0);
-		surfaceNormal = glm::vec3(0, 0, 0);
-		surfacePosition = glm::vec3(0, 0, 0);
-		primitiveIntersectionCount = 0;
-		successfulPrimitiveIntersectionCount = 0;
-		successfulAabbIntersectionCount = 0;
-		aabbIntersectionCount = 0;
-	}
+	Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false);
+
 	~Ray()
 	{
 	}

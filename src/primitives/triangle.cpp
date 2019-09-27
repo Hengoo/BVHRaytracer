@@ -37,6 +37,33 @@ void Triangle::update()
 
 bool Triangle::intersect(Ray& ray)
 {
+	//do aabb intersection before triangle (only usefull for a leafsize > 1, but overhead is minimal anyway)
+	//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+	float temp;
+	glm::fvec3 t1 = (boundMin - ray.pos) * ray.invDirection;
+	glm::fvec3 t2 = (boundMax - ray.pos) * ray.invDirection;
+	float tmin = glm::compMax(glm::min(t1, t2));
+	float tmax = glm::compMin(glm::max(t1, t2));
+
+	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (tmax < 0)
+	{
+		temp = tmax;
+		return false;
+	}
+	// if tmin > tmax, ray doesn't intersect AABB
+	if (tmin > tmax)
+	{
+		temp = tmax;
+		return false;
+	}
+	//stop when current ray distance is closer than minimum possible distance of the aabb
+	if (ray.tMax < tmin)
+	{
+		return false;
+	}
+
+
 	//mostly from here: http://www.pbr-book.org/3ed-2018/Shapes/Triangle_Meshes.html
 	//code here https://github.com/mmp/pbrt-v3/blob/master/src/shapes/triangle.cpp
 	//it seems very long but every watertight algorithm i found is similarly complex long so i will give this one a try
@@ -143,8 +170,7 @@ bool Triangle::intersect(Ray& ray)
 	float deltaY = gamma(5) * (maxYt + maxZt);
 
 	// Compute $\delta_e$ term for triangle $t$ error bounds
-	float deltaE =
-		2 * (gamma(2) * maxXt * maxYt + deltaY * maxXt + deltaX * maxYt);
+	float deltaE = 2 * (gamma(2) * maxXt * maxYt + deltaY * maxXt + deltaX * maxYt);
 
 	// Compute $\delta_t$ term for triangle $t$ error bounds and check _t_
 	tmp = glm::abs(glm::vec3(e0, e1, e2));

@@ -24,6 +24,7 @@
     <ClCompile Include="src\lodepng\lodepng.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\primitives\triangle.cpp" />
+    <ClCompile Include="src\ray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\accelerationStructure\aabb.h" />

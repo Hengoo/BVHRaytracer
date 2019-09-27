@@ -29,6 +29,7 @@ public:
 
 	int branchingFactor;
 	int leafCount;
+	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
 
 	Bvh()
@@ -129,16 +130,14 @@ public:
 		std::vector<NodeAnalysis*> leafNodes;
 		analysisRoot = std::make_shared<NodeAnalysis>(&*root, branchingFactor, leafCount);
 		analysisRoot->analysis(leafNodes, treeDepth, childCount, primCount);
+		bvhDepth = treeDepth.size();
+		float averageTreeDepth = 0;
 
 		if (saveAndPrintResult)
 		{
 			int nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 			int leafs = leafNodes.size();
-			float averageTreeDepth = 0;
-			for (size_t i = 0; i < treeDepth.size(); i++)
-			{
-				averageTreeDepth += treeDepth[i] * i;
-			}
+
 			averageTreeDepth /= (float)leafs;
 
 			std::cout << "BVH Analysis:" << std::endl;

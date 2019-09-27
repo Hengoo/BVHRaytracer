@@ -46,16 +46,8 @@ bool Node::intersect(Ray& ray)
 	{
 		//save primitivecount
 		//so we know how much we space we waste (and how efficiently we use cachelines)
-		if (ray.primitiveFullness.size() < getPrimCount() + 1)
-		{
-			ray.primitiveFullness.resize(getPrimCount() + 1);
-		}
 		ray.primitiveFullness[getPrimCount()] ++;
 
-		if (ray.leafIntersectionCount.size() < depth + 1)
-		{
-			ray.leafIntersectionCount.resize(depth + 1);
-		}
 		ray.leafIntersectionCount[depth]++;
 
 		//std::all_of stops loop when false is returned
@@ -95,16 +87,8 @@ bool Node::intersect(Ray& ray)
 	if (getChildCount() != 0)
 	{
 		//save childcount of this intersection
-		if (ray.childFullness.size() < getChildCount() + 1)
-		{
-			ray.childFullness.resize(getChildCount() + 1);
-		}
 		ray.childFullness[getChildCount()] ++;
 		//increment node intersection counter
-		if (ray.nodeIntersectionCount.size() < depth + 1)
-		{
-			ray.nodeIntersectionCount.resize(depth + 1);
-		}
 		ray.nodeIntersectionCount[depth]++;
 
 		if (getPrimCount() > 0)

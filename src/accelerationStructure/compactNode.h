@@ -183,51 +183,18 @@ public:
 			//check intersection with id
 			CompactNodeV1 node = compactNodesV1[id];
 
-			ray.aabbIntersectionCount++;
-			//aabb intersection (same as in Aabb)
-			float t;
-			glm::fvec3 t1 = (node.boundMin - ray.pos) * ray.invDirection;
-			glm::fvec3 t2 = (node.boundMax - ray.pos) * ray.invDirection;
-			float tmin = glm::compMax(glm::min(t1, t2));
-			float tmax = glm::compMin(glm::max(t1, t2));
-
-			// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-			if (tmax < 0)
-			{
-				t = tmax;
-				continue;
-			}
-			// if tmin > tmax, ray doesn't intersect AABB
-			if (tmin > tmax)
-			{
-				t = tmax;
-				continue;
-			}
-			//stop when current ray distance is closer than minimum possible distance of the aabb
-			if (ray.tMax < tmin)
+			if (!aabbCheck(ray, node))
 			{
 				continue;
 			}
-
-			ray.successfulAabbIntersectionCount++;
 
 			//intersection happened, test primitives
 			if (node.primIdBegin != node.primIdEnd)
 			{
 				int primCount = node.primIdEnd - node.primIdBegin;
 				//logging: primitive fullness:
-				if (ray.primitiveFullness.size() < primCount + 1)
-				{
-					ray.primitiveFullness.resize(primCount + 1);
-				}
 				ray.primitiveFullness[primCount] ++;
-
-				if (ray.leafIntersectionCount.size() < 1)
-				{
-					ray.leafIntersectionCount.resize(1);
-				}
 				ray.leafIntersectionCount[0]++;
-
 				if (!ray.shadowRay)
 				{
 					std::for_each(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
@@ -269,17 +236,9 @@ public:
 			{
 				//update child FUllness:
 				int childCount = node.childIdEnd - node.childIdBegin;
-				if (ray.childFullness.size() < childCount + 2)
-				{
-					ray.childFullness.resize(childCount + 2);
-				}
-				ray.childFullness[childCount +1] ++;
+				ray.childFullness[childCount + 1] ++;
 
 				//increment node intersection counter
-				if (ray.nodeIntersectionCount.size() < 1)
-				{
-					ray.nodeIntersectionCount.resize(1);
-				}
 				ray.nodeIntersectionCount[0]++;
 				if (ray.direction[node.sortAxis] > 0)
 				{
@@ -293,6 +252,159 @@ public:
 					for (size_t i = node.childIdBegin; i <= node.childIdEnd; i++)
 					{
 						queue.push_back(i);
+					}
+				}
+
+			}
+		}
+		return result;
+	}
+
+	inline bool aabbCheck(Ray& ray, CompactNodeV1& node)
+	{
+		ray.aabbIntersectionCount++;
+
+		//aabb intersection (same as in Aabb)
+		//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+		float t;
+		glm::fvec3 t1 = (node.boundMin - ray.pos) * ray.invDirection;
+		glm::fvec3 t2 = (node.boundMax - ray.pos) * ray.invDirection;
+		float tmin = glm::compMax(glm::min(t1, t2));
+		float tmax = glm::compMin(glm::max(t1, t2));
+
+		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+		if (tmax < 0)
+		{
+			t = tmax;
+			return false;
+		}
+		// if tmin > tmax, ray doesn't intersect AABB
+		if (tmin > tmax)
+		{
+			t = tmax;
+			return false;
+		}
+		//stop when current ray distance is closer than minimum possible distance of the aabb
+		if (ray.tMax < tmin)
+		{
+			return false;
+		}
+		ray.successfulAabbIntersectionCount++;
+		return true;
+	}
+
+	//similar to normal intersect but instantly tests all child aabbs (instead of only testing the closest)
+	bool intersectTest(Ray& ray)
+	{
+		//traverse compact node vector
+
+		//check root node
+		CompactNodeV1 node = compactNodesV1[0];
+		if (!aabbCheck(ray, node))
+		{
+			return false;
+		}
+
+		//ids of nodes that are already tested but didnt test the children jet:
+		std::vector<size_t> queue;
+		queue.reserve(20);
+		queue.push_back(0);
+		std::vector<size_t> depths;
+		depths.reserve(20);
+		depths.push_back(0);
+
+		bool result = false;
+
+		while (queue.size() != 0)
+		{
+			//get current id (most recently added because we do depth first)
+			size_t id = queue.back();
+			queue.pop_back();
+			size_t d = depths.back();
+			depths.pop_back();
+
+			//check intersection with id
+			node = compactNodesV1[id];
+
+			//intersection happened, test primitives
+			if (node.primIdBegin != node.primIdEnd)
+			{
+				int primCount = node.primIdEnd - node.primIdBegin;
+				//logging: primitive fullness:
+				ray.primitiveFullness[primCount] ++;
+				ray.leafIntersectionCount[d]++;
+
+				if (!ray.shadowRay)
+				{
+					std::for_each(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
+						[&](auto& p)
+						{
+							ray.primitiveIntersectionCount++;
+							if (p->intersect(ray))
+							{
+								ray.successfulPrimitiveIntersectionCount++;
+								result = true;
+							}
+						});
+				}
+				else
+				{
+					auto b = std::any_of(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
+						[&](auto& p)
+						{
+							ray.primitiveIntersectionCount++;
+							if (p->intersect(ray))
+							{
+								ray.successfulPrimitiveIntersectionCount++;
+								if (ray.shadowRay)
+								{
+									return true;
+								}
+							}
+							return false;
+						});
+					if (b)
+					{
+						return true;
+					}
+				}
+			}
+
+			//test nodes (and add positive ones to queue)
+			if (node.childIdBegin != node.childIdEnd)
+			{
+				//update counters
+				int childCount = node.childIdEnd - node.childIdBegin;
+
+				ray.childFullness[childCount + 1] ++;
+				ray.nodeIntersectionCount[d]++;
+
+				if (ray.direction[node.sortAxis] > 0)
+				{
+					int insertPoint = queue.size();
+					for (size_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+						//for (size_t i = node.childIdEnd; i >= node.childIdBegin; i--)
+					{
+						CompactNodeV1 c = compactNodesV1[i];
+						if (!aabbCheck(ray, c))
+						{
+							continue;
+						}
+						queue.insert(queue.begin() + insertPoint, i);
+						depths.insert(depths.begin() + insertPoint, d + 1);
+					}
+				}
+				else
+				{
+					for (size_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+					{
+						CompactNodeV1 c = compactNodesV1[i];
+						if (!aabbCheck(ray, c))
+						{
+							continue;
+						}
+						queue.push_back(i);
+						depths.push_back(d + 1);
 					}
 				}
 
