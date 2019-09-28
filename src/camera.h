@@ -97,7 +97,8 @@ public:
 	size_t shadowSuccessfulAabbIntersections;
 	size_t shadowAabbIntersections;
 
-	Camera(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
+	Camera(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter
+		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
 		: path(path), name(name), problem(problem), position(position), focalLength(focalLength), height(height), width(width)
 	{
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
@@ -105,7 +106,8 @@ public:
 		initializeVariables();
 	}
 
-	Camera(std::string path, std::string name, std::string problem, glm::mat4 transform, float focalLength = 0.866f, size_t height = 1000, size_t width = 1000)
+	Camera(std::string path, std::string name, std::string problem, glm::mat4 transform,
+		float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
 		: path(path), name(name), problem(problem), transform(transform), focalLength(focalLength), height(height), width(width)
 	{
 		position = transform * glm::vec4(0, 0, 0, 1);
@@ -150,16 +152,18 @@ public:
 				//glm uses x = right, y = up , -z = forward ...
 
 				glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
+				//next line to get perfect forward ray
+				//centerOffset = glm::vec4(0, 0, -1, 0);
 				glm::vec3 pos = position + glm::vec3(transform * centerOffset);
 
 				auto ray = Ray(position, pos - position);
 
 				//auto result = bvh.intersect(ray);
-				auto result = nodeManager->intersect(ray);
-				//auto result = nodeManager->intersectTest(ray);
+				//auto result = nodeManager->intersect(ray);
+				auto result = nodeManager->intersectTest(ray);
 
 				//check shadows if ray hit something
-				if (false && result)
+				if (result)
 				{
 					//resolve shadows, ez:
 					for (auto& l : lights)
@@ -378,6 +382,7 @@ public:
 				myfile << i << " : " << childFullness[i] * bothFactor << std::endl;
 			}
 
+			sum = 0;
 			myfile << std::endl;
 			myfile << "intersections with leaf nodes with x primitives :" << std::endl;
 			for (size_t i = 0; i < primitiveFullness.size(); i++)

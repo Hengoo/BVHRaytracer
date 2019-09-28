@@ -36,6 +36,10 @@ struct CompactNodeV1
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
+	CompactNodeV1()
+	{
+	}
+
 	CompactNodeV1(size_t childIdBegin, size_t childIdEnd, size_t primIdBegin, size_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, char sortAxis)
 		: childIdBegin(childIdBegin), childIdEnd(childIdEnd), primIdBegin(primIdBegin), primIdEnd(primIdEnd), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
 	{
@@ -170,7 +174,11 @@ public:
 
 		//ids of ndodes that we still need to test:
 		std::vector<size_t> queue;
+		queue.reserve(20);
 		queue.push_back(0);
+		std::vector<size_t> depths;
+		depths.reserve(20);
+		depths.push_back(0);
 
 		bool result = false;
 
@@ -179,11 +187,13 @@ public:
 			//get current id (most recently added because we do depth first)
 			size_t id = queue.back();
 			queue.pop_back();
+			size_t d = depths.back();
+			depths.pop_back();
 
 			//check intersection with id
 			CompactNodeV1 node = compactNodesV1[id];
 
-			if (!aabbCheck(ray, node))
+			if (!aabbCheck(ray, id))
 			{
 				continue;
 			}
@@ -194,7 +204,7 @@ public:
 				int primCount = node.primIdEnd - node.primIdBegin;
 				//logging: primitive fullness:
 				ray.primitiveFullness[primCount] ++;
-				ray.leafIntersectionCount[0]++;
+				ray.leafIntersectionCount[d]++;
 				if (!ray.shadowRay)
 				{
 					std::for_each(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
@@ -239,12 +249,13 @@ public:
 				ray.childFullness[childCount + 1] ++;
 
 				//increment node intersection counter
-				ray.nodeIntersectionCount[0]++;
+				ray.nodeIntersectionCount[d]++;
 				if (ray.direction[node.sortAxis] > 0)
 				{
 					for (size_t i = node.childIdEnd; i >= node.childIdBegin; i--)
 					{
 						queue.push_back(i);
+						depths.push_back(d + 1);
 					}
 				}
 				else
@@ -252,6 +263,7 @@ public:
 					for (size_t i = node.childIdBegin; i <= node.childIdEnd; i++)
 					{
 						queue.push_back(i);
+						depths.push_back(d + 1);
 					}
 				}
 
@@ -260,15 +272,14 @@ public:
 		return result;
 	}
 
-	inline bool aabbCheck(Ray& ray, CompactNodeV1& node)
+	inline bool aabbCheck(Ray& ray, int id)// CompactNodeV1& node)
 	{
 		ray.aabbIntersectionCount++;
-
 		//aabb intersection (same as in Aabb)
 		//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
 		float t;
-		glm::fvec3 t1 = (node.boundMin - ray.pos) * ray.invDirection;
-		glm::fvec3 t2 = (node.boundMax - ray.pos) * ray.invDirection;
+		glm::fvec3 t1 = (compactNodesV1[id].boundMin - ray.pos) * ray.invDirection;
+		glm::fvec3 t2 = (compactNodesV1[id].boundMax - ray.pos) * ray.invDirection;
 		float tmin = glm::compMax(glm::min(t1, t2));
 		float tmax = glm::compMin(glm::max(t1, t2));
 
@@ -300,17 +311,17 @@ public:
 
 		//check root node
 		CompactNodeV1 node = compactNodesV1[0];
-		if (!aabbCheck(ray, node))
+		if (!aabbCheck(ray, 0))
 		{
 			return false;
 		}
 
 		//ids of nodes that are already tested but didnt test the children jet:
 		std::vector<size_t> queue;
-		queue.reserve(20);
+		queue.reserve(50);
 		queue.push_back(0);
 		std::vector<size_t> depths;
-		depths.reserve(20);
+		depths.reserve(50);
 		depths.push_back(0);
 
 		bool result = false;
@@ -374,19 +385,20 @@ public:
 			if (node.childIdBegin != node.childIdEnd)
 			{
 				//update counters
-				int childCount = node.childIdEnd - node.childIdBegin;
+				int childCount = node.childIdEnd - node.childIdBegin + 1;
 
-				ray.childFullness[childCount + 1] ++;
+				ray.childFullness[childCount] ++;
 				ray.nodeIntersectionCount[d]++;
 
+				//CompactNodeV1 c;
 				if (ray.direction[node.sortAxis] > 0)
 				{
 					int insertPoint = queue.size();
+					//std::vector<size_t> work(childCount);
+					//std::iota(work.begin(), work.end(), node.childIdBegin);
 					for (size_t i = node.childIdBegin; i <= node.childIdEnd; i++)
-						//for (size_t i = node.childIdEnd; i >= node.childIdBegin; i--)
 					{
-						CompactNodeV1 c = compactNodesV1[i];
-						if (!aabbCheck(ray, c))
+						if (!aabbCheck(ray, i))
 						{
 							continue;
 						}
@@ -398,8 +410,7 @@ public:
 				{
 					for (size_t i = node.childIdBegin; i <= node.childIdEnd; i++)
 					{
-						CompactNodeV1 c = compactNodesV1[i];
-						if (!aabbCheck(ray, c))
+						if (!aabbCheck(ray, i))
 						{
 							continue;
 						}

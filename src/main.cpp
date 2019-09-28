@@ -16,6 +16,10 @@
 #include "lights/directionalLight.h"
 #include "global.h"
 
+//includes for the timer
+#include <ctime>
+#include <ratio>
+#include <chrono>
 
 //#include "primitives/triangle.h"
 
@@ -36,6 +40,8 @@ public:
 
 	RayTracer()
 	{
+		std::chrono::high_resolution_clock::time_point time1 = std::chrono::high_resolution_clock::now();
+
 		//all settings:  TODO: move this into a txt
 		int minLeafSize = 4;
 		int maxLeafSize = 4;
@@ -43,10 +49,10 @@ public:
 		int maxBranch = 4;
 
 		bool saveImage = true;
-		bool saveDepthDetailedImage = false;
+		bool saveDepthDetailedImage = true;
 		bool bvhAnalysis = false;
 
-		int scenario = 3;
+		int scenario = 4;
 		int bucketCount = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
@@ -162,7 +168,9 @@ public:
 		//gameObjects.clear();
 		//meshBins.clear();
 
-
+		std::chrono::high_resolution_clock::time_point time2 = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> time_span0 = std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1);
+		std::cout << std::endl << "Model loading took " << time_span0.count() << " seconds." << std::endl;
 
 		for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
 		{
@@ -177,6 +185,8 @@ public:
 
 				//bvh of (seeded) random sphere
 				//auto bvh = std::make_unique<Bvh>();
+
+				std::chrono::high_resolution_clock::time_point timeLoop1 = std::chrono::high_resolution_clock::now();
 
 				//bvh of loaded model:
 				bvh = Bvh(*root);
@@ -198,9 +208,18 @@ public:
 
 				CompactNodeManager manager(bvh);
 
+				std::chrono::high_resolution_clock::time_point timeLoop2 = std::chrono::high_resolution_clock::now();
+
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
 				c.renderImage(saveImage, saveDepthDetailedImage, &manager);
+
+				std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
+				std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);
+				std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop3 - timeLoop2);
+
+				std::cout << std::endl << "BVH building took " << time_span1.count() << " seconds." << std::endl;
+				std::cout << "Rendering took " << time_span2.count() << " seconds." << std::endl;
 			}
 		}
 	}
@@ -225,6 +244,5 @@ int main()
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
-
 	return EXIT_SUCCESS;
 }
