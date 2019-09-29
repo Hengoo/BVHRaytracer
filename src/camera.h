@@ -116,7 +116,8 @@ public:
 	}
 
 	//spawns rays and collects results into image. Image is written on disk
-	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager* nodeManager)
+	template<typename T>
+	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager, int renderType)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -158,9 +159,23 @@ public:
 
 				auto ray = Ray(position, pos - position);
 
-				//auto result = bvh.intersect(ray);
-				//auto result = nodeManager->intersect(ray);
-				auto result = nodeManager->intersectTest(ray);
+				bool result;
+				switch (renderType)
+				{
+				case 0:
+					result = bvh.intersect(ray);
+					break;
+				case 1:
+					result = nodeManager.intersect(ray);
+					break;
+				case 2:
+					result = nodeManager.intersectImmediately(ray);
+					break;
+				default:
+					result = nodeManager.intersectImmediately(ray);
+					break;
+				}
+
 
 				//check shadows if ray hit something
 				if (result)
@@ -183,11 +198,25 @@ public:
 						if (f > 0)
 						{
 							shadowRayCounter[info.index] ++;
-							//if (bvh.intersect(shadowRay))
-							//if (nodeManager->intersect(shadowRay))
-							if (nodeManager->intersectTest(shadowRay))
+
+							switch (renderType)
 							{
-								f = 0;
+							case 0:
+								if (bvh.intersect(shadowRay))
+									f = 0;
+								break;
+							case 1:
+								if (nodeManager.intersect(shadowRay))
+									f = 0;
+								break;
+							case 2:
+								if (nodeManager.intersectImmediately(shadowRay))
+									f = 0;
+								break;
+							default:
+								if (nodeManager.intersectImmediately(shadowRay))
+									f = 0;
+								break;
 							}
 
 							//add shadowRay intersection to this ones

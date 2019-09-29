@@ -48,12 +48,17 @@ public:
 		int minBranch = 4;
 		int maxBranch = 4;
 
-		bool saveImage = true;
-		bool saveDepthDetailedImage = true;
+		bool saveImage = false;
+		bool saveDepthDetailedImage = false;
 		bool bvhAnalysis = false;
 
+		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
+		int renderType = 2;
 		int scenario = 4;
 		int bucketCount = 0;
+
+		//0 = custom order
+		int compactNodeOrder = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
@@ -206,13 +211,32 @@ public:
 				//This also duplicates the node system. the copy is used for the compact nodes
 				bvh.bvhAnalysis(path, bvhAnalysis, name, problem);
 
-				CompactNodeManager manager(bvh);
+				//determine type:
 
 				std::chrono::high_resolution_clock::time_point timeLoop2 = std::chrono::high_resolution_clock::now();
 
-				//create camera and render image
-				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, &manager);
+				//only works with constant: (but i want an .txt as settings so i dont have to recompile...
+				//const bool cond = compactNodeOrder == 0;
+				//CompactNodeManager<std::conditional<cond, CompactNodeV0, CompactNodeV1>::type> manager(bvh);
+
+				if (compactNodeOrder == 0)
+				{
+					CompactNodeManager<CompactNodeV1> manager(bvh, compactNodeOrder);
+					//create camera and render image
+					Camera c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, renderType);
+				}
+				else
+				{
+					CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
+					//create camera and render image
+					Camera c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, renderType);
+				}
+
+
+
+
 
 				std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
 				std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);

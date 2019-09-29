@@ -14,7 +14,7 @@ public:
 	std::string name;
 	std::vector<std::shared_ptr<Mesh>> meshes;
 
-	void addMesh(std::shared_ptr<Mesh> mesh)
+	inline void addMesh(std::shared_ptr<Mesh> mesh)
 	{
 		meshes.push_back(mesh);
 	}

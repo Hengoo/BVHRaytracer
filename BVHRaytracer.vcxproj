@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\accelerationStructure\aabb.cpp" />
+    <ClCompile Include="src\accelerationStructure\bvh.cpp" />
+    <ClCompile Include="src\accelerationStructure\compactNode.cpp" />
     <ClCompile Include="src\accelerationStructure\node.cpp" />
     <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\lodepng\lodepng.cpp" />

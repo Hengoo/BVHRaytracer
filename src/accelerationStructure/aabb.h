@@ -49,106 +49,10 @@ class Aabb : public Node
 		{
 		}
 
-		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget, int bucketCount)
-		{
-			//method should be usable for all nodes?
+		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget, int bucketCount);
+		
 
-
-			//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
-			/*
-			glm::vec3 min = glm::vec3(222222.0f);
-			glm::vec3 max = glm::vec3(-222222.0f);
-			glm::vec3 centerDistance;
-			std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
-				[&](auto& p)
-				{
-					centerDistance = p->getCenter();
-					min = glm::min(min, centerDistance);
-					max = glm::max(max, centerDistance);
-				});
-			centerDistance = max - min;
-
-			//choose axis to split:
-			//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
-			int sortAxis = maxDimension(centerDistance);
-
-			//sort primitive array along axis:
-			//its faster to first check if its sorted
-			if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
-			{
-				//TODO test what parallel stuff like std::execution::seq or unseqpar does here
-				std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
-			}
-			*/
-
-			int size = getPrimCount();
-
-			if (bucketCount <= 0 || size < bucketCount)
-			{
-				//test all combos with heuristic:
-				//save results in array and take the one with best result
-
-				// Split by metric (currently SAH)
-				std::vector<float> metric(size - 1);
-
-				Aabb node(0.f, primitiveBegin, primitiveBegin);
-				std::for_each(std::execution::seq, metric.begin(), metric.end(),
-					[&](auto& met)
-					{
-						node.sweepRight();
-						met += node.sah(invSurfaceArea, leafTarget);
-					});
-				node = Aabb(0, primitiveEnd, primitiveEnd);
-				std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
-					[&](auto& met)
-					{
-						node.sweepLeft();
-						met += node.sah(invSurfaceArea, leafTarget);
-					});
-				//make the split with the best metric:
-				auto bestElement = std::min_element(metric.begin(), metric.end());
-				return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
-			}
-			else
-			{
-				//greedy approach with buckets:
-				std::vector<float> metric(bucketCount - 1);
-				std::vector<float> metric2(bucketCount - 1);
-				//split primitives into buckets:
-				std::vector<std::unique_ptr<Aabb>> buckets;
-				//easy version:
-				for (size_t i = 0; i < bucketCount - 1; i++)
-				{
-					buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * i, primitiveBegin + (size / bucketCount) * (i + 1)));
-				}
-				buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * (bucketCount - 1), primitiveEnd));
-
-				//better spacial version:
-				//TODO
-
-				//iterate trough buckets
-				Aabb node(0.f, primitiveBegin, primitiveBegin);
-				for (size_t i = 0; i < bucketCount - 1; i++)
-				{
-					//use all but the first bucket
-					node.sweepRight(&*buckets[i + 1]);
-					metric[i] = node.sah(invSurfaceArea, leafTarget);
-				}
-				node = Aabb(0.f, primitiveEnd, primitiveEnd);
-				for (int i = bucketCount - 2; i >= 0; i--)
-				{
-					//use all but the last bucket
-					node.sweepLeft(&*buckets[i]);
-					metric[i] += node.sah(invSurfaceArea, leafTarget);
-				}
-				//make the split with the best metric:
-				auto bestElement = std::min_element(metric.begin(), metric.end());
-				//return best cut position:
-				return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
-			}
-		}
-
-		size_t getPrimCount()
+		inline size_t getPrimCount()
 		{
 			return std::distance(primitiveBegin, primitiveEnd);
 		}
@@ -168,7 +72,7 @@ public:
 
 	//bool sortBy(Primitive& p1, Primitive& p2, int& axis)
 
-	void calculateBounds()
+	inline void calculateBounds()
 	{
 		//calculate bounds based on the primitives:
 		glm::vec3 min(222222.0f), max(-222222.0f);
@@ -185,112 +89,22 @@ public:
 		boundMax = max;
 	}
 
-	float getSurfaceArea() override
+	inline float getSurfaceArea() override
 	{
 		auto d = boundMax - boundMin;
 		return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
 	}
 
-	float getVolume() override
+	inline float getVolume() override
 	{
 		auto d = boundMax - boundMin;
 		return d.x * d.y * d.z;
 	}
 
-	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount)
-	{
-		//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
-		if (getPrimCount() <= leafTarget)
-		{
-			return;
-		}
+	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount);
+	
 
-		//TODO: if i want to keep primitives in this node i have to spawn them to primitiveBegin BEFORE the sort
-		//also dont forget to set primitiveBegin and primitiveEnd correctly before end of method
-
-
-		//calculate distance of centers along each axis -> largest distance is the axis we want to split
-		glm::vec3 min = glm::vec3(222222.0f);
-		glm::vec3 max = glm::vec3(-222222.0f);
-		glm::vec3 centerDistance;
-		std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
-			[&](auto& p)
-			{
-				centerDistance = p->getCenter();
-				min = glm::min(min, centerDistance);
-				max = glm::max(max, centerDistance);
-			});
-		centerDistance = max - min;
-
-		//choose axis to split:
-		//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
-		sortAxis = maxDimension(centerDistance);
-
-		//stop when triangle centers are at the same position (when this happens to often i might try the real center instead of the aabb center????
-		//if (centerDistance[axis] <= 0.00002)
-		//{
-		//	return;
-		//}
-
-
-		//sort primitive array along axis:
-		//its faster to first check if its sorted
-		if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
-		{
-			//TODO test what parallel stuff like std::execution::seq or unseqpar does here
-			std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
-		}
-
-
-		std::vector<PrimIntervall> workIntervall;
-		workIntervall.push_back(PrimIntervall(primitiveBegin, primitiveEnd));
-		int bestI = 0;
-		float primCounter = 0;
-
-		for (size_t b = 0; b < branchingFactor - 1; b++)
-		{
-			primCounter = 0;
-			for (size_t i = 0; i < workIntervall.size(); i++)
-			{
-				//choose the PrimIntervall with most primitives
-
-				if (primCounter < workIntervall[i].getPrimCount())
-				{
-					primCounter = workIntervall[i].getPrimCount();
-					bestI = i;
-				}
-			}
-			if (primCounter <= leafTarget)
-			{
-				break;
-			}
-			auto bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget, bucketCount);
-			//split at bestSplit of best intervall:
-			PrimIntervall p1(workIntervall[bestI].primitiveBegin, bestSplit);
-			PrimIntervall p2(bestSplit, workIntervall[bestI].primitiveEnd);
-			workIntervall[bestI] = p1;
-			workIntervall.insert(workIntervall.begin() + bestI + 1, p2);
-		}
-		//create childNodes of every workIntervall;
-		//Order has to be sorted!
-		for (auto& i : workIntervall)
-		{
-			addNode(std::make_shared<Aabb>(depth + 1, i.primitiveBegin, i.primitiveEnd));
-		}
-
-		//just a debug output to get warned abount eventual loop
-		if (depth >= 35)
-		{
-			std::cout << depth << std::endl;
-		}
-
-		primitiveBegin = primitiveEnd;
-
-		//constructs bvh of all children:
-		Node::recursiveBvh(branchingFactor, leafTarget, bucketCount);
-	}
-
-	virtual bool intersectNode(Ray& ray, float& distance) override
+	inline virtual bool intersectNode(Ray& ray, float& distance) override
 	{
 		float t;
 		//second answer form here: https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
@@ -343,7 +157,8 @@ public:
 		distance = tmax;
 		return true;
 	}
-	void Node::sweepRight() override
+
+	inline void Node::sweepRight() override
 	{
 		primitiveEnd = primitiveEnd + 1;
 
@@ -352,7 +167,7 @@ public:
 		boundMin = glm::min(boundMin, minp);
 		boundMax = glm::max(boundMax, maxp);
 	}
-	void Node::sweepLeft()override
+	inline void Node::sweepLeft()override
 	{
 		primitiveBegin = primitiveBegin - 1;
 
@@ -362,7 +177,7 @@ public:
 		boundMax = glm::max(boundMax, maxp);
 	}
 
-	void Node::sweepRight(Node* n) override
+	inline void Node::sweepRight(Node* n) override
 	{
 		Aabb* aabb = static_cast<Aabb*>(n);
 		primitiveEnd = aabb->primitiveEnd;
@@ -370,7 +185,7 @@ public:
 		boundMin = glm::min(boundMin, aabb->boundMin);
 		boundMax = glm::max(boundMax, aabb->boundMax);
 	}
-	void Node::sweepLeft(Node* n) override
+	inline void Node::sweepLeft(Node* n) override
 	{
 		Aabb* aabb = static_cast<Aabb*>(n);
 		primitiveBegin = aabb->primitiveBegin;
