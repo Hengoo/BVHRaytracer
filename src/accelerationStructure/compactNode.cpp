@@ -32,6 +32,9 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 			levelTreeOrder(bvh.getAnalysisRoot(), nodeVector, i);
 		}
 		break;
+	case 2:
+		depthFirstTreeOrder(bvh.getAnalysisRoot(), nodeVector);
+		break;
 	default:
 		nodeVector.push_back(bvh.getAnalysisRoot());
 		customTreeOrder(bvh.getAnalysisRoot(), nodeVector);
@@ -90,14 +93,16 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 			compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis));
 		}
 	}
+	primitives = bvh.primitives;
 
 	//debug: test if compact nodes are fully traversable
 	//std::cout << nodeVector.size() << std::endl;
 	//std::cout << compactNodes.size() << std::endl;
 	//std::cout << fullTraverse() << std::endl;
+	//std::cout << primitives->size() << std::endl;
 	//std::cout << sizeof(CompactNodeV0) << std::endl;
 	//std::cout << sizeof(CompactNodeV1) << std::endl;
-	primitives = bvh.primitives;
+	//std::cout << sizeof(glm::vec3) << std::endl;
 }
 
 template<typename T>
@@ -437,6 +442,16 @@ void CompactNodeManager<T>::customTreeOrder(NodeAnalysis* n, std::vector<NodeAna
 	for (auto& c : n->children)
 	{
 		customTreeOrder(&*c, nodeVector);
+	}
+}
+
+template<typename T>
+void CompactNodeManager<T>::depthFirstTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector)
+{
+	nodeVector.push_back(n);
+	for (auto& c : n->children)
+	{
+		depthFirstTreeOrder(&*c, nodeVector);
 	}
 }
 

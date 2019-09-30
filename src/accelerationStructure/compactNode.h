@@ -91,6 +91,8 @@ public:
 	//for level order. add all children of depth (from left to right)
 	void levelTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector, int depth);
 
+	void depthFirstTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
+
 	inline bool aabbCheck(Ray& ray, int id)// CompactNodeV1& node)
 	{
 		ray.aabbIntersectionCount++;
