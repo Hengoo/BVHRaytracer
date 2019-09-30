@@ -13,13 +13,13 @@ class Ray;
 class Node
 {
 public:
-	Node(unsigned int depth, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
+	Node(uint8_t depth, primPointVector::iterator primitiveBegin, primPointVector::iterator primitiveEnd)
 		:depth(depth), primitiveBegin(primitiveBegin), primitiveEnd(primitiveEnd)
 	{
 		//update bounds in derived classes
 	}
-	int sortAxis;
-	unsigned int depth;
+	uint8_t sortAxis;
+	uint8_t depth;
 	virtual void addNode(std::shared_ptr<Node> n);
 
 	//primitives are given at creation and can only be removed(when they are "placed" in child nodes)

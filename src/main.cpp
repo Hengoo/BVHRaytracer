@@ -53,12 +53,12 @@ public:
 		bool bvhAnalysis = false;
 
 		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
-		int renderType = 2;
+		int renderType = 1;
 		int scenario = 4;
 		int bucketCount = 0;
 
-		//0 = custom order
-		int compactNodeOrder = 0;
+		//0 = custom order, 1 = level
+		int compactNodeOrder = 1;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
@@ -219,7 +219,7 @@ public:
 				//const bool cond = compactNodeOrder == 0;
 				//CompactNodeManager<std::conditional<cond, CompactNodeV0, CompactNodeV1>::type> manager(bvh);
 
-				if (compactNodeOrder == 0)
+				if (compactNodeOrder == 0 || compactNodeOrder == 1)
 				{
 					CompactNodeManager<CompactNodeV1> manager(bvh, compactNodeOrder);
 					//create camera and render image

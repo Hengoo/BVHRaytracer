@@ -58,16 +58,16 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 	std::vector<std::shared_ptr<Texture>> textures;
 
 	//offset to the modelUID of gltf
-	size_t modelIndexOffset = meshBins.size();
+	uint32_t modelIndexOffset = meshBins.size();
 	//offset to the gameobject uid of gltf (needed to reference the right children)
-	size_t gameObjectOffset = gameObjects.size();
+	uint32_t gameObjectOffset = gameObjects.size();
 
 	//import and load all images into gpu memory:
 	//increase texture vector sizes:
 	textures.reserve(gltfModel.images.size());
 
 	//go trough all images and import them.
-	for (int i = 0; i < gltfModel.images.size(); i++)
+	for (size_t i = 0; i < gltfModel.images.size(); i++)
 	{
 		auto& gltfImage = gltfModel.images[i];
 
@@ -83,7 +83,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 		}
 
 		//need to check what exactly happens to the memory here? i kinda want it to copy??
-		//auto sharPtr = std::make_shared<std::vector<unsigned char>>(std::move(gltfImage));
+		//auto sharPtr = std::make_shared<std::vector<uint8_t>>(std::move(gltfImage));
 		textures.push_back(std::make_shared<Texture>(gltfImage.width, gltfImage.height, gltfImage.image));
 	}
 

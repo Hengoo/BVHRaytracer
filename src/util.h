@@ -24,10 +24,10 @@ static int rint(int min, int max)
 	return r;
 }
 
-//random unsigned char (for colors)
-static unsigned char ruchar(unsigned char min, unsigned char max)
+//random unsigned uint8 (for colors)
+static uint8_t rUint8(uint8_t min, uint8_t max)
 {
-	unsigned char r = rand() % (max - min) + min;
+	uint8_t r = rand() % (max - min) + min;
 	return r;
 }
 
@@ -47,9 +47,9 @@ static  inline float gamma(int n)
 
 //Encode from raw pixels to an in - memory PNG file first, then write it to disk
 //The image argument has width * height RGBA pixels or width * height * 4 bytes
-static void encodeTwoSteps(std::string encodeFilename, std::vector<unsigned char>& encodeImage, unsigned encodeWidth, unsigned encodeHeight)
+static void encodeTwoSteps(std::string encodeFilename, std::vector<uint8_t>& encodeImage, unsigned encodeWidth, unsigned encodeHeight)
 {
-	std::vector<unsigned char> png;
+	std::vector<uint8_t> png;
 
 	unsigned error = lodepng::encode(png, encodeImage, encodeWidth, encodeHeight);
 	if (!error) lodepng::save_file(png, encodeFilename);

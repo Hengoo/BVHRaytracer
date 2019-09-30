@@ -10,20 +10,21 @@
 //compact node with random child ids
 struct CompactNodeV0
 {
-	char sortAxis;
-	std::vector<size_t> childrenIds;
-	size_t primIdBegin;
-	size_t primIdEnd;
+	std::vector<uint32_t> childrenIds;
+	uint32_t primIdBegin;
+	uint32_t primIdEnd;
 
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-	CompactNodeV0(std::vector<size_t> childrenIds, size_t primIdBegin, size_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, char sortAxis)
+	uint8_t sortAxis;
+
+	CompactNodeV0(std::vector<uint32_t> childrenIds, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
 		:childrenIds(childrenIds), primIdBegin(primIdBegin), primIdEnd(primIdEnd), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
 	{
 	}
 
-	inline int getChildCount()
+	inline uint16_t getChildCount()
 	{
 		return childrenIds.size();
 	}
@@ -32,50 +33,28 @@ struct CompactNodeV0
 	{
 		return childrenIds.size() == 0;
 	}
-
-	inline std::vector<size_t> getChildVector()
-	{
-		return childrenIds;
-	}
 };
 
 //compact node with consecutive child ids (use if possible)
 struct CompactNodeV1
 {
-	char sortAxis;
 	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
-	size_t childIdBegin;
-	size_t childIdEnd;
-	size_t primIdBegin;
-	size_t primIdEnd;
+	uint32_t childIdBegin;
+	uint32_t childIdEnd;
+	uint32_t primIdBegin;
+	uint32_t primIdEnd;
 
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-	CompactNodeV1()
-	{
-	}
-	CompactNodeV1(size_t childIdBegin, size_t childIdEnd, size_t primIdBegin, size_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, char sortAxis)
+	uint8_t sortAxis;
+
+	CompactNodeV1(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
 		: childIdBegin(childIdBegin), childIdEnd(childIdEnd), primIdBegin(primIdBegin), primIdEnd(primIdEnd), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
 	{
 	}
-	/*
-	CompactNodeV1(std::vector<size_t> childrenIds, size_t primIdBegin, size_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, char sortAxis)
-		: primIdBegin(primIdBegin), primIdEnd(primIdEnd), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
-	{
-		if (childrenIds.size() != 0)
-		{
-			childIdBegin = *childrenIds.begin();
-			childIdEnd = *(childrenIds.end() - 1);
-		}
-		else
-		{
-			childIdBegin = 0;
-			childIdEnd = 0;
-		}
-	}*/
 
-	inline int getChildCount()
+	inline uint16_t getChildCount()
 	{
 		return childIdEnd - childIdBegin + 1;
 	}
@@ -83,13 +62,6 @@ struct CompactNodeV1
 	inline bool noChildren()
 	{
 		return childIdBegin == childIdEnd;
-	}
-
-	inline std::vector<size_t> getChildVector()
-	{
-		std::vector<size_t> result(getChildCount());
-		std::iota(result.begin(), result.end(), childIdBegin);
-		return result;
 	}
 };
 
@@ -111,9 +83,12 @@ public:
 
 	//similar to normal intersect but instantly tests all child aabbs immediately (instead of only testing the closest)
 	bool intersectImmediately(Ray& ray);
-	
+
 	//first add all children of node, then rekusion for each child
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
+
+	//for level order. add all children of depth (from left to right)
+	void levelTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector, int depth);
 
 	inline bool aabbCheck(Ray& ray, int id)// CompactNodeV1& node)
 	{
@@ -148,39 +123,6 @@ public:
 		return true;
 	}
 
-	//debug method to test if all nodes are connected corretly
-	/*
-	int testTraverse()
-	{
-		int result = 0;
-		int count2 = 0;
-
-
-		std::vector<size_t> queue;
-		queue.push_back(0);
-		while (queue.size() != 0)
-		{
-			//get current id (most recently added because we do depth first)
-			size_t id = queue.back();
-			queue.pop_back();
-
-			//check intersection with id
-			CompactNodeV1 node = compactNodes[id];
-			result++;
-
-			if (node.primIdBegin != node.primIdEnd)
-			{
-				count2++;
-			}
-
-			if (node.childIdBegin != node.childIdEnd)
-			{
-				for (size_t i = node.childIdEnd; i >= node.childIdBegin; i--)
-				{
-					queue.push_back(i);
-				}
-			}
-		}
-		return result;
-	}*/
+	//debug method returns number of nodes that are connected to root
+	int fullTraverse();
 };

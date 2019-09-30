@@ -109,7 +109,7 @@ void Bvh::iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& prim
 				primitives->push_back(std::make_shared<Triangle>(&go, &*m, i));
 
 				//sphere version (one sphere for each triangle?
-				//std::array<unsigned char, 4> color = { ruchar(0, 255), ruchar(0, 255), ruchar(0, 255), 255 };
+				//std::array<uint8_t 4> color = { rUint8(0, 255), rUint8(0, 255), rUint8(0, 255), 255 };
 				//auto p = std::make_shared<Sphere>(go.pos, 0.5f, color);
 				//root->addPrimitive(p);
 			}
@@ -137,10 +137,10 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, std::string nam
 	int minPos = 0;
 	int maxPos = 0;
 	//counts: childCount[i] = number of nodes that have i children
-	std::vector<unsigned int> childCount;
-	std::vector<unsigned int> primCount;
+	std::vector<uint16_t> childCount;
+	std::vector<uint16_t> primCount;
 	//depth of the leaf nodes
-	std::vector<unsigned int> treeDepth;
+	std::vector<uint16_t> treeDepth;
 	std::vector<NodeAnalysis*> leafNodes;
 	analysisRoot = std::make_shared<NodeAnalysis>(&*root, branchingFactor, leafCount);
 	analysisRoot->analysis(leafNodes, treeDepth, childCount, primCount);
@@ -262,7 +262,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, std::string nam
 		//create image
 		int height = treeDepth.size();
 		int width = leafs;
-		std::vector<unsigned char> image(height * width * 4, 255);
+		std::vector<uint8_t> image(height * width * 4, 255);
 
 		int x, y;
 		int id;
@@ -273,10 +273,10 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, std::string nam
 			x = i;
 			leafNodes[i]->printLeaf(factor, parents, x, y);
 			id = x + y * width;
-			image[id * 4 + 0] = (unsigned char)(factor * 255);
-			image[id * 4 + 1] = (unsigned char)(factor * 255);
-			image[id * 4 + 2] = (unsigned char)(factor * 255);
-			image[id * 4 + 3] = (unsigned char)255;
+			image[id * 4 + 0] = (uint8_t)(factor * 255);
+			image[id * 4 + 1] = (uint8_t)(factor * 255);
+			image[id * 4 + 2] = (uint8_t)(factor * 255);
+			image[id * 4 + 3] = (uint8_t)255;
 
 		}
 		bool finished = false;
@@ -289,10 +289,10 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, std::string nam
 				if (p->printNode(factor, newParents, x, y))
 				{
 					id = x + y * width;
-					image[id * 4 + 0] = (unsigned char)(factor * 255);
-					image[id * 4 + 1] = (unsigned char)0;
-					image[id * 4 + 2] = (unsigned char)0;
-					image[id * 4 + 3] = (unsigned char)255;
+					image[id * 4 + 0] = (uint8_t)(factor * 255);
+					image[id * 4 + 1] = (uint8_t)0;
+					image[id * 4 + 2] = (uint8_t)0;
+					image[id * 4 + 3] = (uint8_t)255;
 				}
 				else
 				{

@@ -11,19 +11,30 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 	//general appraoch: save all analysisNodes in a vector -> then write the id (the position in the vector)
 	//Then we now the ids of all nodes and the ids of those children -> write them into compactNodesVector
 
+	//tmp node vector
 	std::vector<NodeAnalysis*> nodeVector;
 	//LevelOrder
 
-	//custom order: (TODO: need to seach if it exists / what name it has?)
-	//benefits it has: consecutive children + consecutive cachelines when the first child is tested
+
 
 	switch (nodeOrder)
 	{
 	case 0:
+		//custom order: (TODO: need to seach if it exists / what name it has?)
+		//benefits it has: consecutive children + consecutive cachelines when the first child is tested
 		nodeVector.push_back(bvh.getAnalysisRoot());
 		customTreeOrder(bvh.getAnalysisRoot(), nodeVector);
 		break;
+	case 1:
+		//not the most efficient thing but that doesnt matter.
+		for (size_t i = 0; i < bvh.bvhDepth; i++)
+		{
+			levelTreeOrder(bvh.getAnalysisRoot(), nodeVector, i);
+		}
+		break;
 	default:
+		nodeVector.push_back(bvh.getAnalysisRoot());
+		customTreeOrder(bvh.getAnalysisRoot(), nodeVector);
 		break;
 	}
 
@@ -39,9 +50,9 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 		for (auto& n : nodeVector)
 		{
 			//begin and end the same -> empty
-			std::vector<size_t> childs;
-			size_t pBegin = 0;
-			size_t pEnd = 0;
+			std::vector<uint32_t> childs;
+			uint32_t pBegin = 0;
+			uint32_t pEnd = 0;
 
 			for (auto& c : n->children)
 			{
@@ -58,14 +69,13 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 	}
 	if constexpr (std::is_same<T, CompactNodeV1>::value)
 	{
-		std::cout << "compactNodeV1" << std::endl;
 		for (auto& n : nodeVector)
 		{
 			//begin and end the same -> empty
-			size_t cBegin = 0;
-			size_t cEnd = 0;
-			size_t pBegin = 0;
-			size_t pEnd = 0;
+			uint32_t cBegin = 0;
+			uint32_t cEnd = 0;
+			uint32_t pBegin = 0;
+			uint32_t pEnd = 0;
 			if (n->node->getChildCount() > 0)
 			{
 				cBegin = (*n->children.begin())->id;
@@ -80,8 +90,13 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 			compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis));
 		}
 	}
-	//int test = testTraverse();
-	//int deb = 0;
+
+	//debug: test if compact nodes are fully traversable
+	//std::cout << nodeVector.size() << std::endl;
+	//std::cout << compactNodes.size() << std::endl;
+	//std::cout << fullTraverse() << std::endl;
+	std::cout << sizeof(CompactNodeV0) << std::endl;
+	std::cout << sizeof(CompactNodeV1) << std::endl;
 	primitives = bvh.primitives;
 }
 
@@ -98,10 +113,10 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 	}
 
 	//ids of nodes that are already tested but didnt test the children jet:
-	std::vector<size_t> queue;
+	std::vector<uint32_t> queue;
 	queue.reserve(50);
 	queue.push_back(0);
-	std::vector<size_t> depths;
+	std::vector<uint8_t> depths;
 	depths.reserve(50);
 	depths.push_back(0);
 
@@ -110,9 +125,9 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 	while (queue.size() != 0)
 	{
 		//get current id (most recently added because we do depth first)
-		size_t id = queue.back();
+		uint32_t id = queue.back();
 		queue.pop_back();
-		size_t d = depths.back();
+		uint8_t d = depths.back();
 		depths.pop_back();
 
 		//check intersection with id
@@ -121,7 +136,7 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 		//intersection happened, test primitives
 		if (node.primIdBegin != node.primIdEnd)
 		{
-			int primCount = node.primIdEnd - node.primIdBegin;
+			uint32_t primCount = node.primIdEnd - node.primIdBegin;
 			//logging: primitive fullness:
 			ray.primitiveFullness[primCount] ++;
 			ray.leafIntersectionCount[d]++;
@@ -166,41 +181,69 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 		if (!node.noChildren())
 		{
 			//update counters
-			int childCount = node.getChildCount();
+			uint16_t childCount = node.getChildCount();
 
 			ray.childFullness[childCount] ++;
 			ray.nodeIntersectionCount[d]++;
 
-			auto children = node.getChildVector();
-			if (ray.direction[node.sortAxis] > 0)
+			if constexpr (std::is_same<T, CompactNodeV0>::value)
 			{
-				//need to check what order to read
-				//int insertPoint = queue.size();
-				std::for_each(std::execution::seq, children.rbegin(), children.rend(),
-					[&](auto& i)
-					{
-						if (!aabbCheck(ray, i))
+				if (ray.direction[node.sortAxis] > 0)
+				{
+					std::for_each(std::execution::seq, node.childrenIds.rbegin(), node.childrenIds.rend(),
+						[&](auto& i)
 						{
-							return;
-						}
-						queue.push_back(i);
-						depths.push_back(d + 1);
-						//queue.insert(queue.begin() + insertPoint, i);
-						//depths.insert(depths.begin() + insertPoint, d + 1);
-					});
+							if (!aabbCheck(ray, i))
+							{
+								return;
+							}
+							queue.push_back(i);
+							depths.push_back(d + 1);
+						});
+				}
+				else
+				{
+					std::for_each(std::execution::seq, node.childrenIds.begin(), node.childrenIds.end(),
+						[&](auto& i)
+						{
+							if (!aabbCheck(ray, i))
+							{
+								return;
+							}
+							queue.push_back(i);
+							depths.push_back(d + 1);
+						});
+				}
 			}
-			else
+			else if constexpr (std::is_same<T, CompactNodeV1>::value)
 			{
-				std::for_each(std::execution::seq, children.begin(), children.end(),
-					[&](auto& i)
+				if (ray.direction[node.sortAxis] > 0)
+				{
+					int insertPoint = queue.size();
+					//std::vector<size_t> work(childCount);
+					//std::iota(work.begin(), work.end(), node.childIdBegin);
+					for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
 					{
 						if (!aabbCheck(ray, i))
 						{
-							return;
+							continue;
+						}
+						queue.insert(queue.begin() + insertPoint, i);
+						depths.insert(depths.begin() + insertPoint, d + 1);
+					}
+				}
+				else
+				{
+					for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+					{
+						if (!aabbCheck(ray, i))
+						{
+							continue;
 						}
 						queue.push_back(i);
 						depths.push_back(d + 1);
-					});
+					}
+				}
 			}
 		}
 	}
@@ -215,10 +258,10 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 	//most of the logging can also be done here, but we do not know the depth of
 
 	//ids of ndodes that we still need to test:
-	std::vector<size_t> queue;
+	std::vector<uint32_t> queue;
 	queue.reserve(20);
 	queue.push_back(0);
-	std::vector<size_t> depths;
+	std::vector<uint8_t> depths;
 	depths.reserve(20);
 	depths.push_back(0);
 
@@ -227,9 +270,9 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 	while (queue.size() != 0)
 	{
 		//get current id (most recently added because we do depth first)
-		size_t id = queue.back();
+		uint32_t id = queue.back();
 		queue.pop_back();
-		size_t d = depths.back();
+		uint8_t d = depths.back();
 		depths.pop_back();
 
 		//check intersection with id
@@ -243,7 +286,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 		//intersection happened, test primitives
 		if (node.primIdBegin != node.primIdEnd)
 		{
-			int primCount = node.primIdEnd - node.primIdBegin;
+			uint16_t primCount = node.primIdEnd - node.primIdBegin;
 			//logging: primitive fullness:
 			ray.primitiveFullness[primCount] ++;
 			ray.leafIntersectionCount[d]++;
@@ -287,30 +330,94 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 		if (!node.noChildren())
 		{
 			//update child FUllness:
-			int childCount = node.getChildCount();
+			uint16_t childCount = node.getChildCount();
 			ray.childFullness[childCount + 1] ++;
-
-			//increment node intersection counter
 			ray.nodeIntersectionCount[d]++;
 
-			auto children = node.getChildVector();
-			if (ray.direction[node.sortAxis] > 0)
+			if constexpr (std::is_same<T, CompactNodeV0>::value)
 			{
-				std::for_each(std::execution::seq, children.rbegin(), children.rend(),
-					[&](auto& i)
-					{
-						queue.push_back(i);
-						depths.push_back(d + 1);
-					});
+				//increment node intersection counter
+				if (ray.direction[node.sortAxis] > 0)
+				{
+					std::for_each(std::execution::seq, node.childrenIds.rbegin(), node.childrenIds.rend(),
+						[&](auto& i)
+						{
+							queue.push_back(i);
+							depths.push_back(d + 1);
+						});
+				}
+				else
+				{
+					std::for_each(std::execution::seq, node.childrenIds.begin(), node.childrenIds.end(),
+						[&](auto& i)
+						{
+							queue.push_back(i);
+							depths.push_back(d + 1);
+						});
+				}
 			}
-			else
+			else if constexpr (std::is_same<T, CompactNodeV1>::value)
 			{
-				std::for_each(std::execution::seq, children.begin(), children.end(),
-					[&](auto& i)
+				if (ray.direction[node.sortAxis] > 0)
+				{
+					for (uint32_t i = node.childIdEnd; i >= node.childIdBegin; i--)
 					{
 						queue.push_back(i);
 						depths.push_back(d + 1);
+					}
+				}
+				else
+				{
+					for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+					{
+						queue.push_back(i);
+						depths.push_back(d + 1);
+					}
+				}
+			}
+
+
+		}
+	}
+	return result;
+}
+
+template<typename T>
+int CompactNodeManager<T>::fullTraverse()
+{
+	int result = 0;
+
+	std::vector<uint32_t> queue;
+	queue.push_back(0);
+	while (queue.size() != 0)
+	{
+		//get current id (most recently added because we do depth first)
+		uint32_t id = queue.back();
+		queue.pop_back();
+
+		//check intersection with id
+		T node = compactNodes[id];
+		result++;
+
+		if (!node.noChildren())
+		{
+			if constexpr (std::is_same<T, CompactNodeV0>::value)
+			{
+
+				std::for_each(std::execution::seq, node.childrenIds.begin(), node.childrenIds.end(),
+					[&](auto& i)
+					{
+						queue.push_back(i);
 					});
+
+			}
+			else if constexpr (std::is_same<T, CompactNodeV1>::value)
+			{
+
+				for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+				{
+					queue.push_back(i);
+				}
 			}
 		}
 	}
@@ -327,5 +434,25 @@ void CompactNodeManager<T>::customTreeOrder(NodeAnalysis* n, std::vector<NodeAna
 	for (auto& c : n->children)
 	{
 		customTreeOrder(&*c, nodeVector);
+	}
+}
+
+template<typename T>
+void CompactNodeManager<T>::levelTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector, int depth)
+{
+	if (n->depth == depth)
+	{
+		nodeVector.push_back(n);
+		//for (auto& c : n->children)
+		//{
+		//	nodeVector.push_back(&*c);
+		//}
+	}
+	else
+	{
+		for (auto& c : n->children)
+		{
+			levelTreeOrder(&*c, nodeVector, depth);
+		}
 	}
 }

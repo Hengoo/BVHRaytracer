@@ -60,7 +60,7 @@ public:
 	}
 
 	//traverses tree from left to right
-	void analysis(std::vector<NodeAnalysis*>& leafNodes, std::vector<unsigned int>& treeDepth, std::vector<unsigned int>& childCount, std::vector<unsigned int>& primCount)
+	void analysis(std::vector<NodeAnalysis*>& leafNodes, std::vector<uint16_t>& treeDepth, std::vector<uint16_t>& childCount, std::vector<uint16_t>& primCount)
 	{
 		size_t cc = children.size();
 		size_t pc = primitiveCount;

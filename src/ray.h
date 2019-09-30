@@ -31,14 +31,14 @@ public:
 	//float distance;
 	float tMax;
 
-	std::vector<unsigned int> nodeIntersectionCount;
-	std::vector<unsigned int> leafIntersectionCount;
-	std::vector<unsigned int> childFullness;
-	std::vector<unsigned int> primitiveFullness;
-	unsigned int primitiveIntersectionCount;
-	unsigned int successfulPrimitiveIntersectionCount;
-	unsigned int successfulAabbIntersectionCount;
-	unsigned int aabbIntersectionCount;
+	std::vector<uint16_t> nodeIntersectionCount;
+	std::vector<uint16_t> leafIntersectionCount;
+	std::vector<uint16_t> childFullness;
+	std::vector<uint16_t> primitiveFullness;
+	uint16_t primitiveIntersectionCount;
+	uint16_t successfulPrimitiveIntersectionCount;
+	uint16_t successfulAabbIntersectionCount;
+	uint16_t aabbIntersectionCount;
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
 
 	Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false);

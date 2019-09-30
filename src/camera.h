@@ -40,7 +40,7 @@ public:
 	std::string problem;
 	glm::vec3 position;
 	glm::mat4 transform;
-	std::vector<unsigned char> image;
+	std::vector<uint8_t> image;
 
 	//contains all info needed to spawn the ray for the specific pixel. Only needed because i dont know how to get the loop index into the unsequenced for_each
 	std::vector<RenderInfo> renderInfos;
@@ -56,46 +56,46 @@ public:
 	float farPlane = 50;
 
 	//per pixel per depth counter:
-	std::vector<std::vector<unsigned int>> nodeIntersectionPerPixelCount;
-	std::vector<std::vector<unsigned int>> leafIntersectionPerPixelCount;
-	std::vector<std::vector<unsigned int>> shadowNodeIntersectionPerPixelCount;
-	std::vector<std::vector<unsigned int>> shadowLeafIntersectionPerPixelCount;
-	std::vector<std::vector<unsigned int>> childFullnessPerPixelCount;
-	std::vector<std::vector<unsigned int>> primitiveFullnessPerPixelCount;
+	std::vector<std::vector<uint16_t>> nodeIntersectionPerPixelCount;
+	std::vector<std::vector<uint16_t>> leafIntersectionPerPixelCount;
+	std::vector<std::vector<uint16_t>> shadowNodeIntersectionPerPixelCount;
+	std::vector<std::vector<uint16_t>> shadowLeafIntersectionPerPixelCount;
+	std::vector<std::vector<uint16_t>> childFullnessPerPixelCount;
+	std::vector<std::vector<uint16_t>> primitiveFullnessPerPixelCount;
 
 	//per pixel counter:
-	std::vector<size_t> primitiveIntersectionsPerPixel;
-	std::vector<size_t> shadowPrimitiveIntersectionsPerPixel;
-	std::vector<size_t> successfulPrimitiveIntersectionsPerPixel;
-	std::vector<size_t> successfulAabbIntersectionsPerPixel;
-	std::vector<size_t> aabbIntersectionsPerPixel;
-	std::vector<size_t> shadowRayCounter;
-	std::vector<size_t> shadowSuccessfulPrimitiveIntersectionsPerPixel;
-	std::vector<size_t> shadowSuccessfulAabbIntersectionsPerPixel;
-	std::vector<size_t> shadowAabbIntersectionsPerPixel;
+	std::vector<uint16_t> primitiveIntersectionsPerPixel;
+	std::vector<uint16_t> shadowPrimitiveIntersectionsPerPixel;
+	std::vector<uint16_t> successfulPrimitiveIntersectionsPerPixel;
+	std::vector<uint16_t> successfulAabbIntersectionsPerPixel;
+	std::vector<uint16_t> aabbIntersectionsPerPixel;
+	std::vector<uint16_t> shadowRayCounter;
+	std::vector<uint16_t> shadowSuccessfulPrimitiveIntersectionsPerPixel;
+	std::vector<uint16_t> shadowSuccessfulAabbIntersectionsPerPixel;
+	std::vector<uint16_t> shadowAabbIntersectionsPerPixel;
 
 	//per depth counter:
-	std::vector<size_t> primitiveFullness;
-	std::vector<size_t> childFullness;
-	std::vector<size_t> nodeIntersectionPerDepthCount;
-	std::vector<size_t> leafIntersectionPerDepthCount;
-	std::vector<size_t> shadowNodeIntersectionPerDepthCount;
-	std::vector<size_t> shadowLeafIntersectionPerDepthCount;
+	std::vector<uint64_t> primitiveFullness;
+	std::vector<uint64_t> childFullness;
+	std::vector<uint64_t> nodeIntersectionPerDepthCount;
+	std::vector<uint64_t> leafIntersectionPerDepthCount;
+	std::vector<uint64_t> shadowNodeIntersectionPerDepthCount;
+	std::vector<uint64_t> shadowLeafIntersectionPerDepthCount;
 
 	//normal counter
-	size_t nodeIntersectionCount;
-	size_t leafIntersectionCount;
-	size_t shadowNodeIntersectionCount;
-	size_t shadowLeafIntersectionCount;
-	size_t primitiveIntersections;
-	size_t shadowPrimitiveIntersections;
-	size_t successfulPrimitiveIntersections;
-	size_t successfulAabbIntersections;
-	size_t aabbIntersections;
-	size_t shadowRayCount;
-	size_t shadowSuccessfulPrimitiveIntersections;
-	size_t shadowSuccessfulAabbIntersections;
-	size_t shadowAabbIntersections;
+	uint64_t nodeIntersectionCount;
+	uint64_t leafIntersectionCount;
+	uint64_t shadowNodeIntersectionCount;
+	uint64_t shadowLeafIntersectionCount;
+	uint64_t primitiveIntersections;
+	uint64_t shadowPrimitiveIntersections;
+	uint64_t successfulPrimitiveIntersections;
+	uint64_t successfulAabbIntersections;
+	uint64_t aabbIntersections;
+	uint64_t shadowRayCount;
+	uint64_t shadowSuccessfulPrimitiveIntersections;
+	uint64_t shadowSuccessfulAabbIntersections;
+	uint64_t shadowAabbIntersections;
 
 	Camera(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter
 		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
@@ -273,10 +273,10 @@ public:
 
 				}
 
-				image[info.index * 4 + 0] = (unsigned char)(ray.surfaceColor.r * 255);
-				image[info.index * 4 + 1] = (unsigned char)(ray.surfaceColor.g * 255);
-				image[info.index * 4 + 2] = (unsigned char)(ray.surfaceColor.b * 255);
-				image[info.index * 4 + 3] = (unsigned char)(ray.surfaceColor.a * 255);
+				image[info.index * 4 + 0] = (uint8_t)(ray.surfaceColor.r * 255);
+				image[info.index * 4 + 1] = (uint8_t)(ray.surfaceColor.g * 255);
+				image[info.index * 4 + 2] = (uint8_t)(ray.surfaceColor.b * 255);
+				image[info.index * 4 + 3] = (uint8_t)(ray.surfaceColor.a * 255);
 
 				//copy vectors
 				nodeIntersectionPerPixelCount[info.index] = ray.nodeIntersectionCount;
@@ -463,7 +463,7 @@ public:
 			//save an image with all the aabb intersections for every depth
 			for (size_t d = 0; d < nodeIntersectionPerDepthCount.size(); d++)
 			{
-				std::vector<unsigned int> maxDepth;
+				std::vector<uint16_t> maxDepth;
 				//find max element first to normalise to;
 				std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 					[&](auto& info)
@@ -481,7 +481,7 @@ public:
 				std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 					[&](auto& info)
 					{
-						int sum = 0;
+						uint16_t sum = 0;
 						if (d < nodeIntersectionPerPixelCount[info.index].size())
 						{
 							sum = nodeIntersectionPerPixelCount[info.index][d];
@@ -489,10 +489,10 @@ public:
 
 						//Color c(sum * 0.01f);
 						Color c(sum * (1 / (float)maxDepth[d]));
-						image[info.index * 4 + 0] = (unsigned char)(c.r * 255);
-						image[info.index * 4 + 1] = (unsigned char)(c.g * 255);
-						image[info.index * 4 + 2] = (unsigned char)(c.b * 255);
-						image[info.index * 4 + 3] = (unsigned char)(c.a * 255);
+						image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
+						image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
+						image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
+						image[info.index * 4 + 3] = (uint8_t)(c.a * 255);
 					});
 				encodeTwoSteps(path + "/" + name + problem + "_NodeDepth" + std::to_string(d) + ".png", image, width, height);
 			}
@@ -517,10 +517,10 @@ public:
 					int sum = nodeIntersectionPerPixelCount[info.index].size() - minDepth;
 					//Color c(sum * 0.01f);
 					Color c(sum * normalisation);
-					image[info.index * 4 + 0] = (unsigned char)(c.r * 255);
-					image[info.index * 4 + 1] = (unsigned char)(c.g * 255);
-					image[info.index * 4 + 2] = (unsigned char)(c.b * 255);
-					image[info.index * 4 + 3] = (unsigned char)(c.a * 255);
+					image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
+					image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
+					image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
+					image[info.index * 4 + 3] = (uint8_t)(c.a * 255);
 				});
 			encodeTwoSteps(path + "/" + name + problem + "_PixelDepth.png", image, width, height);
 		}

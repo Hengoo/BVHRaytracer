@@ -11,7 +11,7 @@ class Texture
 {
 private:
 	const size_t height, width;
-	const std::vector<unsigned char> colors;
+	const std::vector<uint8_t> colors;
 
 public:
 	Color getColor(const glm::vec2& uv)
@@ -25,7 +25,7 @@ public:
 	}
 
 	//the texture is copied once at creation
-	Texture(size_t width, size_t height, std::vector<unsigned char> colors)
+	Texture(size_t width, size_t height, std::vector<uint8_t> colors)
 		: width(width), height(height), colors(colors)
 	{
 
