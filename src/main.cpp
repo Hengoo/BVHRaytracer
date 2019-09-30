@@ -48,17 +48,17 @@ public:
 		int minBranch = 4;
 		int maxBranch = 4;
 
-		bool saveImage = false;
-		bool saveDepthDetailedImage = false;
-		bool bvhAnalysis = false;
+		bool saveImage = true;
+		bool saveDepthDetailedImage = true;
+		bool bvhAnalysis = true;
 
 		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
-		int renderType = 1;
+		int renderType = 2;
 		int scenario = 4;
 		int bucketCount = 0;
 
 		//0 = custom order, 1 = level
-		int compactNodeOrder = 1;
+		int compactNodeOrder = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));

@@ -497,26 +497,45 @@ public:
 				encodeTwoSteps(path + "/" + name + problem + "_NodeDepth" + std::to_string(d) + ".png", image, width, height);
 			}
 
-			float normalisation = nodeIntersectionPerDepthCount.size();
-			int minDepth = normalisation;
+			unsigned maxDepth = 0;
+			unsigned minDepth = nodeIntersectionPerDepthCount.size();
 			//find minimum:
 			std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
-					//int sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
-					minDepth = std::min(minDepth, (int)nodeIntersectionPerPixelCount[info.index].size());
+					unsigned depth;
+					//find largest depth value:
+					for (unsigned i = 0; i < nodeIntersectionPerPixelCount[info.index].size(); i++)
+					{
+
+						if (nodeIntersectionPerPixelCount[info.index][i] != 0)
+						{
+							depth = i;
+						}
+					}
+					minDepth = std::min(minDepth, depth);
+					maxDepth = std::max(maxDepth, depth);
 				});
-			normalisation = 1 / (normalisation - minDepth);
+			float normalisation = 1 / ((float)maxDepth - (float)minDepth);
 			//pixel bvh depth
 			std::cout << normalisation << std::endl;
 			std::cout << minDepth << std::endl;
+			std::cout << maxDepth << std::endl;
 			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
-					//int sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
-					int sum = nodeIntersectionPerPixelCount[info.index].size() - minDepth;
-					//Color c(sum * 0.01f);
-					Color c(sum * normalisation);
+					unsigned depth;
+					//find largest depth value:
+					for (unsigned i = 0; i < nodeIntersectionPerPixelCount[info.index].size(); i++)
+					{
+
+						if (nodeIntersectionPerPixelCount[info.index][i] != 0)
+						{
+							depth = i;
+						}
+					}
+					depth = depth - minDepth;
+					Color c(depth * normalisation);
 					image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
 					image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
 					image[info.index * 4 + 2] = (uint8_t)(c.b * 255);

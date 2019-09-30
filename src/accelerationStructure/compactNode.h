@@ -12,16 +12,17 @@ struct CompactNodeV0
 {
 	std::vector<uint32_t> childrenIds;
 	uint32_t primIdBegin;
-	uint32_t primIdEnd;
-
+	uint8_t primIdEndOffset;
+	uint8_t sortAxis;
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-	uint8_t sortAxis;
+
 
 	CompactNodeV0(std::vector<uint32_t> childrenIds, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
-		:childrenIds(childrenIds), primIdBegin(primIdBegin), primIdEnd(primIdEnd), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
+		:childrenIds(childrenIds), primIdBegin(primIdBegin), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
 	{
+		primIdEndOffset = primIdEnd - primIdBegin;
 	}
 
 	inline uint16_t getChildCount()
@@ -40,28 +41,28 @@ struct CompactNodeV1
 {
 	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
 	uint32_t childIdBegin;
-	uint32_t childIdEnd;
 	uint32_t primIdBegin;
-	uint32_t primIdEnd;
-
+	uint8_t childIdEndOffset;
+	uint8_t primIdEndOffset;
+	uint8_t sortAxis;
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-	uint8_t sortAxis;
-
 	CompactNodeV1(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
-		: childIdBegin(childIdBegin), childIdEnd(childIdEnd), primIdBegin(primIdBegin), primIdEnd(primIdEnd), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
+		: childIdBegin(childIdBegin), primIdBegin(primIdBegin), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
 	{
+		childIdEndOffset = childIdEnd - childIdBegin;
+		primIdEndOffset = primIdEnd - primIdBegin;
 	}
 
 	inline uint16_t getChildCount()
 	{
-		return childIdEnd - childIdBegin + 1;
+		return childIdEndOffset + 1;
 	}
 
 	inline bool noChildren()
 	{
-		return childIdBegin == childIdEnd;
+		return childIdEndOffset == 0;
 	}
 };
 

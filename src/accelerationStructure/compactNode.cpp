@@ -95,8 +95,8 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 	//std::cout << nodeVector.size() << std::endl;
 	//std::cout << compactNodes.size() << std::endl;
 	//std::cout << fullTraverse() << std::endl;
-	std::cout << sizeof(CompactNodeV0) << std::endl;
-	std::cout << sizeof(CompactNodeV1) << std::endl;
+	//std::cout << sizeof(CompactNodeV0) << std::endl;
+	//std::cout << sizeof(CompactNodeV1) << std::endl;
 	primitives = bvh.primitives;
 }
 
@@ -134,16 +134,16 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 		node = compactNodes[id];
 
 		//intersection happened, test primitives
-		if (node.primIdBegin != node.primIdEnd)
+		if (node.primIdEndOffset != 0)
 		{
-			uint32_t primCount = node.primIdEnd - node.primIdBegin;
+			uint32_t primCount = node.primIdEndOffset;
 			//logging: primitive fullness:
 			ray.primitiveFullness[primCount] ++;
 			ray.leafIntersectionCount[d]++;
 
 			if (!ray.shadowRay)
 			{
-				std::for_each(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
+				std::for_each(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEndOffset + node.primIdBegin,
 					[&](auto& p)
 					{
 						ray.primitiveIntersectionCount++;
@@ -156,7 +156,7 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 			}
 			else
 			{
-				auto b = std::any_of(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
+				auto b = std::any_of(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEndOffset + node.primIdBegin,
 					[&](auto& p)
 					{
 						ray.primitiveIntersectionCount++;
@@ -219,22 +219,25 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 			{
 				if (ray.direction[node.sortAxis] > 0)
 				{
-					int insertPoint = queue.size();
-					//std::vector<size_t> work(childCount);
-					//std::iota(work.begin(), work.end(), node.childIdBegin);
-					for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+					//version in comments is slower
+					//int insertPoint = queue.size();
+					//for (uint32_t i = node.childIdBegin; i <= node.childIdEndOffset + node.childIdBegin; i++)
+					for (uint32_t i = node.childIdEndOffset + node.childIdBegin; i >= node.childIdBegin; i--)
 					{
 						if (!aabbCheck(ray, i))
 						{
 							continue;
 						}
-						queue.insert(queue.begin() + insertPoint, i);
-						depths.insert(depths.begin() + insertPoint, d + 1);
+						//queue.insert(queue.begin() + insertPoint, i);
+						//depths.insert(depths.begin() + insertPoint, d + 1);
+
+						queue.push_back(i);
+						depths.push_back(d + 1);
 					}
 				}
 				else
 				{
-					for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+					for (uint32_t i = node.childIdBegin; i <= node.childIdEndOffset + node.childIdBegin; i++)
 					{
 						if (!aabbCheck(ray, i))
 						{
@@ -284,15 +287,15 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 		}
 
 		//intersection happened, test primitives
-		if (node.primIdBegin != node.primIdEnd)
+		if (node.primIdEndOffset != 0)
 		{
-			uint16_t primCount = node.primIdEnd - node.primIdBegin;
+			uint16_t primCount = node.primIdEndOffset;
 			//logging: primitive fullness:
 			ray.primitiveFullness[primCount] ++;
 			ray.leafIntersectionCount[d]++;
 			if (!ray.shadowRay)
 			{
-				std::for_each(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
+				std::for_each(primitives->begin() + node.primIdBegin, primitives->begin() + +node.primIdEndOffset + node.primIdBegin,
 					[&](auto& p)
 					{
 						ray.primitiveIntersectionCount++;
@@ -305,7 +308,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 			}
 			else
 			{
-				auto b = std::any_of(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEnd,
+				auto b = std::any_of(primitives->begin() + node.primIdBegin, primitives->begin() + node.primIdEndOffset + node.primIdBegin,
 					[&](auto& p)
 					{
 						ray.primitiveIntersectionCount++;
@@ -360,7 +363,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 			{
 				if (ray.direction[node.sortAxis] > 0)
 				{
-					for (uint32_t i = node.childIdEnd; i >= node.childIdBegin; i--)
+					for (uint32_t i = node.childIdEndOffset + node.childIdBegin; i >= node.childIdBegin; i--)
 					{
 						queue.push_back(i);
 						depths.push_back(d + 1);
@@ -368,7 +371,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 				}
 				else
 				{
-					for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+					for (uint32_t i = node.childIdBegin; i <= node.childIdEndOffset + node.childIdBegin; i++)
 					{
 						queue.push_back(i);
 						depths.push_back(d + 1);
@@ -414,7 +417,7 @@ int CompactNodeManager<T>::fullTraverse()
 			else if constexpr (std::is_same<T, CompactNodeV1>::value)
 			{
 
-				for (uint32_t i = node.childIdBegin; i <= node.childIdEnd; i++)
+				for (uint32_t i = node.childIdBegin; i <= node.childIdEndOffset + node.childIdBegin; i++)
 				{
 					queue.push_back(i);
 				}
