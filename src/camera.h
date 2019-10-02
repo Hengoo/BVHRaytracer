@@ -405,7 +405,7 @@ public:
 				sum += childFullness[i] * i;
 			}
 			sum /= std::accumulate(childFullness.begin(), childFullness.end(), 0);
-			myfile << "average: : " << std::to_string(sum) << std::endl;
+			myfile << "average child fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 0; i < childFullness.size(); i++)
 			{
 				myfile << i << " : " << childFullness[i] * bothFactor << std::endl;
@@ -419,7 +419,7 @@ public:
 				sum += primitiveFullness[i] * i;
 			}
 			sum /= std::accumulate(primitiveFullness.begin(), primitiveFullness.end(), 0);
-			myfile << "average: : " << std::to_string(sum) << std::endl;
+			myfile << "averag leaf fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 0; i < primitiveFullness.size(); i++)
 			{
 				myfile << i << " : " << primitiveFullness[i] * bothFactor << std::endl;

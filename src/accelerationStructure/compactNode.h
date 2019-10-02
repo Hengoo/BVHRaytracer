@@ -7,6 +7,35 @@
 #include "bvh.h"
 #include "../ray.h"
 
+/* possible nodes
+struct Node32Bit
+{
+	glm::vec3 min1;
+	glm::vec3 min2;
+
+	uint16_t childIdBegin;
+	uint16_t primIdBegin;
+	uint8_t childIdEndOffset;
+	uint8_t primIdEndOffset;
+	uint8_t sortAxis;
+};
+
+struct Node64Bit
+{
+	glm::vec3 min1;
+	glm::vec3 min2;
+	glm::vec3 min3;
+	glm::vec3 min4;
+
+	uint32_t childIdBegin;
+	uint32_t primIdBegin;
+	uint8_t childIdEndOffset;
+	uint8_t primIdEndOffset;
+	uint8_t sortAxis;
+	uint8_t pad1;
+	uint16_t pad2;
+};
+*/
 //compact node with random child ids
 struct CompactNodeV0
 {

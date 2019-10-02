@@ -52,12 +52,15 @@ public:
 		bool saveDepthDetailedImage = true;
 		bool bvhAnalysis = true;
 
+		//todo: make use texture option. should save rendertime (ONLY enable for scenes without transparency)
+		bool useTexture = false;
+
 		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 		int renderType = 2;
 		int scenario = 4;
 		int bucketCount = 0;
 
-		//0 = custom order, 1 = level
+		//0 = custom order, 1 = level, 2 = depth first,
 		int compactNodeOrder = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
@@ -233,10 +236,6 @@ public:
 					Camera c(path, name, problem, cameraPos, cameraTarget);
 					c.renderImage(saveImage, saveDepthDetailedImage, manager, renderType);
 				}
-
-
-
-
 
 				std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
 				std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);

@@ -1,6 +1,6 @@
 #include "aabb.h"
 
-primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget, int bucketCount)
+primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget)
 {
 	//method should be usable for all nodes?
 
@@ -32,73 +32,116 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 	}
 	*/
 
-	int size = getPrimCount();
+	size_t size = getPrimCount();
 
-	if (bucketCount <= 0 || size < bucketCount)
-	{
-		//test all combos with heuristic:
-		//save results in array and take the one with best result
 
-		// Split by metric (currently SAH)
-		std::vector<float> metric(size - 1);
+	//test all combos with heuristic:
+	//save results in array and take the one with best result
 
-		Aabb node(0.f, primitiveBegin, primitiveBegin);
-		std::for_each(std::execution::seq, metric.begin(), metric.end(),
-			[&](auto& met)
-			{
-				node.sweepRight();
-				met += node.sah(invSurfaceArea, leafTarget);
-			});
-		node = Aabb(0, primitiveEnd, primitiveEnd);
-		std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
-			[&](auto& met)
-			{
-				node.sweepLeft();
-				met += node.sah(invSurfaceArea, leafTarget);
-			});
-		//make the split with the best metric:
-		auto bestElement = std::min_element(metric.begin(), metric.end());
-		return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
-	}
-	else
-	{
-		//greedy approach with buckets:
-		std::vector<float> metric(bucketCount - 1);
-		std::vector<float> metric2(bucketCount - 1);
-		//split primitives into buckets:
-		std::vector<std::unique_ptr<Aabb>> buckets;
-		//easy version:
-		for (size_t i = 0; i < bucketCount - 1; i++)
+	// Split by metric (currently SAH)
+	std::vector<float> metric(size - 1);
+
+	Aabb node(0.f, primitiveBegin, primitiveBegin);
+	std::for_each(std::execution::seq, metric.begin(), metric.end(),
+		[&](auto& met)
 		{
-			buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * i, primitiveBegin + (size / bucketCount) * (i + 1)));
-		}
-		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * (bucketCount - 1), primitiveEnd));
-
-		//better spacial version:
-		//TODO
-
-		//iterate trough buckets
-		Aabb node(0.f, primitiveBegin, primitiveBegin);
-		for (size_t i = 0; i < bucketCount - 1; i++)
+			node.sweepRight();
+			met += node.sah(invSurfaceArea, leafTarget);
+		});
+	node = Aabb(0, primitiveEnd, primitiveEnd);
+	std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
+		[&](auto& met)
 		{
-			//use all but the first bucket
-			node.sweepRight(&*buckets[i + 1]);
-			metric[i] = node.sah(invSurfaceArea, leafTarget);
-		}
-		node = Aabb(0.f, primitiveEnd, primitiveEnd);
-		for (int i = bucketCount - 2; i >= 0; i--)
-		{
-			//use all but the last bucket
-			node.sweepLeft(&*buckets[i]);
-			metric[i] += node.sah(invSurfaceArea, leafTarget);
-		}
-		//make the split with the best metric:
-		auto bestElement = std::min_element(metric.begin(), metric.end());
-		//return best cut position:
-		return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
-	}
+			node.sweepLeft();
+			met += node.sah(invSurfaceArea, leafTarget);
+		});
+	//make the split with the best metric:
+	auto bestElement = std::min_element(metric.begin(), metric.end());
+	return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
 }
 
+primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget,
+	int bucketCount, glm::vec3 centerMin, glm::vec3 centerMax, uint16_t sortAxis)
+{
+	//method should be usable for all nodes?
+
+	size_t size = getPrimCount();
+
+	//greedy approach with buckets:
+
+	//split primitives into buckets:
+	std::vector<std::unique_ptr<Aabb>> buckets;
+
+	//fill the buckets:
+
+	/*
+	//easy version:
+	for (size_t i = 0; i < bucketCount - 1; i++)
+	{
+		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * i, primitiveBegin + (size / bucketCount) * (i + 1)));
+	}
+	buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * (bucketCount - 1), primitiveEnd));
+	*/
+
+	//better spacial version:
+	// cut at sortAxis 
+	int lastCutIndex = 0;
+	int bestCutIndex = 0;
+	for (size_t i = 1; i < bucketCount; i++)
+	{
+		auto cut = centerMin[sortAxis] + ((centerMax[sortAxis] - centerMin[sortAxis]) / bucketCount) * i;
+		//lazy version: faster would be some kind of binary search
+		for (int j = lastCutIndex; j < size; j++)
+		{
+			//check if prim is right from cut:
+			if (cut >= (*(primitiveBegin + j))->getCenter()[sortAxis])
+			{
+				bestCutIndex = j;
+			}
+		}
+		if (bestCutIndex != lastCutIndex)
+		{
+			buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + lastCutIndex, primitiveBegin + bestCutIndex));
+			lastCutIndex = bestCutIndex;
+		}
+
+	}
+	if (size != bestCutIndex)
+	{
+		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + bestCutIndex, primitiveEnd));
+	}
+
+	bucketCount = buckets.size();
+
+	std::vector<float> metric(bucketCount - 1);
+
+	//iterate trough buckets
+	Aabb node(0.f, primitiveBegin, primitiveBegin);
+	for (size_t i = 0; i < bucketCount - 1; i++)
+	{
+		//use all but the first bucket
+		node.sweepRight(&*buckets[i + 1]);
+		metric[i] = node.sah(invSurfaceArea, leafTarget);
+	}
+	node = Aabb(0.f, primitiveEnd, primitiveEnd);
+	for (int i = bucketCount - 2; i >= 0; i--)
+	{
+		//use all but the last bucket
+		node.sweepLeft(&*buckets[i]);
+		metric[i] += node.sah(invSurfaceArea, leafTarget);
+	}
+
+	//make the split with the best metric:
+	auto bestElement = std::min_element(metric.begin(), metric.end());
+
+	if (std::distance(metric.begin(), bestElement) < 5 || std::distance(metric.begin(), bestElement) > bucketCount - 5)
+	{
+		std::cout << "why ?" << std::endl;
+	}
+	//return best cut position:
+	return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
+
+}
 void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount)
 {
 	//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
@@ -166,7 +209,27 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 		{
 			break;
 		}
-		auto bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget, bucketCount);
+		primPointVector::iterator bestSplit;
+		if (bucketCount <= 0 || workIntervall[bestI].getPrimCount() < bucketCount * 10)
+		{
+			bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
+		}
+		else
+		{
+			min = glm::vec3(222222.0f);
+			max = glm::vec3(-222222.0f);
+			std::for_each(std::execution::seq, workIntervall[bestI].primitiveBegin, workIntervall[bestI].primitiveEnd,
+				[&](auto& p)
+				{
+					centerDistance = p->getCenter();
+					min = glm::min(min, centerDistance);
+					max = glm::max(max, centerDistance);
+				});
+			bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget, bucketCount,
+				min, max, sortAxis);
+		}
+
+
 		//split at bestSplit of best intervall:
 		PrimIntervall p1(workIntervall[bestI].primitiveBegin, bestSplit);
 		PrimIntervall p2(bestSplit, workIntervall[bestI].primitiveEnd);

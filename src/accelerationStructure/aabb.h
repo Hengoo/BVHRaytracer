@@ -49,8 +49,11 @@ class Aabb : public Node
 		{
 		}
 
-		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget, int bucketCount);
-		
+		//compute sah of every possible split and
+		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget);
+		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget,
+			int bucketCount, glm::vec3 boundMin, glm::vec3 boundMax, uint16_t sortAxis);
+
 
 		inline size_t getPrimCount()
 		{
@@ -102,7 +105,7 @@ public:
 	}
 
 	virtual void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount);
-	
+
 
 	inline virtual bool intersectNode(Ray& ray, float& distance) override
 	{
