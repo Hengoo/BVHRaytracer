@@ -78,6 +78,7 @@
 	\begin{axis}
 	[grid=both,
 	width = \textwidth,
+	height= 0.8\textwidth,
 %	legend entries = {leaf Intersections},
 %	enlargelimits=false , font = \tiny,
 %	legend style={draw=none},
@@ -92,5 +93,91 @@
 		%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
 	\end{axis}
 \end{tikzpicture}
+
+\begin{tikzpicture}
+	\begin{axis}
+	[grid=both,
+	width = \textwidth,
+	height= 0.8\textwidth,
+	%	legend entries = {leaf Intersections},
+	%	enlargelimits=false , font = \tiny,
+	%	legend style={draw=none},
+	%	legend image post style={scale=0.5},
+	ylabel = leaf size,
+	xlabel = branching factor,
+	zlabel = node Intersections
+	%	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
+	]
+	%faceted interp, scatter, point meta=\thisrow{childFullness}
+	\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[x = branchFactor, y =leafSize, z =  nodeIntersections, col sep=comma]{Data/sponzaTable.txt};
+	%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
+	\end{axis}
+\end{tikzpicture}
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth}
+
+		\begin{tikzpicture}
+			\begin{axis}
+			[
+			ylabel = leafIntersections,
+			xlabel = branching factor,
+			colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+			]
+			\addplot[contour filled={number=18, labels = {false}}, thick, color = red] table[x = branchFactor, y = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
+			\end{axis}
+		\end{tikzpicture}
+		
+	\end{minipage}\hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		%TODO move label to the right side
+		\begin{tikzpicture}
+			\begin{axis}
+				[
+				ylabel = nodeIntersections,
+				xlabel = branching factor,
+				colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+				]
+				
+				\addplot[contour filled={number=8, labels = {false}}, thick] table[x = branchFactor, y = nodeIntersections, col sep=comma] {Data/sponzaTable.txt};
+				
+			\end{axis}
+		\end{tikzpicture}
+
+	\end{minipage}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth}
+		
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		ylabel = leafIntersections,
+		xlabel = leafSize,
+		colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+		]
+		\addplot[contour filled={number=18, labels = {false}}, thick, color = red] table[x = leafSize, y = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
+		\end{axis}
+		\end{tikzpicture}
+		
+	\end{minipage}\hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		ylabel = nodeIntersections,
+		xlabel = leafSize,
+		colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+		]
+		
+		\addplot[contour filled={number=8, labels = {false}}, thick] table[x = leafSize, y = nodeIntersections, col sep=comma] {Data/sponzaTable.txt};
+		
+		\end{axis}
+		\end{tikzpicture}
+		
+	\end{minipage}
+\end{figure}
 
 \end{document}

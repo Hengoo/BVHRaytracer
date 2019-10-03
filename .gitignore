@@ -53,6 +53,10 @@
 *.cb
 *.cb2
 
+## Intermediate documents:
+*.dvi
+*-converted-to.*
+
 ## Build tool auxiliary files:
 *.fdb_latexmk
 *.synctex
@@ -63,6 +67,12 @@
 
 ## for now pdf:
 *.pdf
+
+##in the latexPlots area:
+LatexPlots/*.dat
+LatexPlots/*.script
+LatexPlots/*.table
+LatexPlots/*.cmd
 
 #debug and compied folder:
 Debug/
