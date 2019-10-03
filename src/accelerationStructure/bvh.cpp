@@ -121,7 +121,7 @@ void Bvh::iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& prim
 	}
 }
 
-void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, std::string name, std::string problem)
+void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem)
 {
 	//analysis includes
 	//metric analysis: sah, the overlapp heuristic
@@ -133,25 +133,22 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, std::string nam
 
 	//create image -> go through bvh and set one pixel per node
 
-	//position is needed to know where to place center in the image i want to draw
-	int minPos = 0;
-	int maxPos = 0;
 	//counts: childCount[i] = number of nodes that have i children
-	std::vector<uint16_t> childCount;
-	std::vector<uint16_t> primCount;
+	std::vector<uint32_t> childCount;
+	std::vector<uint32_t> primCount;
 	//depth of the leaf nodes
-	std::vector<uint16_t> treeDepth;
+	std::vector<uint32_t> treeDepth;
 	std::vector<NodeAnalysis*> leafNodes;
 	analysisRoot = std::make_shared<NodeAnalysis>(&*root, branchingFactor, leafCount);
 	analysisRoot->analysis(leafNodes, treeDepth, childCount, primCount);
 	bvhDepth = treeDepth.size();
 	float averageTreeDepth = 0;
 
+	uint32_t nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
+	uint32_t leafs = leafNodes.size();
+
 	if (saveAndPrintResult)
 	{
-		int nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
-		int leafs = leafNodes.size();
-
 		averageTreeDepth /= (float)leafs;
 
 		std::cout << "BVH Analysis:" << std::endl;
@@ -257,9 +254,13 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, std::string nam
 		}
 		else std::cout << "Unable to open file" << std::endl;
 
+	}
+
+	//create image
+	if (saveBvhImage && leafs < 1000000)
+	{
 
 
-		//create image
 		int height = treeDepth.size();
 		int width = leafs;
 		std::vector<uint8_t> image(height * width * 4, 255);

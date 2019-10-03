@@ -48,8 +48,10 @@ struct CompactNodeV0
 
 
 
-	CompactNodeV0(std::vector<uint32_t> childrenIds, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
-		:childrenIds(childrenIds), primIdBegin(primIdBegin), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
+	CompactNodeV0(std::vector<uint32_t> childrenIds, uint32_t primIdBegin,
+		uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
+		:childrenIds(childrenIds), primIdBegin(primIdBegin),
+		boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
 	{
 		primIdEndOffset = primIdEnd - primIdBegin;
 	}

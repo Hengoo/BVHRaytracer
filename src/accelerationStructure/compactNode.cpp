@@ -97,9 +97,9 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 
 	//debug: test if compact nodes are fully traversable
 	//std::cout << nodeVector.size() << std::endl;
-	//std::cout << compactNodes.size() << std::endl;
-	//std::cout << fullTraverse() << std::endl;
-	//std::cout << primitives->size() << std::endl;
+	std::cout << "Node count: "<<compactNodes.size() << std::endl;
+	std::cout << "traverse count: "<<fullTraverse() << std::endl;
+	std::cout << "primCount: " << primitives->size() << std::endl;
 	//std::cout << sizeof(CompactNodeV0) << std::endl;
 	//std::cout << sizeof(CompactNodeV1) << std::endl;
 	//std::cout << sizeof(glm::vec3) << std::endl;

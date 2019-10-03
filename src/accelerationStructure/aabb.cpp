@@ -74,15 +74,15 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 
 	//fill the buckets:
 
-	/*
+	
 	//easy version:
 	for (size_t i = 0; i < bucketCount - 1; i++)
 	{
 		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * i, primitiveBegin + (size / bucketCount) * (i + 1)));
 	}
 	buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * (bucketCount - 1), primitiveEnd));
-	*/
-
+	
+	/*
 	//better spacial version:
 	// cut at sortAxis 
 	int lastCutIndex = 0;
@@ -110,8 +110,8 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 	{
 		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + bestCutIndex, primitiveEnd));
 	}
-
 	bucketCount = buckets.size();
+	*/
 
 	std::vector<float> metric(bucketCount - 1);
 
@@ -134,10 +134,6 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 	//make the split with the best metric:
 	auto bestElement = std::min_element(metric.begin(), metric.end());
 
-	if (std::distance(metric.begin(), bestElement) < 5 || std::distance(metric.begin(), bestElement) > bucketCount - 5)
-	{
-		std::cout << "why ?" << std::endl;
-	}
 	//return best cut position:
 	return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
 
@@ -210,7 +206,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 			break;
 		}
 		primPointVector::iterator bestSplit;
-		if (bucketCount <= 0 || workIntervall[bestI].getPrimCount() < bucketCount * 10)
+		if (bucketCount <= 0 || workIntervall[bestI].getPrimCount() < bucketCount * 5)
 		{
 			bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
 		}

@@ -43,21 +43,23 @@ public:
 		std::chrono::high_resolution_clock::time_point time1 = std::chrono::high_resolution_clock::now();
 
 		//all settings:  TODO: move this into a txt
-		int minLeafSize = 4;
-		int maxLeafSize = 4;
-		int minBranch = 4;
-		int maxBranch = 4;
+		int minLeafSize = 1;
+		int maxLeafSize = 1;
+		int minBranch = 2;
+		int maxBranch = 2;
 
 		bool saveImage = true;
 		bool saveDepthDetailedImage = true;
 		bool bvhAnalysis = true;
+		//this image is not saved for scenes with more than 1 000 000 leafnodes
+		bool saveBvhImage = false;
 
 		//todo: make use texture option. should save rendertime (ONLY enable for scenes without transparency)
 		bool useTexture = false;
 
 		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 		int renderType = 2;
-		int scenario = 4;
+		int scenario = 6;
 		int bucketCount = 0;
 
 		//0 = custom order, 1 = level, 2 = depth first,
@@ -75,9 +77,11 @@ public:
 		unsigned int branchingFactor = 0;
 		unsigned int leafCount = 0;
 
+		//reminder : blender coordiantes of this (0, 360, 50) are -> glm::vec3(0, 50, -360);
 		switch (scenario)
 		{
 		case 0:
+			//https://sketchfab.com/3d-models/lizard-mage-817d52d9887948bfa0ca43aef6064eaa
 			name = "lizard";
 			loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshBins);
 			cameraPos = glm::vec3(3.5f, 1.5f, 5.f);
@@ -86,6 +90,7 @@ public:
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
 		case 1:
+			//https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295
 			name = "shiftHappens";
 			loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshBins);
 			cameraPos = glm::vec3(20, 10, -10);
@@ -93,16 +98,8 @@ public:
 
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
-		case 2:
-			name = "gearbox";
-			//loadGltfModel("models/GearboxAssy.glb", gameObjects, meshBins);
-			loadGltfModel("models/GearboxAssyBlenderExport.glb", gameObjects, meshBins);
-			cameraPos = glm::vec3(0, 0, 0);
-			cameraTarget = glm::vec3(50, 0, 0);
-
-			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
-			break;
 		case 3:
+			//just some cubes for debuging single rays
 			name = "cubes";
 			loadGltfModel("models/4Cubes.glb", gameObjects, meshBins);
 			cameraPos = glm::vec3(0, 0, -3);
@@ -111,12 +108,35 @@ public:
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
 		case 4:
+			//http://casual-effects.com/data/index.html
+			//the "Crytek Sponza"
 			name = "sponza";
 			loadGltfModel("models/CasualEffect/sponzaColorful/sponzaColorful.glb", gameObjects, meshBins);
 			cameraPos = glm::vec3(-1100, 300, 0);
 			cameraTarget = glm::vec3(-900, 290, 0);
 
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
+			break;
+
+		case 5:
+			//https://sketchfab.com/3d-models/davia-rocks-b8576a61715a4feabd9637215eeb2e05
+			name = "daviaRock";
+			loadGltfModel("models/davia_rocks/scene.gltf", gameObjects, meshBins);
+			cameraPos = glm::vec3(10, 2, 2);
+			cameraTarget = glm::vec3(0, 0, 0);
+
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
+			break;
+		case 6:
+			//http://casual-effects.com/data/index.html
+			//rungholt scene converted to glb with blender (took ages)
+			name = "rungholt";
+			loadGltfModel("models/rungholt/rungholt.glb", gameObjects, meshBins);
+
+			cameraPos = glm::vec3(-100, 41, -200);
+			cameraTarget = glm::vec3(-140, 0, -80);
+
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 			break;
 		default:
 			break;
@@ -212,7 +232,7 @@ public:
 
 				//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 				//This also duplicates the node system. the copy is used for the compact nodes
-				bvh.bvhAnalysis(path, bvhAnalysis, name, problem);
+				bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem);
 
 				//determine type:
 

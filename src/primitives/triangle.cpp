@@ -194,7 +194,7 @@ bool Triangle::intersect(Ray& ray)
 	color.scale(mesh->color);
 
 	//transparency 
-	if (color.a < 0.1f)
+	if (color.a < 0.5f)
 	{
 		return false;
 	}

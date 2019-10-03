@@ -497,45 +497,45 @@ public:
 				encodeTwoSteps(path + "/" + name + problem + "_NodeDepth" + std::to_string(d) + ".png", image, width, height);
 			}
 
-			unsigned maxDepth = 0;
-			unsigned minDepth = nodeIntersectionPerDepthCount.size();
+			unsigned maxSum = 0;
+			unsigned minSum = nodeIntersectionPerDepthCount.size();
 			//find minimum:
 			std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
-					unsigned depth;
+					unsigned sum = 0;
 					//find largest depth value:
 					for (unsigned i = 0; i < nodeIntersectionPerPixelCount[info.index].size(); i++)
 					{
 
 						if (nodeIntersectionPerPixelCount[info.index][i] != 0)
 						{
-							depth = i;
+							sum += i;
 						}
 					}
-					minDepth = std::min(minDepth, depth);
-					maxDepth = std::max(maxDepth, depth);
+					minSum = std::min(minSum, sum);
+					maxSum = std::max(maxSum, sum);
 				});
-			float normalisation = 1 / ((float)maxDepth - (float)minDepth);
+			float normalisation = 1 / ((float)maxSum - (float)minSum);
 			//pixel bvh depth
 			std::cout << normalisation << std::endl;
-			std::cout << minDepth << std::endl;
-			std::cout << maxDepth << std::endl;
+			std::cout << minSum << std::endl;
+			std::cout << maxSum << std::endl;
 			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
-					unsigned depth;
+					unsigned sum = 0;
 					//find largest depth value:
 					for (unsigned i = 0; i < nodeIntersectionPerPixelCount[info.index].size(); i++)
 					{
 
 						if (nodeIntersectionPerPixelCount[info.index][i] != 0)
 						{
-							depth = i;
+							sum += i;
 						}
 					}
-					depth = depth - minDepth;
-					Color c(depth * normalisation);
+					sum = sum - minSum;
+					Color c(sum * normalisation);
 					image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
 					image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
 					image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
