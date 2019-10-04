@@ -61,9 +61,14 @@ struct CompactNodeV0
 		return childrenIds.size();
 	}
 
-	inline bool noChildren()
+	inline bool hasChildren()
 	{
-		return childrenIds.size() == 0;
+		return childrenIds.size() != 0;
+	}
+
+	inline bool hasPrimitive()
+	{
+		return primIdEndOffset != 0;
 	}
 };
 
@@ -91,9 +96,69 @@ struct CompactNodeV1
 		return childIdEndOffset + 1;
 	}
 
-	inline bool noChildren()
+	inline bool hasChildren()
 	{
-		return childIdEndOffset == 0;
+		return childIdEndOffset != 0;
+	}
+
+	inline bool hasPrimitive()
+	{
+		return primIdEndOffset != 0;
+	}
+};
+
+//even more compact node with consecutive child ids (can only support either childs or primitives)
+struct CompactNodeV2
+{
+	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
+	union
+	{
+		uint32_t childIdBegin;
+		uint32_t primIdBegin;
+	};
+	union
+	{
+		uint8_t childIdEndOffset;
+		uint8_t primIdEndOffset;
+	};
+	uint8_t sortAxis;
+	glm::vec3 boundMin;
+	glm::vec3 boundMax;
+
+	CompactNodeV2(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
+		: boundMin(boundMin), boundMax(boundMax)
+	{
+		if (childIdBegin !=  childIdEnd)
+		{
+			this->childIdBegin = childIdBegin;
+			childIdEndOffset = childIdEnd - childIdBegin;
+			this->sortAxis = sortAxis;
+		}
+		else if (primIdBegin != primIdEnd)
+		{
+			this->primIdBegin = primIdBegin;
+			primIdEndOffset = primIdEnd - primIdBegin;
+			this->sortAxis = 16;
+		}
+		else
+		{
+			std::cout << "ERROR assigning both child and prim to compact node v2" << std::endl;
+		}
+	}
+
+	inline uint16_t getChildCount()
+	{
+		return childIdEndOffset + 1;
+	}
+
+	inline bool hasChildren()
+	{
+		return sortAxis != 16;
+	}
+
+	inline bool hasPrimitive()
+	{
+		return sortAxis == 16;
 	}
 };
 

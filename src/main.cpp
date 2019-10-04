@@ -43,14 +43,14 @@ public:
 		std::chrono::high_resolution_clock::time_point time1 = std::chrono::high_resolution_clock::now();
 
 		//all settings:  TODO: move this into a txt
-		int minLeafSize = 1;
-		int maxLeafSize = 1;
-		int minBranch = 2;
-		int maxBranch = 2;
+		int minLeafSize = 4;
+		int maxLeafSize = 4;
+		int minBranch = 4;
+		int maxBranch = 4;
 
-		bool saveImage = true;
-		bool saveDepthDetailedImage = true;
-		bool bvhAnalysis = true;
+		bool saveImage = false;
+		bool saveDepthDetailedImage = false;
+		bool bvhAnalysis = false;
 		//this image is not saved for scenes with more than 1 000 000 leafnodes
 		bool saveBvhImage = false;
 
@@ -59,7 +59,7 @@ public:
 
 		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 		int renderType = 2;
-		int scenario = 6;
+		int scenario = 4;
 		int bucketCount = 0;
 
 		//0 = custom order, 1 = level, 2 = depth first,
@@ -244,7 +244,7 @@ public:
 
 				if (compactNodeOrder == 0 || compactNodeOrder == 1)
 				{
-					CompactNodeManager<CompactNodeV1> manager(bvh, compactNodeOrder);
+					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 					//create camera and render image
 					Camera c(path, name, problem, cameraPos, cameraTarget);
 					c.renderImage(saveImage, saveDepthDetailedImage, manager, renderType);
