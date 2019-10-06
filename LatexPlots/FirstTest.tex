@@ -70,6 +70,11 @@
 	xleftmargin=0.5cm
 }
 
+\newcommand{\branchf}{Branching Factor}
+\newcommand{\leafs}{Leaf Size}
+\newcommand{\leafi}{Leaf Intersection}
+\newcommand{\nodei}{Node Intersection}
+
 \titleformat{\paragraph}[hang]{\normalfont\bfseries}{\theparagraph}{.5em}{}
 
 \begin{document}
@@ -78,19 +83,22 @@
 	\begin{axis}
 	[grid=both,
 	width = \textwidth,
-	height= 0.8\textwidth,
+	height= 0.7\textwidth,
 %	legend entries = {leaf Intersections},
 %	enlargelimits=false , font = \tiny,
 %	legend style={draw=none},
 %	legend image post style={scale=0.5},
-	xlabel = leaf size,
-	ylabel = branching factor,
+	ylabel = leaf size,
+	xlabel = branching factor,
 	zlabel = leaf Intersections
 %	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
 	]
 		%faceted interp, scatter, point meta=\thisrow{childFullness}
-		\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[y = branchFactor, x =leafSize, z =  leafIntersections, col sep=comma]{Data/sponzaTable.txt};
+		%\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[y = branchFactor, x =leafSize, z =  leafIntersections, col sep=comma]{Data/sponzaTable.txt};
+		
 		%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
+		
+		\addplot3[contour filled={number=8, labels = {false}}, thick] table[y = leafSize, x = branchFactor, z = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
 	\end{axis}
 \end{tikzpicture}
 
@@ -98,7 +106,7 @@
 	\begin{axis}
 	[grid=both,
 	width = \textwidth,
-	height= 0.8\textwidth,
+	height= 0.7\textwidth,
 	%	legend entries = {leaf Intersections},
 	%	enlargelimits=false , font = \tiny,
 	%	legend style={draw=none},
@@ -114,69 +122,153 @@
 	\end{axis}
 \end{tikzpicture}
 
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
+\pgfplotsset{
+	every axis/.append style={
+		scale only axis,
+		width=0.8\textwidth,
+%		height = 5.9cm
+		mark size=3.8pt,
+%		colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+		colorbar,
+	}
+}
 
+shift happens
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth} 
+		
 		\begin{tikzpicture}
-			\begin{axis}
-			[
-			ylabel = leafIntersections,
-			xlabel = branching factor,
-			colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
-			]
-			\addplot[contour filled={number=18, labels = {false}}, thick, color = red] table[x = branchFactor, y = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
-			\end{axis}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		ylabel = \branchf,
+		colorbar style={title=\leafi}
+		]
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/shiftHappensTable.txt};
+		\end{axis}
 		\end{tikzpicture}
 		
-	\end{minipage}\hfil
+	\end{minipage}\hfil \hfil
 	\begin{minipage}[t]{0.4\textwidth}
+		
 		%TODO move label to the right side
 		\begin{tikzpicture}
-			\begin{axis}
-				[
-				ylabel = nodeIntersections,
-				xlabel = branching factor,
-				colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
-				]
-				
-				\addplot[contour filled={number=8, labels = {false}}, thick] table[x = branchFactor, y = nodeIntersections, col sep=comma] {Data/sponzaTable.txt};
-				
-			\end{axis}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		%ylabel = branching factpr,
+		colorbar style={title=\nodei}
+		]
+		
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/shiftHappensTable.txt};
+		\end{axis}
 		\end{tikzpicture}
-
 	\end{minipage}
 \end{figure}
 
+sponza
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth}
 		
 		\begin{tikzpicture}
 		\begin{axis}
 		[
-		ylabel = leafIntersections,
-		xlabel = leafSize,
-		colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+		xlabel = \leafs,
+		ylabel = \branchf,
+		colorbar style={title=\leafi}
 		]
-		\addplot[contour filled={number=18, labels = {false}}, thick, color = red] table[x = leafSize, y = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/sponzaTable.txt};
 		\end{axis}
 		\end{tikzpicture}
 		
-	\end{minipage}\hfil
+	\end{minipage}\hfil\hfil
 	\begin{minipage}[t]{0.4\textwidth}
+
 		%TODO move label to the right side
 		\begin{tikzpicture}
 		\begin{axis}
 		[
-		ylabel = nodeIntersections,
-		xlabel = leafSize,
-		colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+		xlabel = \leafs,
+		colorbar style={title=\nodei}
 		]
 		
-		\addplot[contour filled={number=8, labels = {false}}, thick] table[x = leafSize, y = nodeIntersections, col sep=comma] {Data/sponzaTable.txt};
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/sponzaTable.txt};
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+\end{figure}
+
+rungholt
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth}
 		
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		ylabel = \branchf,
+		colorbar style={title=\leafi}
+		]
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/rungholtTable.txt};
 		\end{axis}
 		\end{tikzpicture}
 		
+	\end{minipage}\hfil\hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+%		ylabel = branching factpr,
+		colorbar style={title=\nodei}
+		]
+		
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/rungholtTable.txt};
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+\end{figure}
+
+erato
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth}
+		
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		ylabel = \branchf,
+		colorbar style={title=\leafi}
+		]
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/eratoTable.txt};
+		\end{axis}
+		\end{tikzpicture}
+		
+	\end{minipage}\hfil\hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		%		ylabel = branching factpr,
+		colorbar style={title=\nodei}
+		]
+		
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
+		{Data/eratoTable.txt};
+		\end{axis}
+		\end{tikzpicture}
 	\end{minipage}
 \end{figure}
 

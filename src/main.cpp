@@ -43,10 +43,10 @@ public:
 		std::chrono::high_resolution_clock::time_point time1 = std::chrono::high_resolution_clock::now();
 
 		//all settings:  TODO: move this into a txt
-		int minLeafSize = 4;
-		int maxLeafSize = 4;
-		int minBranch = 4;
-		int maxBranch = 4;
+		int minLeafSize = 1;
+		int maxLeafSize = 16;
+		int minBranch = 2;
+		int maxBranch = 16;
 
 		bool saveImage = false;
 		bool saveDepthDetailedImage = false;
@@ -59,7 +59,7 @@ public:
 
 		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 		int renderType = 2;
-		int scenario = 4;
+		int scenario = 2;
 		int bucketCount = 0;
 
 		//0 = custom order, 1 = level, 2 = depth first,
@@ -95,6 +95,16 @@ public:
 			loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshBins);
 			cameraPos = glm::vec3(20, 10, -10);
 			cameraTarget = glm::vec3(0, 5, 0);
+
+			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
+			break;
+		case 2:
+			//http://casual-effects.com/data/index.html
+			//erato scene converted to glb with blender (replaced some #indoo with 0 so blender could load it?)
+			name = "erato";
+			loadGltfModel("models/erato/erato.glb", gameObjects, meshBins);
+			cameraPos = glm::vec3(10, 6, 9);
+			cameraTarget = glm::vec3(-3, 1.5, 0);
 
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 			break;
@@ -134,7 +144,7 @@ public:
 			loadGltfModel("models/rungholt/rungholt.glb", gameObjects, meshBins);
 
 			cameraPos = glm::vec3(-100, 41, -200);
-			cameraTarget = glm::vec3(-140, 0, -80);
+			cameraTarget = glm::vec3(-140, 0, -70);
 
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 			break;

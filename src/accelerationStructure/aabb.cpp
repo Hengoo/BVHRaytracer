@@ -208,10 +208,13 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 		primPointVector::iterator bestSplit;
 		if (bucketCount <= 0 || workIntervall[bestI].getPrimCount() < bucketCount * 5)
 		{
+			//compute all possible splits
 			bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
 		}
 		else
 		{
+			//compute bucketed split
+			//This part is for spacial version: compute bounds of centers
 			min = glm::vec3(222222.0f);
 			max = glm::vec3(-222222.0f);
 			std::for_each(std::execution::seq, workIntervall[bestI].primitiveBegin, workIntervall[bestI].primitiveEnd,

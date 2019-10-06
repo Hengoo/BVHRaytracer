@@ -5,8 +5,8 @@ from os import path
 
 #name = "shiftHappens"
 #folderName = "shiftHappensSave"
-name = "sponza"
-folderName = "sponzaSave"
+name = "erato"
+folderName = "eratoSave"
 maxBranchingFactor = 16
 maxLeafSize = 16
 
