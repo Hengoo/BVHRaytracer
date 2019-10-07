@@ -27,6 +27,8 @@ Bvh::Bvh(GameObject& gameObject)
 	primitives = std::make_shared<primPointVector>();
 	iterateGo(gameObject, primitives);
 	root = std::make_shared<Aabb>(0, primitives->begin(), primitives->end());
+
+	std::cout << "created bvh of " << primitives->size() << " Triangles" << std::endl;
 }
 
 void Bvh::recursiveOctree(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount)
