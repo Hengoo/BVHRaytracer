@@ -11,7 +11,20 @@ Ray::Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay)
 
 	this->direction = glm::normalize(direction);
 	//the possible inv here should be no problem
+	
 	invDirection = 1.0f / (this->direction);
+	if (direction.x == 0)
+	{
+		invDirection.x = std::numeric_limits<float>::max();
+	}
+	if (direction.y == 0)
+	{
+		invDirection.y = std::numeric_limits<float>::max();
+	}
+	if (direction.z == 0)
+	{
+		invDirection.z = std::numeric_limits<float>::max();
+	}
 	tMax = 222222.f;
 	surfaceColor = Color(0);
 	surfaceNormal = glm::vec3(0, 0, 0);
