@@ -76,396 +76,106 @@
 \newcommand{\nodei}{Node Intersection}
 \newcommand{\sleafi}{Shadow Leaf Intersection}
 \newcommand{\snodei}{Shadow Node Intersection}
+\newcommand{\cost}{Cost Function}
+\newcommand{\scost}{Shadow Cost Function}
+
+%fcommands to manage plots.
+\newcommand{\file}{xxx}
+\newcommand{\labelText}{xxx}
 
 \titleformat{\paragraph}[hang]{\normalfont\bfseries}{\theparagraph}{.5em}{}
 
 \begin{document}
 
-\begin{tikzpicture}
-	\begin{axis}
-	[grid=both,
-	width = \textwidth,
-	height= 0.7\textwidth,
-%	legend entries = {leaf Intersections},
-%	enlargelimits=false , font = \tiny,
-%	legend style={draw=none},
-%	legend image post style={scale=0.5},
-	ylabel = leaf size,
-	xlabel = branching factor,
-	zlabel = leaf Intersections
-%	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
-	]
-		%faceted interp, scatter, point meta=\thisrow{childFullness}
-		%\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[y = branchFactor, x =leafSize, z =  leafIntersections, col sep=comma]{Data/sponzaTable.txt};
-		
-		%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
-		
-		\addplot3[contour filled={number=8, labels = {false}}, thick] table[y = leafSize, x = branchFactor, z = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
-	\end{axis}
-\end{tikzpicture}
-
-\begin{tikzpicture}
-	\begin{axis}
-	[grid=both,
-	width = \textwidth,
-	height= 0.7\textwidth,
-	%	legend entries = {leaf Intersections},
-	%	enlargelimits=false , font = \tiny,
-	%	legend style={draw=none},
-	%	legend image post style={scale=0.5},
-	ylabel = leaf size,
-	xlabel = branching factor,
-	zlabel = node Intersections
-	%	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
-	]
-	%faceted interp, scatter, point meta=\thisrow{childFullness}
-	\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[x = branchFactor, y =leafSize, z =  nodeIntersections, col sep=comma]{Data/sponzaTable.txt};
-	%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
-	\end{axis}
-\end{tikzpicture}
 
 \pgfplotsset{
 	every axis/.append style={
 		scale only axis,
 		width=0.8\textwidth,
 %		height = 5.9cm
-		mark size=3.8pt,
+		mark size=4pt,
 %		colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
 		colorbar,
 	}
 }
 
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth} 
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\leafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/shiftHappensTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%ylabel = branching factpr,
-		colorbar style={title=\nodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/shiftHappensTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
+Cost function right now is 1 * LeafIntersections + 1/8 * NodeIntersections
 
-	\begin{minipage}[t]{0.4\textwidth} 
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\sleafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowLeafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/shiftHappensTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%ylabel = branching factpr,
-		colorbar style={title=\snodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowNodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/shiftHappensTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-\caption{Shift happens. Low poly scene. 53,857 Vertices and 240,865 Triangles }
-\end{figure}
 
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\leafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/sponzaTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
 
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		colorbar style={title=\nodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/sponzaTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
+\renewcommand{\file}{Data/shiftHappensTable.txt}
+\renewcommand{\labelText}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles}
+\input{plot0}
 
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\sleafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowLeafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/sponzaTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		colorbar style={title=\snodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowNodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/sponzaTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-\caption{Sponza. Interior scene. 192,676 Vertices and 262,267 Triangles }
-\end{figure}
+\newpage
 
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\leafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/rungholtTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-%		ylabel = branching factpr,
-		colorbar style={title=\nodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/rungholtTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
+\renewcommand{\file}{Data/sponzaTable.txt}
+\renewcommand{\labelText}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles}
+\input{plot0}
 
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\sleafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowLeafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/rungholtTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%		ylabel = branching factpr,
-		colorbar style={title=\snodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowNodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/rungholtTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	\caption{Rungholt. Large minecraft city. 11,630,990 Vertices and 16959,775 Triangles}
-\end{figure}
+\newpage
 
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\leafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/eratoTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%		ylabel = branching factpr,
-		colorbar style={title=\nodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/eratoTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
+\renewcommand{\file}{Data/rungholtTable.txt}
+\renewcommand{\labelText}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 16959,775 Triangles}
+\input{plot0}
 
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\sleafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowLeafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/eratoTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%		ylabel = branching factpr,
-		colorbar style={title=\snodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowNodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/eratoTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	\caption{Eratio. Scan of a marmor statue. 235,332 Vertices and 412,669 Triangles }
-\end{figure}
+\newpage
 
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\leafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/AverageTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%		ylabel = branching factpr,
-		colorbar style={title=\nodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/AverageTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\sleafi}
-		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowLeafIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/AverageTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-		
-	\end{minipage}\hfil\hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%		ylabel = branching factpr,
-		colorbar style={title=\snodei}
-		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowNodeIntersections}, draw opacity=0 ,mark=square*] table[x = leafSize, y = branchFactor, col sep=comma]
-		{Data/AverageTable.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	\caption{Average of all results}
-\end{figure}
+\renewcommand{\file}{Data/eratoTable.txt}
+\renewcommand{\labelText}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles}
+\input{plot0}
+
+\newpage
+
+\renewcommand{\file}{Data/AverageTable.txt}
+\renewcommand{\labelText}{Average of all normalized results}
+\input{plot0}
+
+\newpage
+
+First tests with 3D Plots, but i prefer the 2D Color representation since the 3D surface can be really hard to interpret.
+\begin{tikzpicture}
+\begin{axis}
+[grid=both,
+width = \textwidth,
+height= 0.7\textwidth,
+%	legend entries = {leaf Intersections},
+%	enlargelimits=false , font = \tiny,
+%	legend style={draw=none},
+%	legend image post style={scale=0.5},
+ylabel = leaf size,
+xlabel = branching factor,
+zlabel = leaf Intersections
+%	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
+]
+%faceted interp, scatter, point meta=\thisrow{childFullness}
+%\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[y = branchFactor, x =leafSize, z =  leafIntersections, col sep=comma]{Data/sponzaTable.txt};
+
+%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
+
+\addplot3[contour filled={number=8, labels = {false}}, thick] table[y = leafSize, x = branchFactor, z = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{axis}
+[grid=both,
+width = \textwidth,
+height= 0.7\textwidth,
+%	legend entries = {leaf Intersections},
+%	enlargelimits=false , font = \tiny,
+%	legend style={draw=none},
+%	legend image post style={scale=0.5},
+ylabel = leaf size,
+xlabel = branching factor,
+zlabel = node Intersections
+colorbar style={Leaf Fullness}
+%	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
+]
+%faceted interp, scatter, point meta=\thisrow{childFullness}
+\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[x = branchFactor, y =leafSize, z =  nodeIntersections, col sep=comma]{Data/sponzaTable.txt};
+%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
+\end{axis}
+\end{tikzpicture}
 
 \end{document}
