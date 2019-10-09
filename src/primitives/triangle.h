@@ -20,7 +20,7 @@ class Triangle : public Primitive
 	std::array<glm::vec3, 3> points = {};
 
 	//id to first indexbuffer (in mesh)
-	int index;
+	uint32_t index;
 
 	//worldspace bounds: (will keep bounds for super simple aabb to aabb intersection)
 	glm::vec3 boundMin, boundMax;
@@ -64,4 +64,6 @@ public:
 		//return (boundMax * 0.5f + boundMin * 0.5f);
 		return center;
 	}
+
+	void getVertexIds(uint32_t& vertex0, uint32_t& vertex1, uint32_t& vertex2);
 };

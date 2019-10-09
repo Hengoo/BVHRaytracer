@@ -40,12 +40,12 @@ public:
 
 	inline Node* getRoot()
 	{
-		return &*root;
+		return root.get();
 	}
 
 	inline NodeAnalysis* getAnalysisRoot()
 	{
-		return &*analysisRoot;
+		return analysisRoot.get();
 	}
 
 	//calls the recusive node/ray intersect

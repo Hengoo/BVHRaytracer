@@ -244,3 +244,10 @@ bool Triangle::intersect(Node* node)
 	//no know type-> should not happen
 	return false;
 }
+
+void Triangle::getVertexIds(uint32_t& vertex0, uint32_t& vertex1, uint32_t& vertex2)
+{
+	vertex0 = (*mesh->indices)[(size_t)index + 0];
+	vertex1 = (*mesh->indices)[(size_t)index + 1];
+	vertex2 = (*mesh->indices)[(size_t)index + 2];
+}

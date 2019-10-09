@@ -460,6 +460,7 @@ public:
 		}
 		if (saveDepthDebugImage)
 		{
+			std::cout << std::endl;
 			//save an image with all the aabb intersections for every depth
 			for (size_t d = 0; d < nodeIntersectionPerDepthCount.size(); d++)
 			{
@@ -474,7 +475,7 @@ public:
 						}
 					});
 
-				std::cout << "max " << maxDepth << " intersections at depth " << d << std::endl;
+				std::cout << "depth " << d << " max intersections :" << maxDepth << std::endl;
 
 				//go trough RenderInfo vector and use the stored nodeIntersectionPerPixelCount
 				std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
@@ -529,9 +530,9 @@ public:
 				});
 			float normalisation = 1 / ((float)maxSum - (float)minSum);
 			//pixel bvh depth
-			std::cout << normalisation << std::endl;
-			std::cout << minSum << std::endl;
-			std::cout << maxSum << std::endl;
+			//std::cout << normalisation << std::endl;
+			//std::cout << minSum << std::endl;
+			//std::cout << maxSum << std::endl;
 			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
@@ -555,7 +556,7 @@ public:
 			encodeTwoSteps(path + "/" + name + problem + "_PixelDepth.png", image, width, height);
 
 			normalisation = 1.0 / maxLeafSum;
-			std::cout << maxLeafSum << std::endl;
+			//std::cout << maxLeafSum << std::endl;
 			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{

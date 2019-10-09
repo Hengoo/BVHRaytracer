@@ -439,11 +439,11 @@ void CompactNodeManager<T>::customTreeOrder(NodeAnalysis* n, std::vector<NodeAna
 {
 	for (auto& c : n->children)
 	{
-		nodeVector.push_back(&*c);
+		nodeVector.push_back(c.get());
 	}
 	for (auto& c : n->children)
 	{
-		customTreeOrder(&*c, nodeVector);
+		customTreeOrder(c.get(), nodeVector);
 	}
 }
 
@@ -453,7 +453,7 @@ void CompactNodeManager<T>::depthFirstTreeOrder(NodeAnalysis* n, std::vector<Nod
 	nodeVector.push_back(n);
 	for (auto& c : n->children)
 	{
-		depthFirstTreeOrder(&*c, nodeVector);
+		depthFirstTreeOrder(c.get(), nodeVector);
 	}
 }
 
@@ -465,14 +465,14 @@ void CompactNodeManager<T>::levelTreeOrder(NodeAnalysis* n, std::vector<NodeAnal
 		nodeVector.push_back(n);
 		//for (auto& c : n->children)
 		//{
-		//	nodeVector.push_back(&*c);
+		//	nodeVector.push_back(c.get());
 		//}
 	}
 	else
 	{
 		for (auto& c : n->children)
 		{
-			levelTreeOrder(&*c, nodeVector, depth);
+			levelTreeOrder(c.get(), nodeVector, depth);
 		}
 	}
 }

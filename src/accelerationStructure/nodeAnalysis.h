@@ -40,7 +40,7 @@ public:
 		sah = 0;
 		for (auto& n : node->children)
 		{
-			children.push_back(std::make_unique<NodeAnalysis>(&*n, this, branchingFactor, targetPrimitiveCount));
+			children.push_back(std::make_unique<NodeAnalysis>(n.get(), this, branchingFactor, targetPrimitiveCount));
 		}
 		x = -1;
 	}
@@ -54,7 +54,7 @@ public:
 		sah = node->sah(1 / parent->surfaceArea, targetPrimitiveCount);
 		for (auto& n : node->children)
 		{
-			children.push_back(std::make_unique<NodeAnalysis>(&*n, this, branchingFactor, targetPrimitiveCount));
+			children.push_back(std::make_unique<NodeAnalysis>(n.get(), this, branchingFactor, targetPrimitiveCount));
 		}
 		x = -1;
 	}

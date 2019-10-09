@@ -3,6 +3,7 @@
 #include <iostream>
 // writing on a text file
 #include <fstream>
+#include <set>
 
 #include "node.h"
 #include "nodeAnalysis.h"
@@ -108,7 +109,7 @@ void Bvh::iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& prim
 			for (int i = 0; i < m->indices->size(); i += 3)
 			{
 				//triangle version:
-				primitives->push_back(std::make_shared<Triangle>(&go, &*m, i));
+				primitives->push_back(std::make_shared<Triangle>(&go, m.get(), i));
 
 				//sphere version (one sphere for each triangle?
 				//std::array<uint8_t 4> color = { rUint8(0, 255), rUint8(0, 255), rUint8(0, 255), 255 };
@@ -141,16 +142,62 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	//depth of the leaf nodes
 	std::vector<uint32_t> treeDepth;
 	std::vector<NodeAnalysis*> leafNodes;
-	analysisRoot = std::make_shared<NodeAnalysis>(&*root, branchingFactor, leafCount);
+	analysisRoot = std::make_shared<NodeAnalysis>(root.get(), branchingFactor, leafCount);
 	analysisRoot->analysis(leafNodes, treeDepth, childCount, primCount);
 	bvhDepth = treeDepth.size();
-	float averageTreeDepth = 0;
 
 	uint32_t nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 	uint32_t leafs = leafNodes.size();
 
+
+
 	if (saveAndPrintResult)
 	{
+		uint32_t vertexCount = 0;
+		uint32_t uniqueVertexCount = 0;
+		//analyse vertexcount vs unique vertex count -> triangleFan ec?
+
+		std::set<uint32_t> trianglePrimitiveIds;
+		//different metrics analysis:
+		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0, averageTreeDepth = 0;
+		for (auto& l : leafNodes)
+		{
+			leafSah += l->sah;
+			leafVolume += l->volume;
+			leafSurfaceArea += l->surfaceArea;
+			averageTreeDepth += l->depth;
+
+			vertexCount += l->primitiveCount * 3;
+
+			//Triangle* tri = static_cast<Triangle*>((*l->node->primitiveBegin).get());
+			//primitiveIds.push_back(tri->index)
+
+			std::for_each(l->node->primitiveBegin, l->node->primitiveEnd,
+				[&](auto& prim)
+				{
+					Triangle* tri = static_cast<Triangle*>(prim.get());
+					uint32_t vertex0, vertex1, vertex2;
+					tri->getVertexIds(vertex0, vertex1, vertex2);
+					auto result = trianglePrimitiveIds.insert(vertex0);
+					if (result.second)
+					{
+						uniqueVertexCount += 1;
+					}
+					result = trianglePrimitiveIds.insert(vertex1);
+					if (result.second)
+					{
+						uniqueVertexCount += 1;
+					}
+					result = trianglePrimitiveIds.insert(vertex2);
+					if (result.second)
+					{
+						uniqueVertexCount += 1;
+					}
+				});
+			trianglePrimitiveIds.clear();
+		}
+		leafVolume = leafVolume / analysisRoot->volume;
+		leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
 		averageTreeDepth /= (float)leafs;
 
 		std::cout << "BVH Analysis:" << std::endl;
@@ -174,6 +221,9 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		}
 		std::cout << std::endl;
 		std::cout << "number of leafnodes: " << leafs << std::endl;
+		std::cout << "vertexCount : " << vertexCount << std::endl;
+		std::cout << "uniqueVertexCount : " << uniqueVertexCount << std::endl;
+		std::cout << "factor : " << uniqueVertexCount / (float)vertexCount << std::endl;
 		std::cout << "leafnodes with x primitives:" << std::endl;
 		sum = 0;
 		sum2 = 0;
@@ -191,16 +241,6 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		}
 		std::cout << std::endl;
 
-		//different metrics analysis:
-		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0;
-		for (auto& l : leafNodes)
-		{
-			leafSah += l->sah;
-			leafVolume += l->volume;
-			leafSurfaceArea += l->surfaceArea;
-		}
-		leafVolume = leafVolume / analysisRoot->volume;
-		leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
 		//think volume and surface area need to be normalised by roof values
 		std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
 		std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << customToString(leafVolume / (double)leafs, 10) << std::endl;
@@ -215,6 +255,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 
 			myfile << "BVH Analysis:" << std::endl;
 			myfile << "Tree depth: " << treeDepth.size() - 1 << std::endl;
+			myfile << "average leaf depth: " << averageTreeDepth << std::endl;
 			myfile << "number of nodes: " << nodes - leafs << std::endl;
 			myfile << "nodes with x childen:" << std::endl;
 			float sum = 0;
@@ -233,6 +274,9 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 			}
 
 			myfile << std::endl << "number of leafnodes: " << leafs << std::endl;
+			myfile << "vertexCount : " << vertexCount << std::endl;
+			myfile << "uniqueVertexCount : " << uniqueVertexCount << std::endl;
+			myfile << "factor : " << uniqueVertexCount / (float)vertexCount << std::endl;
 			myfile << "leafnodes with x primitives:" << std::endl;
 			sum = 0;
 			sum2 = 0;
@@ -259,7 +303,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	}
 
 	//create image
-	if (saveBvhImage && leafs < 1000000)
+	if (saveBvhImage && leafs)
 	{
 
 

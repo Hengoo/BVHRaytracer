@@ -32,38 +32,61 @@
 
 class RayTracer
 {
-public:
-	void run()
-	{
+	unsigned minLeafSize;
+	unsigned maxLeafSize;
+	unsigned minBranch;
+	unsigned maxBranch;
 
-	}
+	bool saveImage;
+	bool saveDepthDetailedImage;
+	bool bvhAnalysis;
+	bool saveBvhImage;
+
+	//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
+	unsigned renderType;
+	unsigned scenario;
+	unsigned bucketCount;
+
+	//0 = custom order, 1 = level, 2 = depth first,
+	unsigned compactNodeOrder;
+public:
 
 	RayTracer()
 	{
+	}
+
+	void run()
+	{
+		//settings sanity checks:
+		maxBranch = std::max(maxBranch, minBranch);
+		minBranch = std::min(maxBranch, minBranch);
+		maxLeafSize = std::max(maxLeafSize, minLeafSize);
+		minLeafSize = std::min(maxLeafSize, minLeafSize);
+		if (renderType > 2)
+		{
+			std::cout << "unknown renderType" << std::endl;
+			return;
+		}
+		if (compactNodeOrder > 2)
+		{
+			std::cout << "unknown compactNodeOrder" << std::endl;
+			return;
+		}
+
+		std::cout << "Settings: " << std::endl;
+		std::cout << "LeafSize from " << minLeafSize << " to " << maxLeafSize << std::endl;
+		std::cout << "Branching factor from " << minBranch << " to " << maxBranch << std::endl;
+		if (saveImage) std::cout << "save image" << std::endl;
+		if (saveDepthDetailedImage) std::cout << "save DepthDetailedImage" << std::endl;
+		if (bvhAnalysis) std::cout << "do bvhAnalysis" << std::endl;
+		if (saveBvhImage) std::cout << "save BvhImage" << std::endl;
+		std::cout << "render type: " << renderType << std::endl;
+		std::cout << "scenario: " << scenario << std::endl;
+		std::cout << "bucket count: " << bucketCount << std::endl;
+		std::cout << "compact Node order: " << compactNodeOrder << std::endl;
+		std::cout << std::endl;
+
 		std::chrono::high_resolution_clock::time_point time1 = std::chrono::high_resolution_clock::now();
-
-		//all settings:  TODO: move this into a txt
-		int minLeafSize = 1;
-		int maxLeafSize = 16;
-		int minBranch = 2;
-		int maxBranch = 16;
-
-		bool saveImage = false;
-		bool saveDepthDetailedImage = false;
-		bool bvhAnalysis = false;
-		//this image is not saved for scenes with more than 1 000 000 leafnodes
-		bool saveBvhImage = false;
-
-		//todo: make use texture option. should save rendertime (ONLY enable for scenes without transparency)
-		bool useTexture = false;
-
-		//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
-		int renderType = 2;
-		int scenario = 2;
-		int bucketCount = 0;
-
-		//0 = custom order, 1 = level, 2 = depth first,
-		int compactNodeOrder = 0;
 
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		gameObjects.push_back(std::make_shared<GameObject>("root"));
@@ -149,6 +172,8 @@ public:
 			lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 			break;
 		default:
+			std::cout << "unknown scene id" << std::endl;
+			return;
 			break;
 		}
 		//create folder to save files:
@@ -277,16 +302,132 @@ public:
 		}
 	}
 
-private:
+	void readConfig()
+	{
+		//ugly but works 
+		std::string line;
+		std::ifstream myfile("config.txt");
 
+		if (myfile.is_open())
+		{
+			while (std::getline(myfile, line))
+			{
+
+				if (!line.empty() && line[0] != '#')
+				{
+					auto res = line.find("minLeafSize", 0);
+					auto res2 = res;
+					if (res != std::string::npos)
+					{
+						minLeafSize = std::stoi(line.substr(line.find("=") + 1));
+					}
+					res = line.find("maxLeafSize", 0);
+					if (res != std::string::npos)
+					{
+						maxLeafSize = std::stoi(line.substr(line.find("=") + 1));
+					}
+					res = line.find("minBranch", 0);
+					if (res != std::string::npos)
+					{
+						minBranch = std::stoi(line.substr(line.find("=") + 1));
+					}
+					res = line.find("maxBranch", 0);
+					if (res != std::string::npos)
+					{
+						maxBranch = std::stoi(line.substr(line.find("=") + 1));
+					}
+
+					res = line.find("renderType", 0);
+					if (res != std::string::npos)
+					{
+						renderType = std::stoi(line.substr(line.find("=") + 1));
+					}
+					res = line.find("scenario", 0);
+					if (res != std::string::npos)
+					{
+						scenario = std::stoi(line.substr(line.find("=") + 1));
+					}
+					res = line.find("bucketCount", 0);
+					if (res != std::string::npos)
+					{
+						bucketCount = std::stoi(line.substr(line.find("=") + 1));
+					}
+					res = line.find("compactNodeOrder", 0);
+					if (res != std::string::npos)
+					{
+						compactNodeOrder = std::stoi(line.substr(line.find("=") + 1));
+					}
+					//booleans:
+					res = line.find("saveImage", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)saveImage = true;
+						else if (res2 != std::string::npos)saveImage = false;
+						else
+						{
+							std::cout << "saveImage value written wring -> default = false" << std::endl;
+						}
+					}
+					res = line.find("saveDepthDetailedImage ", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)saveDepthDetailedImage = true;
+						else if (res2 != std::string::npos)saveDepthDetailedImage = false;
+						else
+						{
+							std::cout << "saveDepthDetailedImage value written wring -> default = false" << std::endl;
+						}
+					}
+					res = line.find("bvhAnalysis", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)bvhAnalysis = true;
+						else if (res2 != std::string::npos)bvhAnalysis = false;
+						else
+						{
+							std::cout << "bvhAnalysis value written wring -> default = false" << std::endl;
+						}
+					}
+					res = line.find("saveBvhImage", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)saveBvhImage = true;
+						else if (res2 != std::string::npos)saveBvhImage = false;
+						else
+						{
+							std::cout << "saveBvhImage value written wring -> default = false" << std::endl;
+						}
+					}
+				}
+			}
+		}
+	}
 };
 
 int main()
 {
 	//HelloTriangleApplication app;
 	RayTracer rayTracer;
+	try
+	{
+		rayTracer.readConfig();
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "failed to read config?" << std::endl;
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
 
-	//need to check performance impact of this:
+	//need to check performance impact of this: (seems to be super low if any)
 	try
 	{
 		rayTracer.run();

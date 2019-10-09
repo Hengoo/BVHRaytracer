@@ -120,14 +120,14 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 	for (size_t i = 0; i < bucketCount - 1; i++)
 	{
 		//use all but the first bucket
-		node.sweepRight(&*buckets[i + 1]);
+		node.sweepRight((buckets[i + 1]).get());
 		metric[i] = node.sah(invSurfaceArea, leafTarget);
 	}
 	node = Aabb(0.f, primitiveEnd, primitiveEnd);
 	for (int i = bucketCount - 2; i >= 0; i--)
 	{
 		//use all but the last bucket
-		node.sweepLeft(&*buckets[i]);
+		node.sweepLeft((buckets[i]).get());
 		metric[i] += node.sah(invSurfaceArea, leafTarget);
 	}
 

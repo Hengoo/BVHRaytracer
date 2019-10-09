@@ -1,0 +1,38 @@
+#Config file for raytracer.
+
+#Leafsize and Branching Factor to test:
+minLeafSize = 4
+maxLeafSize = 4
+minBranch = 4
+maxBranch = 4
+
+#What analysis to do:
+saveImage = false
+saveDepthDetailedImage = false
+bvhAnalysis = false
+saveBvhImage = false
+
+#Render type: 	
+#	0 = normal bvh tree traversal
+#	1 = compact node
+#	2 = compact node immediate
+renderType = 2
+
+#Scenes:
+#	0 = lizard
+#	1 = shift happens
+#	2 = erato
+#	3 = cubes
+#	4 = sponza
+#	5 = daviaRock
+#	6 = rungholt
+scenario = 4
+
+#Bucket count of bvh builder (0 = no buckets)
+int bucketCount = 0
+
+#Node order:
+#	0 = custom order (mix of level and depth first. childs are always next to each other)
+#	1 = level
+#	2 = depth first
+compactNodeOrder = 0
