@@ -44,6 +44,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{pgfplots}
+\usepgfplotslibrary{colormaps}
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
@@ -87,15 +88,21 @@
 
 \begin{document}
 
-
 \pgfplotsset{
+	%colormap={X}{ gray(0cm)=(1); gray(1cm)=(0);},
+	colormap/viridis,
 	every axis/.append style={
 		scale only axis,
 		width=0.8\textwidth,
 %		height = 5.9cm
 		mark size=4pt,
-%		colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+		%colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
 		colorbar,
+		%colormap/viridis,
+		colormap={reverse viridis}{
+			indices of colormap={
+				\pgfplotscolormaplastindexof{viridis},...,0 of viridis}
+		}
 	}
 }
 
