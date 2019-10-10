@@ -29,7 +29,7 @@ renderType = 2
 scenario = 4
 
 #Bucket count of bvh builder (0 = no buckets)
-int bucketCount = 0
+bucketCount = 0
 
 #Node order:
 #	0 = custom order (mix of level and depth first. childs are always next to each other)

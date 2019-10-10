@@ -8,7 +8,7 @@ from os import path
 names = ["shiftHappens", "sponza", "rungholt" , "erato"]
 folderNames = ["shiftHappensSave", "sponzaSave", "rungholtSave", "eratoSave"]
 
-idsToSum = [3]
+idsToSum = [0,1,2,3]
 maxBranchingFactor = 16
 maxLeafSize = 16
 
@@ -221,12 +221,18 @@ if len(idsToSum) > 1:
 										tmpFullness = float(t) / leaf
 									except ValueError:
 										pass
-					leafInter += (tmpLeafInter - minLeafInter[id]) / (maxLeafInter[id] - minLeafInter[id])
-					nodeInter += (tmpNodeInter - minNodeInter[id]) / (maxNodeInter[id] - minNodeInter[id])
-					shadowLeafInter += (tmpShadowLeafInter - minShadowLeafInter[id]) / (maxShadowLeafInter[id] - minShadowLeafInter[id])
-					shadowNodeInter += (tmpShadowNodeInter - minShadowNodeInter[id]) / (maxShadowNodeInter[id] - minShadowNodeInter[id])
-					cost += (tmpCost - minCost[id]) / (maxCost[id] - minCost[id])
-					shadowCost += (tmpShadowCost - minShadowCost[id]) / (maxShadowCost[id] - minShadowCost[id])
+					#leafInter += (tmpLeafInter - minLeafInter[id]) / (maxLeafInter[id] - minLeafInter[id])
+					#nodeInter += (tmpNodeInter - minNodeInter[id]) / (maxNodeInter[id] - minNodeInter[id])
+					#shadowLeafInter += (tmpShadowLeafInter - minShadowLeafInter[id]) / (maxShadowLeafInter[id] - minShadowLeafInter[id])
+					#shadowNodeInter += (tmpShadowNodeInter - minShadowNodeInter[id]) / (maxShadowNodeInter[id] - minShadowNodeInter[id])
+					#cost += (tmpCost - minCost[id]) / (maxCost[id] - minCost[id])
+					#shadowCost += (tmpShadowCost - minShadowCost[id]) / (maxShadowCost[id] - minShadowCost[id])
+					leafInter += tmpLeafInter / maxLeafInter[id]
+					nodeInter += tmpNodeInter / maxNodeInter[id]
+					shadowLeafInter += tmpShadowLeafInter / maxShadowLeafInter[id]
+					shadowNodeInter += tmpShadowNodeInter / maxShadowNodeInter[id]
+					cost += tmpCost / maxCost[id]
+					shadowCost += tmpShadowCost / maxShadowCost[id]
 					fullness += tmpFullness
 				else:
 					print("Was not able to open file: " + folderNames[id] + "/" + names[id] + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt")
