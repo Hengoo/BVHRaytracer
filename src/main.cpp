@@ -57,6 +57,11 @@ public:
 
 	void run()
 	{
+		//working progress options that should go to config soon:
+
+		//true -> take new axis and sort for each splot. False -> only do it once in the beginning
+		bool sortEachSplit = false;
+
 		//settings sanity checks:
 		maxBranch = std::max(maxBranch, minBranch);
 		minBranch = std::min(maxBranch, minBranch);
@@ -252,8 +257,8 @@ public:
 				std::chrono::high_resolution_clock::time_point timeLoop1 = std::chrono::high_resolution_clock::now();
 
 				//bvh of loaded model:
-				bvh = Bvh(*root);
-				bvh.recursiveOctree(branchingFactor, leafCount, bucketCount);
+				bvh = Bvh(*root, branchingFactor, leafCount, sortEachSplit);
+				bvh.recursiveOctree(bucketCount);
 				//bvh.recursiveOctree(2, leafCount);
 
 				//collapses the next b child hierarchies to this node

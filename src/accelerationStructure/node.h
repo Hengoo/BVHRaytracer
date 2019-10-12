@@ -20,6 +20,7 @@ public:
 	}
 	uint8_t sortAxis;
 	uint8_t depth;
+	std::vector<std::array<int8_t, 3>> sortAxisEachSplit;
 	virtual void addNode(std::shared_ptr<Node> n);
 
 	//primitives are given at creation and can only be removed(when they are "placed" in child nodes)
@@ -34,7 +35,7 @@ public:
 	virtual void recursiveOctree(const unsigned int leafCount);
 
 	//unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount
-	virtual  void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount);
+	virtual  void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount, bool sortEachSplit);
 
 	virtual size_t getChildCount();
 	virtual size_t getPrimCount();

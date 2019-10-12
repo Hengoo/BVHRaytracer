@@ -1,39 +1,11 @@
 #include "aabb.h"
 
+//compute best split for every node
 primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget)
 {
 	//method should be usable for all nodes?
 
-
-	//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
-	/*
-	glm::vec3 min = glm::vec3(222222.0f);
-	glm::vec3 max = glm::vec3(-222222.0f);
-	glm::vec3 centerDistance;
-	std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
-		[&](auto& p)
-		{
-			centerDistance = p->getCenter();
-			min = glm::min(min, centerDistance);
-			max = glm::max(max, centerDistance);
-		});
-	centerDistance = max - min;
-
-	//choose axis to split:
-	//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
-	int sortAxis = maxDimension(centerDistance);
-
-	//sort primitive array along axis:
-	//its faster to first check if its sorted
-	if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
-	{
-		//TODO test what parallel stuff like std::execution::seq or unseqpar does here
-		std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
-	}
-	*/
-
 	size_t size = getPrimCount();
-
 
 	//test all combos with heuristic:
 	//save results in array and take the one with best result
@@ -60,6 +32,65 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 	return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
 }
 
+//compute best split for every node with sorting
+primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSurfaceArea, int leafTarget, int8_t& sortAxis)
+{
+	//method should be usable for all nodes?
+
+
+	//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
+	glm::vec3 min = glm::vec3(222222.0f);
+	glm::vec3 max = glm::vec3(-222222.0f);
+	glm::vec3 centerDistance;
+	std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
+		[&](auto& p)
+		{
+			centerDistance = p->getCenter();
+			min = glm::min(min, centerDistance);
+			max = glm::max(max, centerDistance);
+		});
+	centerDistance = max - min;
+
+	//choose axis to split:
+	//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
+	sortAxis = maxDimension(centerDistance);
+
+	//sort primitive array along axis:
+	//its faster to first check if its sorted
+	if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
+	{
+		//TODO test what parallel stuff like std::execution::seq or unseqpar does here
+		std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
+	}
+
+	size_t size = getPrimCount();
+
+	//test all combos with heuristic:
+	//save results in array and take the one with best result
+
+	// Split by metric (currently SAH)
+	std::vector<float> metric(size - 1);
+
+	Aabb node(0.f, primitiveBegin, primitiveBegin);
+	std::for_each(std::execution::seq, metric.begin(), metric.end(),
+		[&](auto& met)
+		{
+			node.sweepRight();
+			met += node.sah(invSurfaceArea, leafTarget);
+		});
+	node = Aabb(0, primitiveEnd, primitiveEnd);
+	std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
+		[&](auto& met)
+		{
+			node.sweepLeft();
+			met += node.sah(invSurfaceArea, leafTarget);
+		});
+	//make the split with the best metric:
+	auto bestElement = std::min_element(metric.begin(), metric.end());
+	return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
+}
+
+//compute best split with buckets
 primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget,
 	int bucketCount, glm::vec3 centerMin, glm::vec3 centerMax, uint16_t sortAxis)
 {
@@ -74,17 +105,17 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 
 	//fill the buckets:
 
-	
+
 	//easy version:
 	for (size_t i = 0; i < bucketCount - 1; i++)
 	{
 		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * i, primitiveBegin + (size / bucketCount) * (i + 1)));
 	}
 	buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * (bucketCount - 1), primitiveEnd));
-	
+
 	/*
-	//better spacial version:
-	// cut at sortAxis 
+	//"better" spacial version: (it likes to produce extremly uneven splits because the primitives often have clusters)
+	//cut at sortAxis
 	int lastCutIndex = 0;
 	int bestCutIndex = 0;
 	for (size_t i = 1; i < bucketCount; i++)
@@ -138,7 +169,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 	return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
 
 }
-void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount)
+void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount, bool sortEachSplit)
 {
 	//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
 	if (getPrimCount() <= leafTarget)
@@ -166,13 +197,6 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	//choose axis to split:
 	//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
 	sortAxis = maxDimension(centerDistance);
-
-	//stop when triangle centers are at the same position (when this happens to often i might try the real center instead of the aabb center????
-	//if (centerDistance[axis] <= 0.00002)
-	//{
-	//	return;
-	//}
-
 
 	//sort primitive array along axis:
 	//its faster to first check if its sorted
@@ -209,10 +233,81 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 		if (bucketCount <= 0 || workIntervall[bestI].getPrimCount() < bucketCount * 5)
 		{
 			//compute all possible splits
-			bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
+			if (sortEachSplit)
+			{
+				int8_t newSortAxis;
+				bestSplit = workIntervall[bestI].computerBestSplitSort(1 / getSurfaceArea(), leafTarget, newSortAxis);
+				//fill sort axis vector correctly: bestI is the id
+				int8_t left = 0;
+				int8_t right = 0;
+
+				//find the id for left (right = left -1)
+				if (!sortAxisEachSplit.empty())
+				{
+					//need to seach for the entry in sortAxisEachSplit where it points to -(bestI+1)
+					//this value is left, right is left -1)
+					//and replace it with sortAxisEachSPlit.size()
+					int8_t tmpId = 0;
+					int8_t tmpSide = 0;
+					for (size_t i = 0; i < sortAxisEachSplit.size(); i++)
+					{
+						if (sortAxisEachSplit[i][1] == -(bestI + 1))
+						{
+							tmpId = i;
+							tmpSide = 1;
+							left = sortAxisEachSplit[i][1];
+							break;
+						}
+						if (sortAxisEachSplit[i][2] == -(bestI + 1))
+						{
+							tmpId = i;
+							tmpSide = 2;
+							left = sortAxisEachSplit[i][2];
+							break;
+						}
+					}
+					if (tmpSide == 0)
+					{
+						auto fail = 0;
+					}
+					sortAxisEachSplit[tmpId][tmpSide] = sortAxisEachSplit.size();
+					right = left - 1;
+					//then increment every id that is smaller than left, so it is in the right order
+					for (auto& i : sortAxisEachSplit)
+					{
+						if (i[1] < 0 && i[1] <= left)
+						{
+							i[1] = i[1] - 1;
+						}
+						if (i[2] < 0 && i[2] <= left)
+						{
+							i[2] = i[2] - 1;
+						}
+					}
+
+				}
+				else
+				{
+					left = -1;
+					right = -2;
+				}
+				sortAxisEachSplit.push_back({ newSortAxis, left, right });
+
+			}
+			else
+			{
+				//all splits slong the same common axis
+				bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
+			}
+
 		}
 		else
 		{
+			if (sortEachSplit)
+			{
+				std::cout << "Not implemented bucket version of sorting for each split" << std::endl;
+				throw 322;
+			}
 			//compute bucketed split
 			//This part is for spacial version: compute bounds of centers
 			min = glm::vec3(222222.0f);
@@ -251,7 +346,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	primitiveBegin = primitiveEnd;
 
 	//constructs bvh of all children:
-	Node::recursiveBvh(branchingFactor, leafTarget, bucketCount);
+	Node::recursiveBvh(branchingFactor, leafTarget, bucketCount, sortEachSplit);
 }
 
 

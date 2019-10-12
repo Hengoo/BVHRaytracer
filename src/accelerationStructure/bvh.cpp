@@ -22,7 +22,8 @@
 #include"../mesh.h"
 #include"../meshBin.h"
 
-Bvh::Bvh(GameObject& gameObject)
+Bvh::Bvh(GameObject& gameObject, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit)
+	:branchingFactor(branchingFactor), leafCount(leafCount), sortEachSplit(sortEachSplit)
 {
 	//iterate trough gameobject root and add all triangles to the aabb
 	primitives = std::make_shared<primPointVector>();
@@ -32,12 +33,10 @@ Bvh::Bvh(GameObject& gameObject)
 	std::cout << "created bvh of " << primitives->size() << " Triangles" << std::endl;
 }
 
-void Bvh::recursiveOctree(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount)
+void Bvh::recursiveOctree(int bucketCount)
 {
-	this->branchingFactor = branchingFactor;
-	this->leafCount = leafCount;
 	//root->recursiveOctree(leafCount);
-	root->recursiveBvh(branchingFactor, leafCount, bucketCount);
+	root->recursiveBvh(branchingFactor, leafCount, bucketCount, sortEachSplit);
 
 	//for better performance: could go trough all nodes and recreate primitives in the order they are in the tree (also with minimal needed data)
 }

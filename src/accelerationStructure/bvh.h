@@ -15,6 +15,7 @@ public:
 
 	int branchingFactor;
 	int leafCount;
+	bool sortEachSplit;
 	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
 
@@ -32,7 +33,7 @@ public:
 		//DONT forget to call shrink_to_fit or to clear the primitive vector afterwards
 	}
 
-	Bvh(GameObject& gameObject);
+	Bvh(GameObject& gameObject, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit);
 
 	~Bvh()
 	{
@@ -56,7 +57,7 @@ public:
 	// copy assignment -> called when an already existing object is used to create a new object
 	//Bvh& operator=(const Bvh& other) = delete;
 
-	void recursiveOctree(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount);
+	void recursiveOctree(int bucketCount);
 
 	//collapses the next collapeCount child hierarchies to this node
 	void collapseChilds(int collapeCount);

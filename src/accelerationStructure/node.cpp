@@ -19,12 +19,12 @@ void Node::addNode(std::shared_ptr<Node> n)
 //	primitives.push_back(p);
 //}
 
-void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount)
+void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount, bool sortEachSplit)
 {
 	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
 		[&](auto& c)
 		{
-			c->recursiveBvh(branchingFactor, leafCount, bucketCount);
+			c->recursiveBvh(branchingFactor, leafCount, bucketCount, sortEachSplit);
 		});
 }
 
@@ -99,89 +99,168 @@ bool Node::intersect(Ray& ray)
 		std::vector<std::shared_ptr<Node>>::iterator begin = children.begin();
 		std::vector<std::shared_ptr<Node>>::iterator end = children.end();
 
-		//code duplication because it is about 10% faster to do it this way instead of calling a method in lambda or using std::bind
-		if (ray.direction[sortAxis] > 0)
-		{
-			if (!ray.shadowRay)
-			{
-				std::for_each(children.begin(), children.end(),
-					[&](auto& c)
-					{
-						ray.aabbIntersectionCount++;
-						float dist;
-						if (c->intersectNode(ray, dist))
-						{
-							ray.successfulAabbIntersectionCount++;
 
-							//node intersection successful: rekursion continues
-							if (c->intersect(ray))
+		if (sortAxisEachSplit.size() == 0)
+		{
+			//code duplication because it is about 10% faster to do it this way instead of calling a method in lambda or using std::bind
+			if (ray.direction[sortAxis] > 0)
+			{
+				if (!ray.shadowRay)
+				{
+					std::for_each(children.begin(), children.end(),
+						[&](auto& c)
+						{
+							ray.aabbIntersectionCount++;
+							float dist;
+							if (c->intersectNode(ray, dist))
 							{
-								result = true;
+								ray.successfulAabbIntersectionCount++;
+
+								//node intersection successful: rekursion continues
+								if (c->intersect(ray))
+								{
+									result = true;
+								}
 							}
-						}
-					});
+						});
+				}
+				else
+				{
+					return std::any_of(children.begin(), children.end(),
+						[&](auto& c)
+						{
+							ray.aabbIntersectionCount++;
+							float dist;
+							if (c->intersectNode(ray, dist))
+							{
+								ray.successfulAabbIntersectionCount++;
+
+								//node intersection successful: rekursion continues
+								if (c->intersect(ray))
+								{
+									return true;
+								}
+							}
+							return false;
+						});
+				}
 			}
 			else
 			{
-				return std::any_of(children.begin(), children.end(),
-					[&](auto& c)
-					{
-						ray.aabbIntersectionCount++;
-						float dist;
-						if (c->intersectNode(ray, dist))
+				if (!ray.shadowRay)
+				{
+					std::for_each(children.rbegin(), children.rend(),
+						[&](auto& c)
 						{
-							ray.successfulAabbIntersectionCount++;
-
-							//node intersection successful: rekursion continues
-							if (c->intersect(ray))
+							ray.aabbIntersectionCount++;
+							float dist;
+							if (c->intersectNode(ray, dist))
 							{
-								return true;
+								ray.successfulAabbIntersectionCount++;
+
+								//node intersection successful: rekursion continues
+								if (c->intersect(ray))
+								{
+									result = true;
+								}
 							}
-						}
-						return false;
-					});
+						});
+				}
+				else
+				{
+					return std::any_of(children.rbegin(), children.rend(),
+						[&](auto& c)
+						{
+							ray.aabbIntersectionCount++;
+							float dist;
+							if (c->intersectNode(ray, dist))
+							{
+								ray.successfulAabbIntersectionCount++;
+
+								//node intersection successful: rekursion continues
+								if (c->intersect(ray))
+								{
+									return true;
+								}
+							}
+							return false;
+						});
+				}
 			}
+
 		}
 		else
 		{
-			if (!ray.shadowRay)
-			{
-				std::for_each(children.rbegin(), children.rend(),
-					[&](auto& c)
-					{
-						ray.aabbIntersectionCount++;
-						float dist;
-						if (c->intersectNode(ray, dist))
-						{
-							ray.successfulAabbIntersectionCount++;
+			//traverse nodes with children that can have arbitrary sorting
 
-							//node intersection successful: rekursion continues
-							if (c->intersect(ray))
-							{
-								result = true;
-							}
-						}
-					});
+			//childIds shows the order we have to traverse the childs.
+			std::vector<uint8_t>childIds;
+			childIds.reserve(children.size());
+
+			//queue saves the id of elelemnts of sortAxisEachSplit where we still need to explore the 2. option
+			//true = visited, false = not visited
+			std::vector<std::pair<int8_t, bool>>queue;
+			queue.reserve(children.size());
+
+			queue.push_back({ 0, false });
+			while (!queue.empty())
+			{
+				auto current = queue.back();
+				queue.pop_back();
+
+				//faster to copy than to do reference or pointer
+				auto& a = sortAxisEachSplit[current.first];
+				//side. true = left, false = right
+				bool side = ray.direction[a[0]] > 0;
+				if (!current.second)
+				{
+					side = !side;
+				}
+
+				int8_t id = 0;
+				if (side)
+				{
+					id = a[1];
+				}
+				else
+				{
+					id = a[2];
+				}
+				if (id < 0)
+				{
+					childIds.push_back(abs(id) - 1);
+				}
+				else
+				{
+					queue.push_back({ id, false });
+				}
+
+				//add second part to queue
+				if (!current.second)
+				{
+					queue.push_back({ current.first,true });
+				}
 			}
-			else
-			{
-				return std::any_of(children.rbegin(), children.rend(),
-					[&](auto& c)
-					{
-						ray.aabbIntersectionCount++;
-						float dist;
-						if (c->intersectNode(ray, dist))
-						{
-							ray.successfulAabbIntersectionCount++;
 
-							//node intersection successful: rekursion continues
-							if (c->intersect(ray))
-							{
-								return true;
-							}
+			for (auto& c : childIds)
+			{
+				ray.aabbIntersectionCount++;
+
+				float dist;
+				if (children[c]->intersectNode(ray, dist))
+				{
+					ray.successfulAabbIntersectionCount++;
+
+					//node intersection successful: rekursion continues
+					if (children[c]->intersect(ray))
+					{
+						result = true;
+						if (ray.shadowRay)
+						{
+							return true;
 						}
-						return false;
-					});
+					}
+				}
 			}
 		}
 	}
