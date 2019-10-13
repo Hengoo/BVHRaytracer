@@ -193,10 +193,6 @@ bool Node::intersect(Ray& ray)
 		{
 			//traverse nodes with children that can have arbitrary sorting
 
-			//childIds shows the order we have to traverse the childs.
-			std::vector<uint8_t>childIds;
-			childIds.reserve(children.size());
-
 			//queue saves the id of elelemnts of sortAxisEachSplit where we still need to explore the 2. option
 			//true = visited, false = not visited
 			std::vector<std::pair<int8_t, bool>>queue;
@@ -228,7 +224,25 @@ bool Node::intersect(Ray& ray)
 				}
 				if (id < 0)
 				{
-					childIds.push_back(abs(id) - 1);
+					//traverse aabb
+					uint8_t c = abs(id) - 1;
+					ray.aabbIntersectionCount++;
+
+					float dist;
+					if (children[c]->intersectNode(ray, dist))
+					{
+						ray.successfulAabbIntersectionCount++;
+
+						//node intersection successful: rekursion continues
+						if (children[c]->intersect(ray))
+						{
+							result = true;
+							if (ray.shadowRay)
+							{
+								return true;
+							}
+						}
+					}
 				}
 				else
 				{
@@ -239,27 +253,6 @@ bool Node::intersect(Ray& ray)
 				if (!current.second)
 				{
 					queue.push_back({ current.first,true });
-				}
-			}
-
-			for (auto& c : childIds)
-			{
-				ray.aabbIntersectionCount++;
-
-				float dist;
-				if (children[c]->intersectNode(ray, dist))
-				{
-					ray.successfulAabbIntersectionCount++;
-
-					//node intersection successful: rekursion continues
-					if (children[c]->intersect(ray))
-					{
-						result = true;
-						if (ray.shadowRay)
-						{
-							return true;
-						}
-					}
 				}
 			}
 		}

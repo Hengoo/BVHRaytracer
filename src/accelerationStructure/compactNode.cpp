@@ -1,10 +1,12 @@
 #include "compactNode.h"
 #include "nodeAnalysis.h"
 #include "aabb.h"
+#include "../global.h"
 
 template class CompactNodeManager<CompactNodeV0>;
 template class CompactNodeManager<CompactNodeV1>;
 template class CompactNodeManager<CompactNodeV2>;
+template class CompactNodeManager<CompactNodeV3>;
 
 template<typename T>
 CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
@@ -71,7 +73,7 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 			compactNodes.push_back(T(childs, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis));
 		}
 	}
-	if constexpr (std::is_same<T, CompactNodeV1>::value || std::is_same<T, CompactNodeV2>::value)
+	else if constexpr (std::is_same<T, CompactNodeV1>::value || std::is_same<T, CompactNodeV2>::value || std::is_same<T, CompactNodeV3>::value)
 	{
 		for (auto& n : nodeVector)
 		{
@@ -91,7 +93,14 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 				pEnd = std::distance(bvh.primitives->begin(), n->node->primitiveEnd);
 			}
 			Aabb* aabb = static_cast<Aabb*>(n->node);
-			compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis));
+			if constexpr (std::is_same<T, CompactNodeV1>::value || std::is_same<T, CompactNodeV2>::value)
+			{
+				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis));
+			}
+			else if constexpr (std::is_same<T, CompactNodeV3>::value)
+			{
+				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxisEachSplit));
+			}
 		}
 	}
 	primitives = bvh.primitives;
@@ -111,6 +120,12 @@ template<typename T>
 bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 {
 	//traverse compact node vector
+
+	//this is only for the NodeV3 -> should be optimised away for the other nodes.
+	std::vector<std::pair<int8_t, bool>> smallQueue;
+	smallQueue.reserve(bvh.branchingFactor);
+	std::vector<uint8_t>childIds;
+	childIds.reserve(bvh.branchingFactor);
 
 	//check root node
 	T* node = &compactNodes[0];
@@ -255,6 +270,62 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 					}
 				}
 			}
+			else if (std::is_same<T, CompactNodeV3>::value)
+			{
+				//first get order we have to traverse the childs:
+				smallQueue.push_back({ 0, false });
+				while (!smallQueue.empty())
+				{
+					auto current = smallQueue.back();
+					smallQueue.pop_back();
+
+					//faster to copy than to do reference or pointer
+					auto a = node->sortAxisEachSplit[current.first];
+					//side. true = left, false = right
+					bool side = ray.direction[a[0]] > 0;
+					if (!current.second)
+					{
+						side = !side;
+					}
+
+					int8_t id = 0;
+					if (side)
+					{
+						id = a[1];
+					}
+					else
+					{
+						id = a[2];
+					}
+
+					if (id < 0)
+					{
+						childIds.push_back(abs(id) - 1);
+					}
+					else
+					{
+						smallQueue.push_back({ id, false });
+					}
+
+					//add second part to queue
+					if (!current.second)
+					{
+						smallQueue.push_back({ current.first,true });
+					}
+				}
+
+				std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
+					[&](auto& cId)
+					{
+						if (aabbCheck(ray, node->childIdBegin + cId))
+						{
+							queue.push_back(node->childIdBegin + cId);
+							depths.push_back(d + 1);
+						}
+					});
+				childIds.clear();
+				smallQueue.clear();
+			}
 		}
 	}
 	return result;
@@ -265,7 +336,11 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 {
 	//traverse compact node vector
 
-	//most of the logging can also be done here, but we do not know the depth of
+	//this is only for the NodeV3 -> should be optimised away for the other nodes.
+	std::vector<std::pair<int8_t, bool>> smallQueue;
+	smallQueue.reserve(bvh.branchingFactor);
+	std::vector<uint8_t>childIds;
+	childIds.reserve(bvh.branchingFactor);
 
 	//ids of ndodes that we still need to test:
 	std::vector<uint32_t> queue;
@@ -339,9 +414,9 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 		//add nodes to todo list
 		if (node->hasChildren())
 		{
-			//update child FUllness:
+			//update child Fullness:
 			uint16_t childCount = node->getChildCount();
-			ray.childFullness[childCount + 1] ++;
+			ray.childFullness[childCount] ++;
 			ray.nodeIntersectionCount[d]++;
 
 			if constexpr (std::is_same<T, CompactNodeV0>::value)
@@ -385,8 +460,59 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 					}
 				}
 			}
+			else if constexpr (std::is_same<T, CompactNodeV3>::value)
+			{
+				//first get order we have to traverse the childs:
+				smallQueue.push_back({ 0, false });
+				while (!smallQueue.empty())
+				{
+					auto current = smallQueue.back();
+					smallQueue.pop_back();
 
+					//faster to copy than to do reference or pointer
+					auto a = node->sortAxisEachSplit[current.first];
+					//side. true = left, false = right
+					bool side = ray.direction[a[0]] > 0;
+					if (!current.second)
+					{
+						side = !side;
+					}
 
+					int8_t id = 0;
+					if (side)
+					{
+						id = a[1];
+					}
+					else
+					{
+						id = a[2];
+					}
+
+					if (id < 0)
+					{
+						childIds.push_back(abs(id) - 1);
+					}
+					else
+					{
+						smallQueue.push_back({ id, false });
+					}
+
+					//add second part to queue
+					if (!current.second)
+					{
+						smallQueue.push_back({ current.first,true });
+					}
+				}
+
+				std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
+					[&](auto& cId)
+					{
+						queue.push_back(node->childIdBegin + cId);
+						depths.push_back(d + 1);
+					});
+				childIds.clear();
+				smallQueue.clear();
+			}
 		}
 	}
 	return result;

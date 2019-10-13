@@ -3,14 +3,17 @@
 #Leafsize and Branching Factor to test:
 minLeafSize = 4
 maxLeafSize = 4
-minBranch = 4
-maxBranch = 4
+minBranch = 12
+maxBranch = 12
 
 #What analysis to do:
-saveImage = false
-saveDepthDetailedImage = false
+saveImage = true
+saveDepthDetailedImage = true
 bvhAnalysis = false
 saveBvhImage = false
+
+//true -> take new axis and sort for each split. False -> only do it once in the beginning
+sortEachSplit = true
 
 #Render type: 	
 #	0 = normal bvh tree traversal

@@ -42,6 +42,9 @@ class RayTracer
 	bool bvhAnalysis;
 	bool saveBvhImage;
 
+	//true -> take new axis and sort for each split. False -> only do it once in the beginning
+	bool sortEachSplit;
+
 	//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 	unsigned renderType;
 	unsigned scenario;
@@ -59,8 +62,6 @@ public:
 	{
 		//working progress options that should go to config soon:
 
-		//true -> take new axis and sort for each splot. False -> only do it once in the beginning
-		bool sortEachSplit = false;
 
 		//settings sanity checks:
 		maxBranch = std::max(maxBranch, minBranch);
@@ -284,13 +285,28 @@ public:
 
 				if (compactNodeOrder == 0 || compactNodeOrder == 1)
 				{
-					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
-					//create camera and render image
-					Camera c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, saveDepthDetailedImage, manager, renderType);
+					if (sortEachSplit)
+					{
+						CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
+						//create camera and render image
+						Camera c(path, name, problem, cameraPos, cameraTarget);
+						c.renderImage(saveImage, saveDepthDetailedImage, manager, renderType);
+					}
+					else
+					{
+						CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
+						//create camera and render image
+						Camera c(path, name, problem, cameraPos, cameraTarget);
+						c.renderImage(saveImage, saveDepthDetailedImage, manager, renderType);
+					}
 				}
 				else
 				{
+					if (sortEachSplit)
+					{
+						std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
+						throw(20);
+					}
 					CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 					//create camera and render image
 					Camera c(path, name, problem, cameraPos, cameraTarget);
@@ -409,6 +425,18 @@ public:
 						else
 						{
 							std::cout << "saveBvhImage value written wring -> default = false" << std::endl;
+						}
+					}
+					res = line.find("sortEachSplit", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)sortEachSplit = true;
+						else if (res2 != std::string::npos)sortEachSplit = false;
+						else
+						{
+							std::cout << "sortEachSplit value written wring -> default = false" << std::endl;
 						}
 					}
 				}

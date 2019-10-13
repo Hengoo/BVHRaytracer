@@ -143,6 +143,8 @@ public:
 		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
+				//std::cout << "test" << std::endl;
+
 				//orthographic camera, dont think i will use it anytime soon
 				//glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / 100);
 				//glm::vec3 pos = position + glm::vec3(transform * centerOffset);

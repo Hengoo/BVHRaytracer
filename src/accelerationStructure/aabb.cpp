@@ -210,7 +210,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	std::vector<PrimIntervall> workIntervall;
 	workIntervall.push_back(PrimIntervall(primitiveBegin, primitiveEnd));
 	int bestI = 0;
-	float primCounter = 0;
+	int primCounter = 0;
 
 	for (size_t b = 0; b < branchingFactor - 1; b++)
 	{

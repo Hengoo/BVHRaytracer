@@ -72,7 +72,7 @@ struct CompactNodeV0
 	}
 };
 
-//compact node with consecutive child ids (use if possible)
+//compact node with consecutive child ids
 struct CompactNodeV1
 {
 	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
@@ -128,7 +128,7 @@ struct CompactNodeV2
 	CompactNodeV2(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
 		: boundMin(boundMin), boundMax(boundMax)
 	{
-		if (childIdBegin !=  childIdEnd)
+		if (childIdBegin != childIdEnd)
 		{
 			this->childIdBegin = childIdBegin;
 			childIdEndOffset = childIdEnd - childIdBegin;
@@ -159,6 +159,43 @@ struct CompactNodeV2
 	inline bool hasPrimitive()
 	{
 		return sortAxis == 16;
+	}
+};
+
+//compact node with consecutive child ids and a sorting axis for each split
+struct CompactNodeV3
+{
+	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
+	uint32_t childIdBegin;
+	uint32_t primIdBegin;
+	uint8_t childIdEndOffset;
+	uint8_t primIdEndOffset;
+	std::vector<std::array<int8_t, 3>> sortAxisEachSplit;
+	glm::vec3 boundMin;
+	glm::vec3 boundMax;
+
+	CompactNodeV3(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin,
+		uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, std::vector<std::array<int8_t, 3>> sortAxisEachSplit)
+		: childIdBegin(childIdBegin), primIdBegin(primIdBegin), boundMin(boundMin),
+		boundMax(boundMax), sortAxisEachSplit(sortAxisEachSplit)
+	{
+		childIdEndOffset = childIdEnd - childIdBegin;
+		primIdEndOffset = primIdEnd - primIdBegin;
+	}
+
+	inline uint16_t getChildCount()
+	{
+		return childIdEndOffset + 1;
+	}
+
+	inline bool hasChildren()
+	{
+		return childIdEndOffset != 0;
+	}
+
+	inline bool hasPrimitive()
+	{
+		return primIdEndOffset != 0;
 	}
 };
 
