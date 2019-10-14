@@ -1,7 +1,7 @@
 #include "ray.h"
-#include "global.h"
 
-Ray::Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay)
+
+Ray::Ray(glm::vec3 pos, glm::vec3 direction, Bvh bvh, bool shadowRay)
 	: pos(pos), direction(direction), shadowRay(shadowRay)
 {
 	nodeIntersectionCount.resize(bvh.bvhDepth);

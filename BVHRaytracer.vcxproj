@@ -23,7 +23,6 @@
     <ClCompile Include="src\accelerationStructure\bvh.cpp" />
     <ClCompile Include="src\accelerationStructure\compactNode.cpp" />
     <ClCompile Include="src\accelerationStructure\node.cpp" />
-    <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\lodepng\lodepng.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\primitives\triangle.cpp" />
@@ -40,7 +39,6 @@
     <ClInclude Include="src\gameobject.h" />
     <ClInclude Include="src\glmInclude.h" />
     <ClInclude Include="src\glmUtil.h" />
-    <ClInclude Include="src\global.h" />
     <ClInclude Include="src\lights\directionalLight.h" />
     <ClInclude Include="src\lights\light.h" />
     <ClInclude Include="src\lights\pointLight.h" />

@@ -10,8 +10,8 @@
 //for the parallel for
 #include <execution>
 
+#include "lights/light.h"
 #include "glmInclude.h"
-#include "global.h"
 #include "util.h"
 
 struct RenderInfo
@@ -117,7 +117,7 @@ public:
 
 	//spawns rays and collects results into image. Image is written on disk
 	template<typename T>
-	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager, int renderType)
+	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, int renderType)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -159,7 +159,7 @@ public:
 				//centerOffset = glm::vec4(0, 0, -1, 0);
 				glm::vec3 pos = position + glm::vec3(transform * centerOffset);
 
-				auto ray = Ray(position, pos - position);
+				auto ray = Ray(position, pos - position, bvh);
 
 				bool result;
 				switch (renderType)
@@ -193,7 +193,7 @@ public:
 
 						float f = glm::dot(ray.surfaceNormal, lightVector);
 						//add bias to vector to prevent shadow rays hitting the surface they where created for
-						Ray shadowRay(ray.surfacePosition + lightVector * 0.001f, lightVector, true);
+						Ray shadowRay(ray.surfacePosition + lightVector * 0.001f, lightVector, bvh, true);
 						shadowRay.tMax = lightDistance;
 
 						//only shoot ray when surface points in light direction

@@ -205,8 +205,8 @@ class CompactNodeManager
 {
 	//depending on the node order we can choose the consecutive V1 or have to use V0
 	std::vector<T> compactNodes;
-
 	std::shared_ptr<primPointVector> primitives;
+	const unsigned branchingFactor;
 public:
 
 	//copies a bvh and rearanges it into a single vector of compact nodes

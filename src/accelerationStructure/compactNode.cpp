@@ -1,7 +1,6 @@
 #include "compactNode.h"
 #include "nodeAnalysis.h"
 #include "aabb.h"
-#include "../global.h"
 
 template class CompactNodeManager<CompactNodeV0>;
 template class CompactNodeManager<CompactNodeV1>;
@@ -10,6 +9,7 @@ template class CompactNodeManager<CompactNodeV3>;
 
 template<typename T>
 CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
+	:branchingFactor(bvh.branchingFactor)
 {
 	//general appraoch: save all analysisNodes in a vector -> then write the id (the position in the vector)
 	//Then we now the ids of all nodes and the ids of those children -> write them into compactNodesVector
@@ -123,9 +123,9 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 
 	//this is only for the NodeV3 -> should be optimised away for the other nodes.
 	std::vector<std::pair<int8_t, bool>> smallQueue;
-	smallQueue.reserve(bvh.branchingFactor);
+	smallQueue.reserve(branchingFactor);
 	std::vector<uint8_t>childIds;
-	childIds.reserve(bvh.branchingFactor);
+	childIds.reserve(branchingFactor);
 
 	//check root node
 	T* node = &compactNodes[0];
@@ -338,9 +338,9 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 
 	//this is only for the NodeV3 -> should be optimised away for the other nodes.
 	std::vector<std::pair<int8_t, bool>> smallQueue;
-	smallQueue.reserve(bvh.branchingFactor);
+	smallQueue.reserve(branchingFactor);
 	std::vector<uint8_t>childIds;
-	childIds.reserve(bvh.branchingFactor);
+	childIds.reserve(branchingFactor);
 
 	//ids of ndodes that we still need to test:
 	std::vector<uint32_t> queue;

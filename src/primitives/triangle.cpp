@@ -1,8 +1,6 @@
 #include "triangle.h"
 
 #include "../accelerationStructure/bvh.h"
-#include "../lights/light.h"
-#include "../global.h"
 
 #include "../glmUtil.h"
 #include "../util.h"

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
-
+#include "accelerationStructure/bvh.h"
 
 #include "glmInclude.h"
 #include "color.h"
@@ -41,7 +41,7 @@ public:
 	uint16_t aabbIntersectionCount;
 	//result would be primitive + distance + normal +  ?vector of secondary rays?
 
-	Ray(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false);
+	Ray(glm::vec3 pos, glm::vec3 direction, Bvh bvh, bool shadowRay = false);
 
 	~Ray()
 	{
