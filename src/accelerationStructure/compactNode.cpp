@@ -283,7 +283,7 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 					auto a = node->sortAxisEachSplit[current.first];
 					//side. true = left, false = right
 					bool side = ray.direction[a[0]] > 0;
-					if (!current.second)
+					if (current.second)
 					{
 						side = !side;
 					}
@@ -297,7 +297,11 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 					{
 						id = a[2];
 					}
-
+					//add second part to queue
+					if (!current.second)
+					{
+						smallQueue.push_back({ current.first,true });
+					}
 					if (id < 0)
 					{
 						childIds.push_back(abs(id) - 1);
@@ -306,14 +310,7 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray)
 					{
 						smallQueue.push_back({ id, false });
 					}
-
-					//add second part to queue
-					if (!current.second)
-					{
-						smallQueue.push_back({ current.first,true });
-					}
 				}
-
 				std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
 					[&](auto& cId)
 					{
@@ -473,7 +470,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 					auto a = node->sortAxisEachSplit[current.first];
 					//side. true = left, false = right
 					bool side = ray.direction[a[0]] > 0;
-					if (!current.second)
+					if (current.second)
 					{
 						side = !side;
 					}
@@ -487,7 +484,11 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 					{
 						id = a[2];
 					}
-
+					//add second part to queue
+					if (!current.second)
+					{
+						smallQueue.push_back({ current.first,true });
+					}
 					if (id < 0)
 					{
 						childIds.push_back(abs(id) - 1);
@@ -496,14 +497,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 					{
 						smallQueue.push_back({ id, false });
 					}
-
-					//add second part to queue
-					if (!current.second)
-					{
-						smallQueue.push_back({ current.first,true });
-					}
 				}
-
 				std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
 					[&](auto& cId)
 					{

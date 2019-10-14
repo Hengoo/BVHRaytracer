@@ -117,7 +117,8 @@ public:
 
 	//spawns rays and collects results into image. Image is written on disk
 	template<typename T>
-	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, int renderType)
+	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
+		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, int renderType, bool mute)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -362,21 +363,24 @@ public:
 		//shadowfactor for now the same. Could normalize it per shadowrays but that would ruin the scale and fullness
 		float shadowFactor = 1 / (float)shadowRayCount;
 		float bothFactor = 1 / (float)(width * height + shadowRayCount);
-		std::cout << "intersections counts are normalized per Ray" << std::endl << std::endl;
-		std::cout << "node intersections: " << nodeIntersectionCount * factor << std::endl;
-		std::cout << "aabb intersections: " << aabbIntersections * factor << std::endl;
-		std::cout << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
-		std::cout << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
-		std::cout << "primitive intersections: " << primitiveIntersections * factor << std::endl;
-		std::cout << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
-		std::cout << std::endl;
-		std::cout << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
-		std::cout << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
-		std::cout << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
-		std::cout << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
-		std::cout << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
-		std::cout << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
 
+		if (!mute)
+		{
+			std::cout << "intersections counts are normalized per Ray" << std::endl << std::endl;
+			std::cout << "node intersections: " << nodeIntersectionCount * factor << std::endl;
+			std::cout << "aabb intersections: " << aabbIntersections * factor << std::endl;
+			std::cout << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
+			std::cout << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
+			std::cout << "primitive intersections: " << primitiveIntersections * factor << std::endl;
+			std::cout << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
+			std::cout << std::endl;
+			std::cout << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
+			std::cout << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
+			std::cout << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
+			std::cout << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
+			std::cout << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
+			std::cout << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
+		}
 		std::ofstream myfile(path + "/" + name + problem + "_Info.txt");
 		if (myfile.is_open())
 		{

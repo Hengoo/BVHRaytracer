@@ -36,6 +36,7 @@ class RayTracer
 	unsigned minBranch;
 	unsigned maxBranch;
 
+	bool renderImage;
 	bool saveImage;
 	bool saveDepthDetailedImage;
 	bool bvhAnalysis;
@@ -95,9 +96,10 @@ public:
 		std::cout << "compact Node order: " << compactNodeOrder << std::endl;
 		std::cout << std::endl;
 
-		if (scenarios.size() > 1)
+		bool mute = scenarios.size() > 1;
+		if (mute)
 		{
-			//mute cout
+			//mute cout (so we dont have to place an if arround every cout
 			std::cout.setstate(std::ios_base::failbit);
 		}
 		std::for_each(std::execution::par_unseq, scenarios.begin(), scenarios.end(),
@@ -252,10 +254,10 @@ public:
 				std::chrono::duration<double> time_span0 = std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1);
 				std::cout << std::endl << "Model loading took " << time_span0.count() << " seconds." << std::endl;
 
-				std::vector<unsigned> leafWork(maxLeafSize - minLeafSize + 1);
-				std::iota(std::begin(leafWork), std::end(leafWork), minLeafSize);
-				std::vector<unsigned> branchWork(maxBranch - minBranch + 1);
-				std::iota(std::begin(branchWork), std::end(branchWork), minBranch);
+				//std::vector<unsigned> leafWork(maxLeafSize - minLeafSize + 1);
+				//std::iota(std::begin(leafWork), std::end(leafWork), minLeafSize);
+				//std::vector<unsigned> branchWork(maxBranch - minBranch + 1);
+				//std::iota(std::begin(branchWork), std::end(branchWork), minBranch);
 
 				for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
 				{
@@ -290,51 +292,53 @@ public:
 
 						//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 						//This also duplicates the node system. the copy is used for the compact nodes
-						bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem);
-
-						//determine type:
+						bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem, mute);
 
 						std::chrono::high_resolution_clock::time_point timeLoop2 = std::chrono::high_resolution_clock::now();
 						std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);
 						std::cout << std::endl << "BVH building took " << time_span1.count() << " seconds." << std::endl;
 
+						//determine type:
 						//only works with constant: (but i want an .txt as settings so i dont have to recompile...
 						//const bool cond = compactNodeOrder == 0;
 						//CompactNodeManager<std::conditional<cond, CompactNodeV0, CompactNodeV1>::type> manager(bvh);
 
-						if (compactNodeOrder == 0 || compactNodeOrder == 1)
+						if (renderImage)
 						{
-							if (sortEachSplit)
+							if (compactNodeOrder == 0 || compactNodeOrder == 1)
 							{
-								CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
-								//create camera and render image
-								Camera c(path, name, problem, cameraPos, cameraTarget);
-								c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType);
+								if (sortEachSplit)
+								{
+									CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
+									//create camera and render image
+									Camera c(path, name, problem, cameraPos, cameraTarget);
+									c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+								}
+								else
+								{
+									CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
+									//create camera and render image
+									Camera c(path, name, problem, cameraPos, cameraTarget);
+									c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+								}
 							}
 							else
 							{
-								CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
+								if (sortEachSplit)
+								{
+									std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
+									throw(20);
+								}
+								CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 								//create camera and render image
 								Camera c(path, name, problem, cameraPos, cameraTarget);
-								c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType);
+								c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
 							}
-						}
-						else
-						{
-							if (sortEachSplit)
-							{
-								std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
-								throw(20);
-							}
-							CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
-							//create camera and render image
-							Camera c(path, name, problem, cameraPos, cameraTarget);
-							c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType);
-						}
 
-						std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
-						std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop3 - timeLoop2);
-						std::cout << "Rendering took " << time_span2.count() << " seconds." << std::endl;
+							std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
+							std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop3 - timeLoop2);
+							std::cout << "Rendering took " << time_span2.count() << " seconds." << std::endl;
+						}
 					}
 				}
 			});
@@ -472,6 +476,18 @@ public:
 						else
 						{
 							std::cerr << "sortEachSplit value written wrong -> default = false" << std::endl;
+						}
+					}
+					res = line.find("renderImage", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)renderImage = true;
+						else if (res2 != std::string::npos)renderImage = false;
+						else
+						{
+							std::cerr << "renderImage value written wrong -> default = false" << std::endl;
 						}
 					}
 				}

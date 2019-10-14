@@ -62,7 +62,7 @@ public:
 	//collapses the next collapeCount child hierarchies to this node
 	void collapseChilds(int collapeCount);
 
-	void bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem);
+	void bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem, bool mute);
 
 protected:
 	std::shared_ptr<Node> root;

@@ -123,7 +123,7 @@ void Bvh::iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& prim
 	}
 }
 
-void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem)
+void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem, bool mute)
 {
 	//analysis includes
 	//metric analysis: sah, the overlapp heuristic
@@ -199,53 +199,55 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
 		averageTreeDepth /= (float)leafs;
 
-		std::cout << "BVH Analysis:" << std::endl;
-		std::cout << "Tree depth: " << treeDepth.size() - 1 << std::endl;
-		std::cout << "average leaf depth: " << averageTreeDepth << std::endl;
-		std::cout << "number of nodes: " << nodes - leafs << std::endl;
-		std::cout << "nodes with x childen:" << std::endl;
-		float sum = 0;
-		float sum2 = 0;
-		for (size_t i = 1; i < childCount.size(); i++)
+		if (!mute)
 		{
-			sum += childCount[i] * i;
-			sum2 += childCount[i];
-		}
-		//sum /= std::accumulate(childCount.begin(), childCount.end(), 0);
-		sum /= sum2;
-		std::cout << "average: " << std::to_string(sum) << std::endl;
-		for (size_t i = 2; i < childCount.size(); i++)
-		{
-			std::cout << i << " : " << childCount[i] << std::endl;
-		}
-		std::cout << std::endl;
-		std::cout << "number of leafnodes: " << leafs << std::endl;
-		std::cout << "vertexCount : " << vertexCount << std::endl;
-		std::cout << "uniqueVertexCount : " << uniqueVertexCount << std::endl;
-		std::cout << "factor : " << uniqueVertexCount / (float)vertexCount << std::endl;
-		std::cout << "leafnodes with x primitives:" << std::endl;
-		sum = 0;
-		sum2 = 0;
-		for (size_t i = 1; i < primCount.size(); i++)
-		{
-			sum += primCount[i] * i;
-			sum2 += primCount[i];
-		}
-		//sum /= std::accumulate(primCount.begin(), primCount.end(), 0);
-		sum /= sum2;
-		std::cout << "average: : " << std::to_string(sum) << std::endl;
-		for (size_t i = 1; i < primCount.size(); i++)
-		{
-			std::cout << i << " : " << primCount[i] << std::endl;
-		}
-		std::cout << std::endl;
+			std::cout << "BVH Analysis:" << std::endl;
+			std::cout << "Tree depth: " << treeDepth.size() - 1 << std::endl;
+			std::cout << "average leaf depth: " << averageTreeDepth << std::endl;
+			std::cout << "number of nodes: " << nodes - leafs << std::endl;
+			std::cout << "nodes with x childen:" << std::endl;
+			float sum = 0;
+			float sum2 = 0;
+			for (size_t i = 1; i < childCount.size(); i++)
+			{
+				sum += childCount[i] * i;
+				sum2 += childCount[i];
+			}
+			//sum /= std::accumulate(childCount.begin(), childCount.end(), 0);
+			sum /= sum2;
+			std::cout << "average: " << std::to_string(sum) << std::endl;
+			for (size_t i = 2; i < childCount.size(); i++)
+			{
+				std::cout << i << " : " << childCount[i] << std::endl;
+			}
+			std::cout << std::endl;
+			std::cout << "number of leafnodes: " << leafs << std::endl;
+			std::cout << "vertexCount : " << vertexCount << std::endl;
+			std::cout << "uniqueVertexCount : " << uniqueVertexCount << std::endl;
+			std::cout << "factor : " << uniqueVertexCount / (float)vertexCount << std::endl;
+			std::cout << "leafnodes with x primitives:" << std::endl;
+			sum = 0;
+			sum2 = 0;
+			for (size_t i = 1; i < primCount.size(); i++)
+			{
+				sum += primCount[i] * i;
+				sum2 += primCount[i];
+			}
+			//sum /= std::accumulate(primCount.begin(), primCount.end(), 0);
+			sum /= sum2;
+			std::cout << "average: : " << std::to_string(sum) << std::endl;
+			for (size_t i = 1; i < primCount.size(); i++)
+			{
+				std::cout << i << " : " << primCount[i] << std::endl;
+			}
+			std::cout << std::endl;
 
-		//think volume and surface area need to be normalised by roof values
-		std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
-		std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << customToString(leafVolume / (double)leafs, 10) << std::endl;
-		std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
-		std::cout << std::endl;
-
+			//think volume and surface area need to be normalised by roof values
+			std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
+			std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << customToString(leafVolume / (double)leafs, 10) << std::endl;
+			std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
+			std::cout << std::endl;
+		}
 		//write to file
 		std::ofstream myfile(path + "/" + name + problem + "_BVHInfo.txt");
 		if (myfile.is_open())

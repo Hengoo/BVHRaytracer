@@ -100,7 +100,7 @@ bool Node::intersect(Ray& ray)
 		std::vector<std::shared_ptr<Node>>::iterator end = children.end();
 
 
-		if (sortAxisEachSplit.size() == 0)
+		if (sortAxisEachSplit.empty())
 		{
 			//code duplication because it is about 10% faster to do it this way instead of calling a method in lambda or using std::bind
 			if (ray.direction[sortAxis] > 0)
@@ -208,7 +208,7 @@ bool Node::intersect(Ray& ray)
 				auto& a = sortAxisEachSplit[current.first];
 				//side. true = left, false = right
 				bool side = ray.direction[a[0]] > 0;
-				if (!current.second)
+				if (current.second)
 				{
 					side = !side;
 				}
@@ -221,6 +221,11 @@ bool Node::intersect(Ray& ray)
 				else
 				{
 					id = a[2];
+				}
+				//add second part to queue
+				if (!current.second)
+				{
+					queue.push_back({ current.first,true });
 				}
 				if (id < 0)
 				{
@@ -247,12 +252,6 @@ bool Node::intersect(Ray& ray)
 				else
 				{
 					queue.push_back({ id, false });
-				}
-
-				//add second part to queue
-				if (!current.second)
-				{
-					queue.push_back({ current.first,true });
 				}
 			}
 		}
