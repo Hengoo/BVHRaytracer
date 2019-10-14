@@ -43,7 +43,7 @@ void Bvh::recursiveOctree(int bucketCount)
 
 void Bvh::collapseChilds(int collapeCount)
 {
-	std::cout << "TODO: before using collapse : fix ray intersection order so it uses the sorting" << std::endl;
+	std::cerr << "TODO: before using collapse : fix ray intersection order so it uses the sorting" << std::endl;
 	if (collapeCount > 0)
 	{
 		collapseChilds(root, collapeCount);
@@ -297,15 +297,12 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 			myfile << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
 			myfile << std::endl;
 		}
-		else std::cout << "Unable to open file" << std::endl;
-
+		else std::cerr << "Unable to open file" << std::endl;
 	}
 
 	//create image
 	if (saveBvhImage && leafs)
 	{
-
-
 		int height = treeDepth.size();
 		int width = leafs;
 		std::vector<uint8_t> image(height * width * 4, 255);

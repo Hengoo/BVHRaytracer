@@ -93,7 +93,7 @@ bool Node::intersect(Ray& ray)
 
 		if (getPrimCount() > 0)
 		{
-			std::cout << "TODO: implement correct counter for primitive intersection in upper nodes" << std::endl;
+			std::cerr << "TODO: implement correct counter for primitives in non leaf nodes" << std::endl;
 		}
 
 		std::vector<std::shared_ptr<Node>>::iterator begin = children.begin();

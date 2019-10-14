@@ -73,13 +73,13 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 
 		if (gltfImage.component != 4)
 		{
-			std::cout << "image doesnt have 4 components... -> must convert to rgba (if required)" << std::endl;
+			std::cerr << "image doesnt have 4 components... -> must convert to rgba (if required)" << std::endl;
 			//look at this https://github.com/SaschaWillems/Vulkan/blob/master/base/VulkanglTFModel.hpp for help
 		}
 		//think about bits
 		if (gltfImage.bits != 8)
 		{
-			std::cout << "image doesnt have 8 bits per component?" << std::endl;
+			std::cerr << "image doesnt have 8 bits per component?" << std::endl;
 		}
 
 		//need to check what exactly happens to the memory here? i kinda want it to copy??
@@ -218,7 +218,7 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 				}
 				else
 				{
-					std::cout << "index component type not known?" << std::endl;
+					std::cerr << "index component type not known?" << std::endl;
 				}
 			}
 			else

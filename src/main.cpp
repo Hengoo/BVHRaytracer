@@ -70,12 +70,12 @@ public:
 		minLeafSize = std::min(maxLeafSize, minLeafSize);
 		if (renderType > 2)
 		{
-			std::cout << "unknown renderType" << std::endl;
+			std::cerr << "unknown renderType" << std::endl;
 			return;
 		}
 		if (compactNodeOrder > 2)
 		{
-			std::cout << "unknown compactNodeOrder" << std::endl;
+			std::cerr << "unknown compactNodeOrder" << std::endl;
 			return;
 		}
 
@@ -95,6 +95,11 @@ public:
 		std::cout << "compact Node order: " << compactNodeOrder << std::endl;
 		std::cout << std::endl;
 
+		if (scenarios.size() > 1)
+		{
+			//mute cout
+			std::cout.setstate(std::ios_base::failbit);
+		}
 		std::for_each(std::execution::par_unseq, scenarios.begin(), scenarios.end(),
 			[&](auto& scenario)
 			{
@@ -184,7 +189,7 @@ public:
 					lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 					break;
 				default:
-					std::cout << "unknown scene id" << std::endl;
+					std::cerr << "unknown scene id" << std::endl;
 					return;
 					break;
 				}
@@ -207,13 +212,13 @@ public:
 					}
 					else
 					{
-						std::cout << "failed to create directory" << std::endl;
+						std::cerr << "failed to create directory" << std::endl;
 						return;
 					}
 				}
 				else
 				{
-					std::cout << "failed to create directory" << std::endl;
+					std::cerr << "failed to create directory" << std::endl;
 					return;
 				}
 
@@ -333,6 +338,11 @@ public:
 					}
 				}
 			});
+
+		if (scenarios.size() > 1)
+		{
+			std::cout.clear();
+		}
 		std::cout << std::endl;
 		std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> time_spanAll = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeBegin);
@@ -413,7 +423,7 @@ public:
 						else if (res2 != std::string::npos)saveImage = false;
 						else
 						{
-							std::cout << "saveImage value written wrong -> default = false" << std::endl;
+							std::cerr << "saveImage value written wrong -> default = false" << std::endl;
 						}
 					}
 					res = line.find("saveDepthDetailedImage ", 0);
@@ -425,7 +435,7 @@ public:
 						else if (res2 != std::string::npos)saveDepthDetailedImage = false;
 						else
 						{
-							std::cout << "saveDepthDetailedImage value written wrong -> default = false" << std::endl;
+							std::cerr << "saveDepthDetailedImage value written wrong -> default = false" << std::endl;
 						}
 					}
 					res = line.find("bvhAnalysis", 0);
@@ -437,7 +447,7 @@ public:
 						else if (res2 != std::string::npos)bvhAnalysis = false;
 						else
 						{
-							std::cout << "bvhAnalysis value written wrong -> default = false" << std::endl;
+							std::cerr << "bvhAnalysis value written wrong -> default = false" << std::endl;
 						}
 					}
 					res = line.find("saveBvhImage", 0);
@@ -449,7 +459,7 @@ public:
 						else if (res2 != std::string::npos)saveBvhImage = false;
 						else
 						{
-							std::cout << "saveBvhImage value written wrong -> default = false" << std::endl;
+							std::cerr << "saveBvhImage value written wrong -> default = false" << std::endl;
 						}
 					}
 					res = line.find("sortEachSplit", 0);
@@ -461,7 +471,7 @@ public:
 						else if (res2 != std::string::npos)sortEachSplit = false;
 						else
 						{
-							std::cout << "sortEachSplit value written wrong -> default = false" << std::endl;
+							std::cerr << "sortEachSplit value written wrong -> default = false" << std::endl;
 						}
 					}
 				}

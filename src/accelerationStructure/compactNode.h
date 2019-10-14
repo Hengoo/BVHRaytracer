@@ -142,7 +142,7 @@ struct CompactNodeV2
 		}
 		else
 		{
-			std::cout << "ERROR assigning both child and prim to compact node v2" << std::endl;
+			std::cerr << "ERROR assigning both child and prim to compact node v2" << std::endl;
 		}
 	}
 

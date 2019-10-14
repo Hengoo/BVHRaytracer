@@ -261,7 +261,7 @@ public:
 							shadowPrimitiveIntersectionsPerPixel[info.index] += shadowRay.primitiveIntersectionCount;
 							if (shadowRay.successfulPrimitiveIntersectionCount > 1)
 							{
-								std::cout << "error: more than 1 successful shadowray primitive intersection for one light" << std::endl;
+								std::cerr << "error: more than 1 successful shadowray primitive intersection for one light" << std::endl;
 							}
 							shadowSuccessfulPrimitiveIntersectionsPerPixel[info.index] += shadowRay.successfulPrimitiveIntersectionCount;
 							shadowSuccessfulAabbIntersectionsPerPixel[info.index] += shadowRay.successfulAabbIntersectionCount;
@@ -453,7 +453,7 @@ public:
 			}
 			myfile.close();
 		}
-		else std::cout << "Unable to open file" << std::endl;
+		else std::cerr << "Unable to open file" << std::endl;
 
 
 		if (saveImage)
@@ -616,5 +616,4 @@ private:
 		shadowSuccessfulPrimitiveIntersections = 0;
 		shadowRayCount = 0;
 	}
-
 };

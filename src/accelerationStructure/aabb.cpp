@@ -268,7 +268,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 					}
 					if (tmpSide == 0)
 					{
-						auto fail = 0;
+						std::cerr << "unexpected per axis sorting error?" << std::endl;
 					}
 					sortAxisEachSplit[tmpId][tmpSide] = sortAxisEachSplit.size();
 					right = left - 1;
@@ -291,8 +291,8 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 					left = -1;
 					right = -2;
 				}
+				//add new split axis
 				sortAxisEachSplit.push_back({ newSortAxis, left, right });
-
 			}
 			else
 			{
@@ -305,7 +305,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 		{
 			if (sortEachSplit)
 			{
-				std::cout << "Not implemented bucket version of sorting for each split" << std::endl;
+				std::cerr << "Not implemented bucket version of sorting for each split" << std::endl;
 				throw 322;
 			}
 			//compute bucketed split
@@ -340,7 +340,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	//just a debug output to get warned abount eventual loop
 	if (depth >= 35)
 	{
-		std::cout << depth << std::endl;
+		std::cerr << "bvh is suspiciously deep: " << depth << std::endl;
 	}
 
 	primitiveBegin = primitiveEnd;
@@ -348,5 +348,3 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	//constructs bvh of all children:
 	Node::recursiveBvh(branchingFactor, leafTarget, bucketCount, sortEachSplit);
 }
-
-
