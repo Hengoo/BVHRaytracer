@@ -5,10 +5,11 @@
 #include <vector>
 #include <array>
 
-
+#include "typedef.h"
 #include "glmInclude.h"
-//#include "mesh.h"
-//#include "meshBin.h"
+#include "mesh.h"
+#include "meshBin.h"
+#include "primitives/triangle.h"
 
 class MeshBin;
 
@@ -105,4 +106,22 @@ public:
 		scale = glm::vec3(1) / (boundMin - boundMax);
 	}
 
+	void iterateGo(primPointVector& primitives)
+	{
+		if (meshBin)
+		{
+			for (auto& m : meshBin->meshes)
+			{
+				for (int i = 0; i < m->indices->size(); i += 3)
+				{
+					//triangle version:
+					primitives.push_back(std::make_shared<Triangle>(this, m.get(), i));
+				}
+			}
+		}
+		for (auto& g : children)
+		{
+			g->iterateGo(primitives);
+		}
+	}
 };

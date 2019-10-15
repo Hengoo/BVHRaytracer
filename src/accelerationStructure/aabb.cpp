@@ -37,31 +37,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSu
 {
 	//method should be usable for all nodes?
 
-
-	//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
-	glm::vec3 min = glm::vec3(222222.0f);
-	glm::vec3 max = glm::vec3(-222222.0f);
-	glm::vec3 centerDistance;
-	std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
-		[&](auto& p)
-		{
-			centerDistance = p->getCenter();
-			min = glm::min(min, centerDistance);
-			max = glm::max(max, centerDistance);
-		});
-	centerDistance = max - min;
-
-	//choose axis to split:
-	//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
-	sortAxis = maxDimension(centerDistance);
-
-	//sort primitive array along axis:
-	//its faster to first check if its sorted
-	if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
-	{
-		//TODO test what parallel stuff like std::execution::seq or unseqpar does here
-		std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
-	}
+	sortAxis = chooseAxisAndSort(primitiveBegin, primitiveEnd);
 
 	size_t size = getPrimCount();
 
@@ -180,32 +156,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	//TODO: if i want to keep primitives in this node i have to spawn them to primitiveBegin BEFORE the sort
 	//also dont forget to set primitiveBegin and primitiveEnd correctly before end of method
 
-
-	//calculate distance of centers along each axis -> largest distance is the axis we want to split
-	glm::vec3 min = glm::vec3(222222.0f);
-	glm::vec3 max = glm::vec3(-222222.0f);
-	glm::vec3 centerDistance;
-	std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
-		[&](auto& p)
-		{
-			centerDistance = p->getCenter();
-			min = glm::min(min, centerDistance);
-			max = glm::max(max, centerDistance);
-		});
-	centerDistance = max - min;
-
-	//choose axis to split:
-	//TODO: possible  version i want to try: take sum of aabb boxes and split the one with the SMALLEST sum (-> least overlapping?)
-	sortAxis = maxDimension(centerDistance);
-
-	//sort primitive array along axis:
-	//its faster to first check if its sorted
-	if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
-	{
-		//TODO test what parallel stuff like std::execution::seq or unseqpar does here
-		std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
-	}
-
+	sortAxis = chooseAxisAndSort(primitiveBegin, primitiveEnd);
 
 	std::vector<PrimIntervall> workIntervall;
 	workIntervall.push_back(PrimIntervall(primitiveBegin, primitiveEnd));
@@ -310,8 +261,9 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 			}
 			//compute bucketed split
 			//This part is for spacial version: compute bounds of centers
-			min = glm::vec3(222222.0f);
-			max = glm::vec3(-222222.0f);
+			glm::vec3 min = glm::vec3(222222.0f);
+			glm::vec3 max = glm::vec3(-222222.0f);
+			glm::vec3 centerDistance;
 			std::for_each(std::execution::seq, workIntervall[bestI].primitiveBegin, workIntervall[bestI].primitiveEnd,
 				[&](auto& p)
 				{

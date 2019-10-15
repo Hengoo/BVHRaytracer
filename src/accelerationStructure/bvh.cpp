@@ -22,23 +22,18 @@
 #include"../mesh.h"
 #include"../meshBin.h"
 
-Bvh::Bvh(GameObject& gameObject, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit)
+Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit)
 	:branchingFactor(branchingFactor), leafCount(leafCount), sortEachSplit(sortEachSplit)
 {
-	//iterate trough gameobject root and add all triangles to the aabb
-	primitives = std::make_shared<primPointVector>();
-	iterateGo(gameObject, primitives);
-	root = std::make_shared<Aabb>(0, primitives->begin(), primitives->end());
-
-	std::cout << "created bvh of " << primitives->size() << " Triangles" << std::endl;
+	//copy primitives (needed so we dont need to recompute for each branching factor and leafsize)
+	this->primitives = std::make_shared<primPointVector>(primitives);
+	root = std::make_shared<Aabb>(0, this->primitives->begin(), this->primitives->end());
 }
 
 void Bvh::recursiveOctree(int bucketCount)
 {
 	//root->recursiveOctree(leafCount);
 	root->recursiveBvh(branchingFactor, leafCount, bucketCount, sortEachSplit);
-
-	//for better performance: could go trough all nodes and recreate primitives in the order they are in the tree (also with minimal needed data)
 }
 
 void Bvh::collapseChilds(int collapeCount)
@@ -96,31 +91,6 @@ bool Bvh::intersect(Ray& ray)
 		return root->intersect(ray);
 	}
 	return false;
-}
-
-void Bvh::iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& primitives)
-{
-	//for (auto& p : (*go.mesh->vertices))
-	if (go.meshBin)
-	{
-		for (auto& m : go.meshBin->meshes)
-		{
-			for (int i = 0; i < m->indices->size(); i += 3)
-			{
-				//triangle version:
-				primitives->push_back(std::make_shared<Triangle>(&go, m.get(), i));
-
-				//sphere version (one sphere for each triangle?
-				//std::array<uint8_t 4> color = { rUint8(0, 255), rUint8(0, 255), rUint8(0, 255), 255 };
-				//auto p = std::make_shared<Sphere>(go.pos, 0.5f, color);
-				//root->addPrimitive(p);
-			}
-		}
-	}
-	for (auto& g : go.children)
-	{
-		iterateGo(*g, primitives);
-	}
 }
 
 void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem, bool mute)

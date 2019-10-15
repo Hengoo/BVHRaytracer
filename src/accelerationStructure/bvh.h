@@ -33,7 +33,7 @@ public:
 		//DONT forget to call shrink_to_fit or to clear the primitive vector afterwards
 	}
 
-	Bvh(GameObject& gameObject, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit);
+	Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit);
 
 	~Bvh()
 	{

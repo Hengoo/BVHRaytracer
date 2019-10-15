@@ -6,6 +6,7 @@
 #include "accelerationStructure/node.h"
 #include "accelerationStructure/bvh.h"
 #include "accelerationStructure/compactNode.h"
+#include "primitives/triangle.h"
 #include "camera.h"
 
 #include "glmInclude.h"
@@ -36,11 +37,12 @@ class RayTracer
 	unsigned minBranch;
 	unsigned maxBranch;
 
-	bool renderImage;
+	bool renderImageOption;
 	bool saveImage;
 	bool saveDepthDetailedImage;
 	bool bvhAnalysis;
 	bool saveBvhImage;
+	bool mute;
 
 	//true -> take new axis and sort for each split. False -> only do it once in the beginning
 	bool sortEachSplit;
@@ -96,7 +98,7 @@ public:
 		std::cout << "compact Node order: " << compactNodeOrder << std::endl;
 		std::cout << std::endl;
 
-		bool mute = scenarios.size() > 1;
+		mute = scenarios.size() > 1 || maxBranch != minBranch || maxLeafSize != minLeafSize;
 		if (mute)
 		{
 			//mute cout (so we dont have to place an if arround every cout
@@ -110,7 +112,7 @@ public:
 				glm::vec3  cameraPos;
 				glm::vec3  cameraTarget;
 
-				std::vector < std::unique_ptr<Light>> lights;
+				std::vector<std::unique_ptr<Light>> lights;
 
 				std::vector<std::shared_ptr<GameObject>> gameObjects;
 				gameObjects.push_back(std::make_shared<GameObject>("root"));
@@ -245,6 +247,10 @@ public:
 				}
 				auto root = gameObjects[0];
 				root->propagateTransform();
+				//get primitive vector (this is what the bvh creator works on, so its copied for each image)
+
+				primPointVector primitives;
+				preparePrimitives(primitives, *root);
 
 				//dont need those anymore
 				//gameObjects.clear();
@@ -254,96 +260,73 @@ public:
 				std::chrono::duration<double> time_span0 = std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1);
 				std::cout << std::endl << "Model loading took " << time_span0.count() << " seconds." << std::endl;
 
-				//std::vector<unsigned> leafWork(maxLeafSize - minLeafSize + 1);
-				//std::iota(std::begin(leafWork), std::end(leafWork), minLeafSize);
-				//std::vector<unsigned> branchWork(maxBranch - minBranch + 1);
-				//std::iota(std::begin(branchWork), std::end(branchWork), minBranch);
+				//two versions:
+				//non parallel when we already have multiple scenes
 
-				for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
+				if (scenarios.size() > 1 || (maxBranch == minBranch && maxLeafSize == minLeafSize))
 				{
-					for (size_t b = minBranch; b < maxBranch + 1; b++)
+					for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
 					{
-						std::string problem;
-						unsigned int branchingFactor = b;
-						unsigned int leafCount = l;
-						std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
-						problem = "_b" + std::to_string(branchingFactor) + "_l" + std::to_string(leafCount);
-						std::cout << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
-						std::cout << std::endl;
-
-						//bvh of (seeded) random sphere
-						//auto bvh = std::make_unique<Bvh>();
-
-						std::chrono::high_resolution_clock::time_point timeLoop1 = std::chrono::high_resolution_clock::now();
-
-						//bvh of loaded model:
-						Bvh bvh = Bvh(*root, branchingFactor, leafCount, sortEachSplit);
-						bvh.recursiveOctree(bucketCount);
-						//bvh.recursiveOctree(2, leafCount);
-
-						//collapses the next b child hierarchies to this node
-						//bvh.collapseChilds(b - 1);
-						//bvh.collapseChilds(1);
-						//for other branching factors we need an other algorithm
-
-						//construct compact tree representation:
-						//4 versions i want to test: level, depth first, breadth first, and bvh version but for level
-
-
-						//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
-						//This also duplicates the node system. the copy is used for the compact nodes
-						bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem, mute);
-
-						std::chrono::high_resolution_clock::time_point timeLoop2 = std::chrono::high_resolution_clock::now();
-						std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);
-						std::cout << std::endl << "BVH building took " << time_span1.count() << " seconds." << std::endl;
-
-						//determine type:
-						//only works with constant: (but i want an .txt as settings so i dont have to recompile...
-						//const bool cond = compactNodeOrder == 0;
-						//CompactNodeManager<std::conditional<cond, CompactNodeV0, CompactNodeV1>::type> manager(bvh);
-
-						if (renderImage)
+						for (size_t b = minBranch; b < maxBranch + 1; b++)
 						{
-							if (compactNodeOrder == 0 || compactNodeOrder == 1)
-							{
-								if (sortEachSplit)
-								{
-									CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
-									//create camera and render image
-									Camera c(path, name, problem, cameraPos, cameraTarget);
-									c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
-								}
-								else
-								{
-									CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
-									//create camera and render image
-									Camera c(path, name, problem, cameraPos, cameraTarget);
-									c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
-								}
-							}
-							else
-							{
-								if (sortEachSplit)
-								{
-									std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
-									throw(20);
-								}
-								CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
-								//create camera and render image
-								Camera c(path, name, problem, cameraPos, cameraTarget);
-								c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
-							}
+							renderImage(b, l, primitives, cameraPos, cameraTarget, lights, name, path);
+						}
+					}
+				}
+				else
+				{
+					//parallel version for when we have one scenario: (like one that takes ages (rungholt))
 
-							std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
-							std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop3 - timeLoop2);
-							std::cout << "Rendering took " << time_span2.count() << " seconds." << std::endl;
+					//number of renders that should run in parallel:
+					unsigned parallelCount = 4;
+
+					if ((maxLeafSize - minLeafSize) > (maxBranch - minBranch))
+					{
+						//in case leafsize is larger than branching factor:
+						for (size_t i = minLeafSize; i <= maxLeafSize; i = i + parallelCount)
+						{
+
+							std::vector<unsigned> leafWork(parallelCount);
+							std::iota(std::begin(leafWork), std::end(leafWork), i);
+
+							std::for_each(std::execution::par_unseq, leafWork.begin(), leafWork.end(),
+								[&](auto& l)
+								{
+									if (l <= maxLeafSize)
+									{
+										for (size_t b = minBranch; b < maxBranch + 1; b++)
+										{
+											renderImage(b, l, primitives, cameraPos, cameraTarget, lights, name, path);
+										}
+									}
+								});
+						}
+					}
+					else
+					{
+						//in case branching factor is larger than leafsize:
+						for (size_t i = minBranch; i <= maxBranch; i = i + parallelCount)
+						{
+							std::vector<unsigned> branchWork(parallelCount);
+							std::iota(std::begin(branchWork), std::end(branchWork), i);
+
+							std::for_each(std::execution::par_unseq, branchWork.begin(), branchWork.end(),
+								[&](auto& b)
+								{
+									if (b <= maxBranch)
+									{
+										for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
+										{
+											renderImage(b, l, primitives, cameraPos, cameraTarget, lights, name, path);
+										}
+									}
+								});
 						}
 					}
 				}
 			});
 
-		if (scenarios.size() > 1)
+		if (mute)
 		{
 			std::cout.clear();
 		}
@@ -351,6 +334,93 @@ public:
 		std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> time_spanAll = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeBegin);
 		std::cout << "Everything took " << time_spanAll.count() << " seconds." << std::endl;
+	}
+
+
+	//is called in the loop that iterates trough branchingfactor and leafsize
+	void renderImage(unsigned branchingFactor, unsigned leafCount, primPointVector& primitives,
+		glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights, std::string& name, std::string& path)
+	{
+
+		std::string problem;
+		std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
+		problem = "_b" + std::to_string(branchingFactor) + "_l" + std::to_string(leafCount);
+		std::cout << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
+		std::cout << std::endl;
+
+		//bvh of (seeded) random sphere
+		//auto bvh = std::make_unique<Bvh>();
+
+		std::chrono::high_resolution_clock::time_point timeLoop1 = std::chrono::high_resolution_clock::now();
+
+		//bvh of loaded model:
+		Bvh bvh = Bvh(primitives, branchingFactor, leafCount, sortEachSplit);
+		bvh.recursiveOctree(bucketCount);
+
+		//bvh.recursiveOctree(2, leafCount);
+
+		//collapses the next b child hierarchies to this node
+		//bvh.collapseChilds(b - 1);
+		//bvh.collapseChilds(1);
+		//for other branching factors we need an other algorithm
+
+		//construct compact tree representation:
+		//4 versions i want to test: level, depth first, breadth first, and bvh version but for level
+
+
+		//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
+		//This also duplicates the node system. the copy is used for the compact nodes
+		bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem, mute);
+
+		std::chrono::high_resolution_clock::time_point timeLoop2 = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);
+		std::cout << std::endl << "BVH building took " << time_span1.count() << " seconds." << std::endl;
+
+		if (renderImageOption)
+		{
+			if (compactNodeOrder == 0 || compactNodeOrder == 1)
+			{
+				if (sortEachSplit)
+				{
+					CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
+					//create camera and render image
+					Camera c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+				}
+				else
+				{
+					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
+					//create camera and render image
+					Camera c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+				}
+			}
+			else
+			{
+				if (sortEachSplit)
+				{
+					std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
+					throw(20);
+				}
+				CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
+				//create camera and render image
+				Camera c(path, name, problem, cameraPos, cameraTarget);
+				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+			}
+
+			std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop3 - timeLoop2);
+			std::cout << "Rendering took " << time_span2.count() << " seconds." << std::endl;
+		}
+	}
+
+	void preparePrimitives(primPointVector& primitives, GameObject& root)
+	{
+		root.iterateGo(primitives);
+
+		//sort primitive vector along the largest axis (rungholt needs ~1.5 seconds) (otherwise this operation is done 15*16 times)
+		chooseAxisAndSort(primitives.begin(), primitives.end());
+		std::cout << "creating bvh of " << primitives.size() << " Triangles" << std::endl;
 	}
 
 	void readConfig()
@@ -483,8 +553,8 @@ public:
 					{
 						res = line.find("true", 0);
 						res2 = line.find("false", 0);
-						if (res != std::string::npos)renderImage = true;
-						else if (res2 != std::string::npos)renderImage = false;
+						if (res != std::string::npos)renderImageOption = true;
+						else if (res2 != std::string::npos)renderImageOption = false;
 						else
 						{
 							std::cerr << "renderImage value written wrong -> default = false" << std::endl;
