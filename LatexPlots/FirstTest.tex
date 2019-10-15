@@ -80,6 +80,103 @@
 \newcommand{\cost}{Cost Function}
 \newcommand{\scost}{Shadow Cost Function}
 
+\newcommand{\plot} [2]
+{
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth} 
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		ylabel = \branchf,
+		colorbar style={title=\leafi}
+		]
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*]
+		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
+		\end{axis}
+		\end{tikzpicture}
+		
+	\end{minipage}\hfil \hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		%ylabel = branching factpr,
+		colorbar style={title=\nodei}
+		]
+		
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*]
+		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	
+	\begin{minipage}[t]{0.4\textwidth} 
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		ylabel = \branchf,
+		colorbar style={title=\sleafi}
+		]
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowLeafIntersections}, draw opacity=0 ,mark=square*]
+		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
+		\end{axis}
+		\end{tikzpicture}
+		
+	\end{minipage}\hfil \hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		%ylabel = branching factpr,
+		colorbar style={title=\snodei}
+		]
+		
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowNodeIntersections}, draw opacity=0 ,mark=square*] 
+		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	
+	\begin{minipage}[t]{0.4\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		ylabel = \branchf,
+		colorbar style={title=\cost}
+		]
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{cost}, draw opacity=0 ,mark=square*] 
+		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
+		\end{axis}
+		\end{tikzpicture}
+		
+	\end{minipage}\hfil\hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		xlabel = \leafs,
+		%		ylabel = branching factpr,
+		colorbar style={title=\scost}
+		]
+		
+		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowCost}, draw opacity=0 ,mark=square*]
+		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{#2}
+\end{figure}
+}
+
 %fcommands to manage plots.
 \newcommand{\file}{xxx}
 \newcommand{\labelText}{xxx}
@@ -108,36 +205,29 @@
 
 Cost function right now is 1 * LeafIntersections + 1/8 * NodeIntersections
 
-
-
-\renewcommand{\file}{Data/shiftHappensTable.txt}
-\renewcommand{\labelText}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles}
-\input{plot0}
-
+\plot{Data/shiftHappensTable.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles}
+\newpage
+\plot{Data/shiftHappensTableSorted.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles. Sorted}
 \newpage
 
-\renewcommand{\file}{Data/sponzaTable.txt}
-\renewcommand{\labelText}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles}
-\input{plot0}
-
+\plot{Data/sponzaTable.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles}
+\newpage
+\plot{Data/sponzaTableSorted.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles. Sorted}
 \newpage
 
-\renewcommand{\file}{Data/rungholtTable.txt}
-\renewcommand{\labelText}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles}
-\input{plot0}
-
+\plot{Data/rungholtTable.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles}
+\newpage
+\plot{Data/rungholtTableSorted.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles. Sorted}
 \newpage
 
-\renewcommand{\file}{Data/eratoTable.txt}
-\renewcommand{\labelText}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles}
-\input{plot0}
-
+\plot{Data/eratoTable.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles}
+\newpage
+\plot{Data/eratoTableSorted.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles. Sorted}
 \newpage
 
-\renewcommand{\file}{Data/AverageTable.txt}
-\renewcommand{\labelText}{Average of all normalized results}
-\input{plot0}
-
+\plot{Data/AverageTable.txt}{Average of all normalized results}
+\newpage
+\plot{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
 \newpage
 
 First tests with 3D Plots, but i prefer the 2D Color representation since the 3D surface can be really hard to interpret.
