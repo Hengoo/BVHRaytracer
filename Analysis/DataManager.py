@@ -3,15 +3,21 @@ from os import path
 
 #collects the NAME_bx_lx_Info.txt data and writes them into a .txt to use in latex pgfplot
 
-#name = "shiftHappens"
-#folderName = "shiftHappensSave"
+#I usualy rename the Analysis folder to something like nameSave or nameSaveSorted.
 names = ["shiftHappens", "sponza", "rungholt" , "erato"]
-folderNames = ["shiftHappensSave", "sponzaSave", "rungholtSave", "eratoSave"]
+#folderNames = ["shiftHappensSave", "sponzaSaveSorted", "rungholtSave", "eratoSave"]
+folderNames = ["shiftHappensSaveSorted", "sponzaSaveSorted", "rungholtSaveSorted", "eratoSaveSorted"]
 
-idsToSum = [0,1,2,3]
+#if a singe id is chosen [2] it creates the table for this one scene
+#if multiple ids [0,1,2,3] are given then it creates the average table
+idsToSum = [0, 1, 2, 3]
+
+
+#maximum branchingfactor and max leafsite
 maxBranchingFactor = 16
 maxLeafSize = 16
 
+#temprary cost function. needs replacement
 nodeCostFactor = 1/8
 
 if (len(idsToSum) == 1):
