@@ -118,8 +118,6 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	uint32_t nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 	uint32_t leafs = leafNodes.size();
 
-
-
 	if (saveAndPrintResult)
 	{
 		uint32_t vertexCount = 0;
@@ -169,6 +167,25 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
 		averageTreeDepth /= (float)leafs;
 
+		//make checksum / hash of vector to compare leafnodes of different bvhs
+		size_t seed = leafNodes.size();
+		for (auto& i : leafNodes)
+		{
+
+			auto p = &(**i->node->primitiveBegin);
+			auto tri = dynamic_cast<Triangle*>(p);
+			uint32_t a, b, c;
+			tri->getVertexIds(a, b, c);
+			if (std::distance(primitives->begin(), i->node->primitiveBegin) < 100)
+			{
+				//std::cerr << std::distance(primitives->begin(), i->node->primitiveBegin) << "  " << a << std::endl;
+			}
+			seed ^= a + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= b + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= c + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		}
+		std::cerr << "branch" << branchingFactor << ": " << seed << std::endl;
+
 		if (!mute)
 		{
 			std::cout << "BVH Analysis:" << std::endl;
@@ -192,6 +209,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 			}
 			std::cout << std::endl;
 			std::cout << "number of leafnodes: " << leafs << std::endl;
+			std::cout << "leafnode checksum: " << seed << std::endl;
 			std::cout << "vertexCount : " << vertexCount << std::endl;
 			std::cout << "uniqueVertexCount : " << uniqueVertexCount << std::endl;
 			std::cout << "factor : " << uniqueVertexCount / (float)vertexCount << std::endl;
@@ -245,6 +263,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 			}
 
 			myfile << std::endl << "number of leafnodes: " << leafs << std::endl;
+			myfile << "leafnode checksum: " << seed << std::endl;
 			myfile << "vertexCount : " << vertexCount << std::endl;
 			myfile << "uniqueVertexCount : " << uniqueVertexCount << std::endl;
 			myfile << "factor : " << uniqueVertexCount / (float)vertexCount << std::endl;
