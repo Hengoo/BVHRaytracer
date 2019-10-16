@@ -91,7 +91,7 @@
 		ylabel = \branchf,
 		colorbar style={title=\leafi}
 		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{leafIntersections}, draw opacity=0 ,mark=square*]
+		\addplot[matrix plot*,point meta=\thisrow{leafIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -106,8 +106,7 @@
 		%ylabel = branching factpr,
 		colorbar style={title=\nodei}
 		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{nodeIntersections}, draw opacity=0 ,mark=square*]
+		\addplot[matrix plot*,point meta=\thisrow{nodeIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -121,7 +120,7 @@
 		ylabel = \branchf,
 		colorbar style={title=\sleafi}
 		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowLeafIntersections}, draw opacity=0 ,mark=square*]
+		\addplot[matrix plot*,point meta=\thisrow{shadowLeafIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -136,8 +135,7 @@
 		%ylabel = branching factpr,
 		colorbar style={title=\snodei}
 		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowNodeIntersections}, draw opacity=0 ,mark=square*] 
+		\addplot[matrix plot*,point meta=\thisrow{shadowNodeIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -151,7 +149,7 @@
 		ylabel = \branchf,
 		colorbar style={title=\cost}
 		]
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{cost}, draw opacity=0 ,mark=square*] 
+		\addplot[matrix plot*,point meta=\thisrow{cost}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -167,8 +165,7 @@
 		%		ylabel = branching factpr,
 		colorbar style={title=\scost}
 		]
-		
-		\addplot[scatter,mark=*, only marks,point meta=\thisrow{shadowCost}, draw opacity=0 ,mark=square*]
+		\addplot[matrix plot*,point meta=\thisrow{shadowCost}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -229,7 +226,9 @@ Cost function right now is 1 * LeafIntersections + 1/8 * NodeIntersections
 \newpage
 \plot{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
 \newpage
+\
 
+\iffalse
 First tests with 3D Plots, but i prefer the 2D Color representation since the 3D surface can be really hard to interpret.
 \begin{tikzpicture}
 \begin{axis}
@@ -274,5 +273,6 @@ colorbar style={Leaf Fullness}
 %		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
 \end{axis}
 \end{tikzpicture}
+\fi
 
 \end{document}
