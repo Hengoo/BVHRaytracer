@@ -184,7 +184,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 			seed ^= b + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 			seed ^= c + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		}
-		std::cerr << "branch" << branchingFactor << ": " << seed << std::endl;
+		//std::cerr << "branch" << branchingFactor << ": " << seed << std::endl;
 
 		if (!mute)
 		{

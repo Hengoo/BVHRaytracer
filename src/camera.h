@@ -455,7 +455,10 @@ public:
 			{
 				myfile << i << " : " << shadowLeafIntersectionPerDepthCount[i] * shadowFactor << std::endl;
 			}
-			myfile.close();
+			if (!saveDepthDebugImage)
+			{
+				myfile.close();
+			}
 		}
 		else std::cerr << "Unable to open file" << std::endl;
 
@@ -466,22 +469,23 @@ public:
 		}
 		if (saveDepthDebugImage)
 		{
-			std::cout << std::endl;
+			myfile << std::endl;
+			myfile << " max node intersections at depth x :" << std::endl;
 			//save an image with all the aabb intersections for every depth
 			for (size_t d = 0; d < nodeIntersectionPerDepthCount.size(); d++)
 			{
-				uint16_t maxDepth = 0;
+				uint16_t depthIntersections = 0;
 				//find max element first to normalise to;
 				std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 					[&](auto& info)
 					{
 						if (d < nodeIntersectionPerPixelCount[info.index].size())
 						{
-							maxDepth = std::max(nodeIntersectionPerPixelCount[info.index][d], maxDepth);
+							depthIntersections = std::max(nodeIntersectionPerPixelCount[info.index][d], depthIntersections);
 						}
 					});
 
-				std::cout << "depth " << d << " max intersections :" << maxDepth << std::endl;
+				myfile << d << " : " << depthIntersections << std::endl;
 
 				//go trough RenderInfo vector and use the stored nodeIntersectionPerPixelCount
 				std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
@@ -494,7 +498,7 @@ public:
 						}
 
 						//Color c(sum * 0.01f);
-						Color c(sum * (1 / (float)maxDepth));
+						Color c(sum * (1 / (float)depthIntersections));
 						image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
 						image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
 						image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
@@ -503,38 +507,18 @@ public:
 				encodeTwoSteps(path + "/" + name + problem + "_NodeDepth" + std::to_string(d) + ".png", image, width, height);
 			}
 
-			unsigned maxSum = 0;
-			unsigned minSum = nodeIntersectionPerDepthCount.size();
+			unsigned maxNodeSum = 0;
 			unsigned maxLeafSum = 0;
-			//find minimum:
+			//find min and max for nodeintersection and leafintersection: (and number of different depth intersections
 			std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
-					unsigned sum = 0;
-					//find largest depth value:
-					for (unsigned i = 0; i < nodeIntersectionPerPixelCount[info.index].size(); i++)
-					{
-
-						if (nodeIntersectionPerPixelCount[info.index][i] != 0)
-						{
-							sum += i;
-						}
-					}
-					minSum = std::min(minSum, sum);
-					maxSum = std::max(maxSum, sum);
-
-					sum = 0;
-					for (unsigned i = 0; i < leafIntersectionPerPixelCount[info.index].size(); i++)
-					{
-
-						if (leafIntersectionPerPixelCount[info.index][i] != 0)
-						{
-							sum += i;
-						}
-					}
+					unsigned sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
+					maxNodeSum = std::max(sum, maxNodeSum);
+					sum = std::accumulate(leafIntersectionPerPixelCount[info.index].begin(), leafIntersectionPerPixelCount[info.index].end(), 0);
 					maxLeafSum = std::max(sum, maxLeafSum);
 				});
-			float normalisation = 1 / ((float)maxSum - (float)minSum);
+			float normalisation = 1 / (float)maxNodeSum;
 			//pixel bvh depth
 			//std::cout << normalisation << std::endl;
 			//std::cout << minSum << std::endl;
@@ -542,17 +526,7 @@ public:
 			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
-					unsigned sum = 0;
-					//find largest depth value:
-					for (unsigned i = 0; i < nodeIntersectionPerPixelCount[info.index].size(); i++)
-					{
-
-						if (nodeIntersectionPerPixelCount[info.index][i] != 0)
-						{
-							sum += i;
-						}
-					}
-					sum = sum - minSum;
+					unsigned sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
 					Color c(sum * normalisation);
 					image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
 					image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
@@ -561,21 +535,14 @@ public:
 				});
 			encodeTwoSteps(path + "/" + name + problem + "_PixelDepth.png", image, width, height);
 
+			myfile << std::endl;
+			myfile << "max leaf intersections :" << maxLeafSum << std::endl;
 			normalisation = 1.0 / maxLeafSum;
 			//std::cout << maxLeafSum << std::endl;
 			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 				[&](auto& info)
 				{
-					unsigned sum = 0;
-					//find largest depth value:
-					for (unsigned i = 0; i < leafIntersectionPerPixelCount[info.index].size(); i++)
-					{
-
-						if (leafIntersectionPerPixelCount[info.index][i] != 0)
-						{
-							sum += i;
-						}
-					}
+					unsigned sum = std::accumulate(leafIntersectionPerPixelCount[info.index].begin(), leafIntersectionPerPixelCount[info.index].end(), 0);
 					Color c(sum * normalisation);
 					image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
 					image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
@@ -583,6 +550,7 @@ public:
 					image[info.index * 4 + 3] = (uint8_t)(c.a * 255);
 				});
 			encodeTwoSteps(path + "/" + name + problem + "_LeafIntersectionCount.png", image, width, height);
+			myfile.close();
 		}
 	}
 
