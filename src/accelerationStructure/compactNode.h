@@ -75,7 +75,6 @@ struct CompactNodeV0
 //compact node with consecutive child ids
 struct CompactNodeV1
 {
-	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
 	uint32_t childIdBegin;
 	uint32_t primIdBegin;
 	uint8_t childIdEndOffset;
@@ -110,7 +109,6 @@ struct CompactNodeV1
 //even more compact node with consecutive child ids (can only support either childs or primitives)
 struct CompactNodeV2
 {
-	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
 	union
 	{
 		uint32_t childIdBegin;
@@ -165,7 +163,6 @@ struct CompactNodeV2
 //compact node with consecutive child ids and a sorting axis for each split
 struct CompactNodeV3
 {
-	//in theory the end part only needs to be really small (could be offset to begin) -> right now its not
 	uint32_t childIdBegin;
 	uint32_t primIdBegin;
 	uint8_t childIdEndOffset;

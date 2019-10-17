@@ -54,6 +54,9 @@ class RayTracer
 
 	//0 = custom order, 1 = level, 2 = depth first,
 	unsigned compactNodeOrder;
+
+	unsigned ambientSampleCount;
+	bool castShadows;
 public:
 
 	RayTracer()
@@ -385,14 +388,14 @@ public:
 					CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
 					//create camera and render image
 					Camera c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, castShadows, renderType, mute);
 				}
 				else
 				{
 					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 					//create camera and render image
 					Camera c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, castShadows, renderType, mute);
 				}
 			}
 			else
@@ -405,7 +408,7 @@ public:
 				CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, renderType, mute);
+				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, castShadows, renderType, mute);
 			}
 
 			std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
@@ -487,6 +490,12 @@ public:
 					{
 						compactNodeOrder = std::stoi(line.substr(line.find("=") + 1));
 					}
+					res = line.find("ambientSampleCount", 0);
+					if (res != std::string::npos)
+					{
+						ambientSampleCount = std::stoi(line.substr(line.find("=") + 1));
+					}
+
 					//booleans:
 					res = line.find("saveImage", 0);
 					if (res != std::string::npos)
@@ -560,6 +569,18 @@ public:
 							std::cerr << "renderImage value written wrong -> default = false" << std::endl;
 						}
 					}
+					res = line.find("castShadows", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)castShadows = true;
+						else if (res2 != std::string::npos)castShadows = false;
+						else
+						{
+							std::cerr << "castShadows value written wrong -> default = false" << std::endl;
+						}
+					}
 				}
 			}
 		}
@@ -568,7 +589,6 @@ public:
 
 int main()
 {
-	//HelloTriangleApplication app;
 	RayTracer rayTracer;
 	try
 	{

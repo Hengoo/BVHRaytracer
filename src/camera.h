@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <vector>
 
+//for pi
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 //for the parallel for
 #include <execution>
@@ -118,7 +121,7 @@ public:
 	//spawns rays and collects results into image. Image is written on disk
 	template<typename T>
 	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
-		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, int renderType, bool mute)
+		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount, bool castShadows, int renderType, bool mute)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -179,11 +182,39 @@ public:
 					break;
 				}
 
-
-				//check shadows if ray hit something
+				//check shadows and ambient occlusion if ray hit something
 				if (result)
 				{
-					//resolve shadows, ez:
+					//ambient occlusion:
+					unsigned ambientResult = 0;
+
+					for (size_t i = 0; i < ambientSampleCount; i++)
+					{
+						//i need two deterministic random values. Currently pixel index but could also be intersect position
+						auto test = std::hash<size_t>();
+						float u = test(info.index * 37 + i * 13) / (float)(std::numeric_limits<size_t>::max());
+						float v = test(info.index * 61 + i * 7) / (float)(std::numeric_limits<size_t>::max());
+
+						auto direction = sampleHemisphere(u, v, ray.surfaceNormal);
+						Ray shadowRay(ray.surfacePosition + direction * 0.001f, direction, bvh, true);
+
+
+						if (shootShadowRay(shadowRay, ray, info, bvh, nodeManager, renderType))
+						{
+							ambientResult++;
+						}
+					}
+					if (ambientSampleCount != 0)
+					{
+						float factor = 1 - ambientResult / (float)ambientSampleCount;
+						factor = (factor + 1) / 2.f;
+						ray.surfaceColor.scale(factor);
+					}
+
+					float factor = 1;
+
+					//resolve shadows
+
 					for (auto& l : lights)
 					{
 						float lightDistance;
@@ -197,81 +228,18 @@ public:
 						Ray shadowRay(ray.surfacePosition + lightVector * 0.001f, lightVector, bvh, true);
 						shadowRay.tMax = lightDistance;
 
+
 						//only shoot ray when surface points in light direction
-						if (f > 0)
+						if (castShadows && factor > 0)
 						{
-							shadowRayCounter[info.index] ++;
-
-							switch (renderType)
+							if (shootShadowRay(shadowRay, ray, info, bvh, nodeManager, renderType))
 							{
-							case 0:
-								if (bvh.intersect(shadowRay))
-									f = 0;
-								break;
-							case 1:
-								if (nodeManager.intersect(shadowRay))
-									f = 0;
-								break;
-							case 2:
-								if (nodeManager.intersectImmediately(shadowRay))
-									f = 0;
-								break;
-							default:
-								if (nodeManager.intersectImmediately(shadowRay))
-									f = 0;
-								break;
+								factor = 0;
 							}
-
-							//add shadowRay intersection to this ones
-							if (shadowNodeIntersectionPerPixelCount[info.index].size() < shadowRay.nodeIntersectionCount.size())
-							{
-								shadowNodeIntersectionPerPixelCount[info.index].resize(shadowRay.nodeIntersectionCount.size());
-							}
-							for (size_t i = 0; i < shadowRay.nodeIntersectionCount.size(); i++)
-							{
-								shadowNodeIntersectionPerPixelCount[info.index][i] += shadowRay.nodeIntersectionCount[i];
-							}
-
-							if (shadowLeafIntersectionPerPixelCount[info.index].size() < shadowRay.leafIntersectionCount.size())
-							{
-								shadowLeafIntersectionPerPixelCount[info.index].resize(shadowRay.leafIntersectionCount.size());
-							}
-							for (size_t i = 0; i < shadowRay.leafIntersectionCount.size(); i++)
-							{
-								shadowLeafIntersectionPerPixelCount[info.index][i] += shadowRay.leafIntersectionCount[i];
-							}
-
-							if (ray.childFullness.size() < shadowRay.childFullness.size())
-							{
-								ray.childFullness.resize(shadowRay.childFullness.size());
-							}
-							for (size_t i = 0; i < shadowRay.childFullness.size(); i++)
-							{
-								ray.childFullness[i] += shadowRay.childFullness[i];
-							}
-
-							if (ray.primitiveFullness.size() < shadowRay.primitiveFullness.size())
-							{
-								ray.primitiveFullness.resize(shadowRay.primitiveFullness.size());
-							}
-							for (size_t i = 0; i < shadowRay.primitiveFullness.size(); i++)
-							{
-								ray.primitiveFullness[i] += shadowRay.primitiveFullness[i];
-							}
-
-							shadowPrimitiveIntersectionsPerPixel[info.index] += shadowRay.primitiveIntersectionCount;
-							if (shadowRay.successfulPrimitiveIntersectionCount > 1)
-							{
-								std::cerr << "error: more than 1 successful shadowray primitive intersection for one light" << std::endl;
-							}
-							shadowSuccessfulPrimitiveIntersectionsPerPixel[info.index] += shadowRay.successfulPrimitiveIntersectionCount;
-							shadowSuccessfulAabbIntersectionsPerPixel[info.index] += shadowRay.successfulAabbIntersectionCount;
-							shadowAabbIntersectionsPerPixel[info.index] += shadowRay.aabbIntersectionCount;
-
 						}
 
-						f = std::max(0.2f, f);
-						ray.surfaceColor.scale(f);
+						factor = std::max(0.3f, factor);
+						ray.surfaceColor.scale(factor);
 					}
 
 				}
@@ -533,7 +501,7 @@ public:
 					image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
 					image[info.index * 4 + 3] = (uint8_t)(c.a * 255);
 				});
-			encodeTwoSteps(path + "/" + name + problem + "_PixelDepth.png", image, width, height);
+			encodeTwoSteps(path + "/" + name + problem + "_NodeIntersectionCount.png", image, width, height);
 
 			myfile << std::endl;
 			myfile << "max leaf intersections :" << maxLeafSum << std::endl;
@@ -554,7 +522,104 @@ public:
 		}
 	}
 
+
+
+
 private:
+	template<typename T>
+	bool shootShadowRay(Ray& shadowRay, Ray& ray, RenderInfo& info, Bvh& bvh, CompactNodeManager<T>& nodeManager, int& renderType)
+	{
+		bool result;
+		shadowRayCounter[info.index] ++;
+		switch (renderType)
+		{
+		case 0:
+			result = bvh.intersect(shadowRay);
+			break;
+		case 1:
+			result = nodeManager.intersect(shadowRay);
+			break;
+		case 2:
+			result = nodeManager.intersectImmediately(shadowRay);
+			break;
+		default:
+			result = nodeManager.intersectImmediately(shadowRay);
+			break;
+		}
+
+		if (shadowNodeIntersectionPerPixelCount[info.index].size() < shadowRay.nodeIntersectionCount.size())
+		{
+			shadowNodeIntersectionPerPixelCount[info.index].resize(shadowRay.nodeIntersectionCount.size());
+		}
+		for (size_t i = 0; i < shadowRay.nodeIntersectionCount.size(); i++)
+		{
+			shadowNodeIntersectionPerPixelCount[info.index][i] += shadowRay.nodeIntersectionCount[i];
+		}
+
+		if (shadowLeafIntersectionPerPixelCount[info.index].size() < shadowRay.leafIntersectionCount.size())
+		{
+			shadowLeafIntersectionPerPixelCount[info.index].resize(shadowRay.leafIntersectionCount.size());
+		}
+		for (size_t i = 0; i < shadowRay.leafIntersectionCount.size(); i++)
+		{
+			shadowLeafIntersectionPerPixelCount[info.index][i] += shadowRay.leafIntersectionCount[i];
+		}
+
+		if (ray.childFullness.size() < shadowRay.childFullness.size())
+		{
+			ray.childFullness.resize(shadowRay.childFullness.size());
+		}
+		for (size_t i = 0; i < shadowRay.childFullness.size(); i++)
+		{
+			ray.childFullness[i] += shadowRay.childFullness[i];
+		}
+
+		if (ray.primitiveFullness.size() < shadowRay.primitiveFullness.size())
+		{
+			ray.primitiveFullness.resize(shadowRay.primitiveFullness.size());
+		}
+		for (size_t i = 0; i < shadowRay.primitiveFullness.size(); i++)
+		{
+			ray.primitiveFullness[i] += shadowRay.primitiveFullness[i];
+		}
+
+		shadowPrimitiveIntersectionsPerPixel[info.index] += shadowRay.primitiveIntersectionCount;
+		if (shadowRay.successfulPrimitiveIntersectionCount > 1)
+		{
+			std::cerr << "error: more than 1 successful shadowray primitive intersection for one light" << std::endl;
+		}
+		shadowSuccessfulPrimitiveIntersectionsPerPixel[info.index] += shadowRay.successfulPrimitiveIntersectionCount;
+		shadowSuccessfulAabbIntersectionsPerPixel[info.index] += shadowRay.successfulAabbIntersectionCount;
+		shadowAabbIntersectionsPerPixel[info.index] += shadowRay.aabbIntersectionCount;
+		return result;
+	}
+
+	glm::vec3 sampleHemisphere(float u, float v, glm::vec3 normal, int m = 1)
+	{
+		//https://blog.thomaspoulet.fr/uniform-sampling-on-unit-hemisphere/
+		float theta = acos(pow(1 - u, 1 / (float)(1 + m)));
+		float phi = 2 * M_PI * v;
+
+		float x = sin(theta) * cos(phi);
+		float y = sin(theta) * sin(phi);
+		float z = -cos(theta);
+
+		//i dont like this approach but for now it has to do
+		glm::vec4 tmp(x, y, z, 0);
+		glm::vec3 up(0);
+		if (normal.y != 1)
+		{
+			up.y = 1;
+		}
+		else
+		{
+			up.x = 1;
+		}
+		auto matrix = glm::lookAt(glm::vec3(0), normal, up);
+
+		auto res2 = tmp * matrix;
+		return glm::vec3(res2);
+	}
 
 	void initializeVariables()
 	{
