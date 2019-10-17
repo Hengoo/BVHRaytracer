@@ -19,12 +19,12 @@ Its planned to have some sort of modelConfig file to add new models without chan
 The render and analysis settings can be changed in config.txt
 	
 ### Analysis:
-Analysis results are saved in /Analysis/<sceneName>
+Analysis results are saved in /Analysis/\<sceneName\>
 
 The python file "DataManager.py" in /Analysis can gather the needed numbers from the folders.
 
 For now you have to edit the python code to choose what scene to summerize
--> the resulting <sceneName>.txt is used in the Latex Project. (normal save folder for the data: /LatexPlots/Data )
+-> the resulting \<sceneName\>.txt is used in the Latex Project. (normal save folder for the data: /LatexPlots/Data )
 
 
 
