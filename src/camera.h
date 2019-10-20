@@ -55,8 +55,8 @@ public:
 	//This focallength has most likely nothing to do with real life focal length
 	float focalLength;
 
-	//todo not implemented (most likely not needed anyway)
-	float farPlane = 50;
+	//(most likely not needed anyway)
+	//float farPlane = 50;
 
 	//per pixel per depth counter:
 	std::vector<std::vector<uint16_t>> nodeIntersectionPerPixelCount;
@@ -301,7 +301,7 @@ public:
 				childFullness[i] += perPixel[i];
 			}
 		}
-		primitiveFullness.resize(bvh.leafCount + 1);
+		primitiveFullness.resize(bvh.leafSize + 1);
 		for (auto& perPixel : primitiveFullnessPerPixelCount)
 		{
 			for (size_t i = 0; i < perPixel.size(); i++)
@@ -352,7 +352,7 @@ public:
 		std::ofstream myfile(path + "/" + name + problem + "_Info.txt");
 		if (myfile.is_open())
 		{
-			myfile << "scenario " << name << " with branching factor of " << std::to_string(bvh.branchingFactor) << " and leafsize of " << bvh.leafCount << std::endl;
+			myfile << "scenario " << name << " with branching factor of " << std::to_string(bvh.branchingFactor) << " and leafsize of " << bvh.leafSize << std::endl;
 			myfile << "intersections counts are normalized per Ray" << std::endl << std::endl;
 
 			myfile << "node intersections: " << nodeIntersectionCount * factor << std::endl;

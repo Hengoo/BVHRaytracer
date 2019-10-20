@@ -14,7 +14,7 @@ class Bvh
 public:
 
 	int branchingFactor;
-	int leafCount;
+	int leafSize;
 	bool sortEachSplit;
 	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
@@ -33,7 +33,7 @@ public:
 		//DONT forget to call shrink_to_fit or to clear the primitive vector afterwards
 	}
 
-	Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit);
+	Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit);
 
 	~Bvh()
 	{
@@ -62,8 +62,10 @@ public:
 	//collapses the next collapeCount child hierarchies to this node
 	void collapseChilds(int collapeCount);
 
-	void bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem, bool mute);
+	void bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
+		std::string problem, float triangleCostFactor, float nodeCostFactor, bool mute);
 
+	float calcEndPointOverlap();
 protected:
 	std::shared_ptr<Node> root;
 	std::shared_ptr<NodeAnalysis> analysisRoot;

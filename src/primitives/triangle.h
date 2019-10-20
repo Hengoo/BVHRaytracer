@@ -66,4 +66,11 @@ public:
 	}
 
 	void getVertexIds(uint32_t& vertex0, uint32_t& vertex1, uint32_t& vertex2);
+
+	inline void getVertexPositions(glm::vec3& vertex0, glm::vec3& vertex1, glm::vec3& vertex2)
+	{
+		vertex0 = points[0];
+		vertex1 = points[1];
+		vertex2 = points[2];
+	}
 };

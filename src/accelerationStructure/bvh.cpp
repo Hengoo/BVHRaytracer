@@ -22,8 +22,8 @@
 #include"../mesh.h"
 #include"../meshBin.h"
 
-Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafCount, bool sortEachSplit)
-	:branchingFactor(branchingFactor), leafCount(leafCount), sortEachSplit(sortEachSplit)
+Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit)
+	:branchingFactor(branchingFactor), leafSize(leafSize), sortEachSplit(sortEachSplit)
 {
 	//copy primitives (needed so we dont need to recompute for each branching factor and leafsize)
 	this->primitives = std::make_shared<primPointVector>(primitives);
@@ -33,7 +33,7 @@ Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const u
 void Bvh::recursiveOctree(int bucketCount)
 {
 	//root->recursiveOctree(leafCount);
-	root->recursiveBvh(branchingFactor, leafCount, bucketCount, sortEachSplit);
+	root->recursiveBvh(branchingFactor, leafSize, bucketCount, sortEachSplit);
 }
 
 void Bvh::collapseChilds(int collapeCount)
@@ -93,7 +93,61 @@ bool Bvh::intersect(Ray& ray)
 	return false;
 }
 
-void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name, std::string problem, bool mute)
+float Bvh::calcEndPointOverlap()
+{
+	//calculate epo:
+	//i think best approach is to go torugh bvh like a ray but with the triangles (aabb)
+	//then add the surface area of each triangle to each node -> need to do something smart about concurrency?
+
+	//its <primitiveId, epo of this triangle, triSurface of primitive>
+	std::vector<std::tuple<uint32_t, float, float>> workPairs(primitives->size());
+
+	for (int i = 0; i < primitives->size(); i++)
+	{
+		std::get<0>(workPairs[i]) = i;
+		std::get<1>(workPairs[i]) = 0;
+		std::get<2>(workPairs[i]) = 0;
+	}
+
+	//for every primitive we go trough the bvh:
+	std::for_each(std::execution::par_unseq, workPairs.begin(), workPairs.end(),
+		[&](auto& info)
+		{
+			//get bounds:
+			uint32_t primId = std::get<0>(info);
+			auto tri = dynamic_cast<Triangle*>((*primitives)[primId].get());
+			glm::vec3 triMin, triMax;
+			tri->getBounds(triMin, triMax);
+
+			//need length of all sides:
+			float a = 0, b = 0, c = 0, triSurfaceArea = 0;
+
+			glm::vec3 v0, v1, v2;
+			tri->getVertexPositions(v0, v1, v2);
+			a = glm::distance(v0, v1);
+			b = glm::distance(v1, v2);
+			c = glm::distance(v2, v0);
+
+			float s = (a + b + c) / 2;
+			triSurfaceArea += sqrt(s * (s - a) * (s - b) * (s - c));
+
+			//traverse analysisBvh
+			std::get<1>(info) = analysisRoot->traverseAnalysisBvh(tri, triMin, triMax, triSurfaceArea, primId);
+			std::get<2>(info) = triSurfaceArea;
+		});
+	float overlapSum = 0;
+	float totalSum = 0;
+	for (auto& i : workPairs)
+	{
+		overlapSum += std::get<1>(i);
+		totalSum += std::get<2>(i);
+	}
+	//TODO: Cn (cost factor !!!!!!!!!!!!!!!!)
+	return overlapSum / totalSum;
+}
+
+void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
+	std::string problem, float triangleCostFactor, float nodeCostFactor, bool mute)
 {
 	//analysis includes
 	//metric analysis: sah, the overlapp heuristic
@@ -111,12 +165,25 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	//depth of the leaf nodes
 	std::vector<uint32_t> treeDepth;
 	std::vector<NodeAnalysis*> leafNodes;
-	analysisRoot = std::make_shared<NodeAnalysis>(root.get(), branchingFactor, leafCount);
-	analysisRoot->analysis(leafNodes, treeDepth, childCount, primCount);
-	bvhDepth = treeDepth.size();
+	float allNodesSah = 0;
 
+	analysisRoot = std::make_shared<NodeAnalysis>(root.get(), branchingFactor, leafSize,
+		primitives.get(), triangleCostFactor, nodeCostFactor);
+
+	analysisRoot->analysis(leafNodes, treeDepth, childCount, primCount, allNodesSah);
+	bvhDepth = treeDepth.size();
+	//allNodesSah /= analysisRoot->surfaceArea;
+
+	std::cerr << "todo remove, sah:" << allNodesSah << " b; " << branchingFactor << " l: " << leafSize << std::endl;
 	uint32_t nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 	uint32_t leafs = leafNodes.size();
+
+	float epo = 0;
+	if (saveAndPrintResult)
+	{
+		epo = calcEndPointOverlap();
+	}
+	std::cerr << "End-Point Overlap: " << epo << std::endl;
 
 	if (saveAndPrintResult)
 	{
@@ -126,7 +193,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 
 		std::set<uint32_t> trianglePrimitiveIds;
 		//different metrics analysis:
-		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0, averageTreeDepth = 0;
+		float nodeSah = 0, leafSah = 0, leafVolume = 0, leafSurfaceArea = 0, averageTreeDepth = 0;
 		for (auto& l : leafNodes)
 		{
 			leafSah += l->sah;
@@ -163,8 +230,9 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 				});
 			trianglePrimitiveIds.clear();
 		}
-		leafVolume = leafVolume / analysisRoot->volume;
-		leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
+		//could "normalise" those by the root node
+		//leafVolume = leafVolume / analysisRoot->volume;
+		//leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
 		averageTreeDepth /= (float)leafs;
 
 		//make checksum / hash of vector to compare leafnodes of different bvhs
@@ -172,7 +240,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		for (auto& i : leafNodes)
 		{
 
-			auto p = &(**i->node->primitiveBegin);
+			auto p = (*i->node->primitiveBegin).get();
 			auto tri = dynamic_cast<Triangle*>(p);
 			uint32_t a, b, c;
 			tri->getVertexIds(a, b, c);
@@ -231,16 +299,20 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 			std::cout << std::endl;
 
 			//think volume and surface area need to be normalised by roof values
-			std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
-			std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << customToString(leafVolume / (double)leafs, 10) << std::endl;
-			std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
+			std::cout << "Sah everything: " << std::to_string(allNodesSah) << " average: " << std::to_string(allNodesSah / (double)nodes) << std::endl;
+			std::cout << "Sah of Nodes: " << std::to_string(allNodesSah - leafSah) << " average: " << std::to_string((allNodesSah - leafSah) / (nodes - (double)leafs)) << std::endl;
+			std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: " << std::to_string(leafSah / (double)leafs) << std::endl;
+			std::cout << "End-Point Overlap: " << std::to_string(epo) << " average: " << std::to_string(epo / (double)nodes) << std::endl;
+			std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: " << customToString(leafVolume / (double)leafs, 10) << std::endl;
+			std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
 			std::cout << std::endl;
+
 		}
 		//write to file
 		std::ofstream myfile(path + "/" + name + problem + "_BVHInfo.txt");
 		if (myfile.is_open())
 		{
-			myfile << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
+			myfile << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafSize << std::endl;
 
 			myfile << "BVH Analysis:" << std::endl;
 			myfile << "Tree depth: " << treeDepth.size() - 1 << std::endl;
@@ -283,9 +355,12 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 				myfile << i << " : " << primCount[i] << std::endl;
 			}
 			myfile << std::endl;
-			myfile << "Sah of leafs: " << std::to_string(leafSah) << " average: : " << std::to_string(leafSah / (double)leafs) << std::endl;
-			myfile << "Volume of leafs: " << std::to_string(leafVolume) << " average: : " << customToString(leafVolume / (double)leafs, 10) << std::endl;
-			myfile << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: : " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
+			myfile << "Sah everything: " << std::to_string(allNodesSah) << " average: " << std::to_string(allNodesSah / (double)nodes) << std::endl;
+			myfile << "Sah of Nodes: " << std::to_string(allNodesSah - leafSah) << " average: " << std::to_string((allNodesSah - leafSah) / (nodes - (double)leafs)) << std::endl;
+			myfile << "Sah of leafs: " << std::to_string(leafSah) << " average: " << std::to_string(leafSah / (double)leafs) << std::endl;
+			myfile << "End-Point Overlap: " << std::to_string(epo) << " average: " << std::to_string(epo / (double)nodes) << std::endl;
+			myfile << "Volume of leafs: " << std::to_string(leafVolume) << " average: " << customToString(leafVolume / (double)leafs, 10) << std::endl;
+			myfile << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
 			myfile << std::endl;
 		}
 		else std::cerr << "Unable to open file" << std::endl;

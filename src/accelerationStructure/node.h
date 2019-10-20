@@ -32,10 +32,10 @@ public:
 	virtual bool intersectNode(Ray& ray, float& distance) = 0;
 
 	//might want to add tree depth here?
-	virtual void recursiveOctree(const unsigned int leafCount);
+	virtual void recursiveOctree(const unsigned int leafSize);
 
 	//unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount
-	virtual  void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafCount, int bucketCount, bool sortEachSplit);
+	virtual  void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafSize, int bucketCount, bool sortEachSplit);
 
 	virtual size_t getChildCount();
 	virtual size_t getPrimCount();
@@ -58,6 +58,8 @@ public:
 	//		since we search for the min value it doesnt change anything????
 	inline float sah(float invArea, int leafSize)
 	{
+		//inv area is 1/area of root node
+
 		/*
 		*overall its x * getSurfaceArea * invArea
 		*the x is related to primitive count
@@ -72,16 +74,28 @@ public:
 
 		//TODO: test different scenes
 
-		//a: linear scaling: -> problem: produces half empty leaf nodes
-		//return (getPrimCount() * getSurfaceArea()) * invArea;
+		unsigned primCount = getPrimCount();
+		if (primCount != 0)
+		{
+			//leafnode sah:
 
-		//b: half step, half linear
-		//return ((((getPrimCount() - 1) / leafSize) + 1) * leafSize / 2.f + getPrimCount() / 2.f) * getSurfaceArea() * invArea;
+			//a: linear scaling: -> problem: produces half empty leaf nodes
+			//return (getPrimCount() * getSurfaceArea()) * invArea;
 
-		//c: step function: Mostly produces full leafs 
-		return (((getPrimCount() - 1) / leafSize) + 1) * getSurfaceArea() * invArea;
+			//b: half step, half linear
+			//return ((((getPrimCount() - 1) / leafSize) + 1) * leafSize / 2.f + getPrimCount() / 2.f) * getSurfaceArea() * invArea;
 
+			//c: step function: Mostly produces full leafs 
+			return (((getPrimCount() - 1) / leafSize) + 1) * getSurfaceArea() * invArea;
+		}
+		else
+		{
+			//currently not used:
 
+			//node sah: 
+			float factor = 1;
+			return getSurfaceArea() * invArea * factor;
+		}
 	}
 
 	//this could be a unique pointer
@@ -90,6 +104,10 @@ public:
 	//begin and end iterator represent the children this node contains  (what when none???)
 	primPointVector::iterator primitiveBegin;
 	primPointVector::iterator primitiveEnd;
+
+	//both all variables give the begin and endpoint for all primitivies in child and childes child nodes
+	primPointVector::iterator allPrimitiveBegin;
+	primPointVector::iterator allPrimitiveEnd;
 protected:
 private:
 };

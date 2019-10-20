@@ -57,6 +57,9 @@ class RayTracer
 
 	unsigned ambientSampleCount;
 	bool castShadows;
+
+	float triangleCostFactor = 1;
+	float nodeCostFactor = 2;
 public:
 
 	RayTracer()
@@ -341,14 +344,14 @@ public:
 
 
 	//is called in the loop that iterates trough branchingfactor and leafsize
-	void renderImage(unsigned branchingFactor, unsigned leafCount, primPointVector& primitives,
+	void renderImage(unsigned branchingFactor, unsigned leafSize, primPointVector& primitives,
 		glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights, std::string& name, std::string& path)
 	{
 
 		std::string problem;
 		std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
-		problem = "_b" + std::to_string(branchingFactor) + "_l" + std::to_string(leafCount);
-		std::cout << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafCount << std::endl;
+		problem = "_b" + std::to_string(branchingFactor) + "_l" + std::to_string(leafSize);
+		std::cout << "scenario " << name << " with branching factor of " << std::to_string(branchingFactor) << " and leafsize of " << leafSize << std::endl;
 		std::cout << std::endl;
 
 		//bvh of (seeded) random sphere
@@ -357,7 +360,7 @@ public:
 		std::chrono::high_resolution_clock::time_point timeLoop1 = std::chrono::high_resolution_clock::now();
 
 		//bvh of loaded model:
-		Bvh bvh = Bvh(primitives, branchingFactor, leafCount, sortEachSplit);
+		Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit);
 		bvh.recursiveOctree(bucketCount);
 
 		//bvh.recursiveOctree(2, leafCount);
@@ -373,11 +376,11 @@ public:
 
 		//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 		//This also duplicates the node system. the copy is used for the compact nodes
-		bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem, mute);
+		bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem, triangleCostFactor, nodeCostFactor, mute);
 
 		std::chrono::high_resolution_clock::time_point timeLoop2 = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);
-		std::cout << std::endl << "BVH building took " << time_span1.count() << " seconds." << std::endl;
+		std::cout << std::endl << "BVH building and bvh Analysis took " << time_span1.count() << " seconds." << std::endl;
 
 		if (renderImageOption)
 		{

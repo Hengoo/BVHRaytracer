@@ -7,7 +7,7 @@ Ray::Ray(glm::vec3 pos, glm::vec3 direction, Bvh bvh, bool shadowRay)
 	nodeIntersectionCount.resize(bvh.bvhDepth);
 	leafIntersectionCount.resize(bvh.bvhDepth);
 	childFullness.resize(bvh.branchingFactor + 1);
-	primitiveFullness.resize(bvh.leafCount + 1);
+	primitiveFullness.resize(bvh.leafSize + 1);
 
 	this->direction = glm::normalize(direction);
 	//the possible inv here should be no problem

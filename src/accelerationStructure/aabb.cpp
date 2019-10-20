@@ -147,6 +147,8 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 }
 void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount, bool sortEachSplit)
 {
+	allPrimitiveBegin = primitiveBegin;
+	allPrimitiveEnd = primitiveEnd;
 	//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
 	if (getPrimCount() <= leafTarget)
 	{
@@ -162,6 +164,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	workIntervall.push_back(PrimIntervall(primitiveBegin, primitiveEnd));
 	int bestI = 0;
 	int primCounter = 0;
+	float invSurfaceArea = 1 / getSurfaceArea();
 
 	for (size_t b = 0; b < branchingFactor - 1; b++)
 	{
@@ -187,7 +190,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 			if (sortEachSplit)
 			{
 				int8_t newSortAxis;
-				bestSplit = workIntervall[bestI].computerBestSplitSort(1 / getSurfaceArea(), leafTarget, newSortAxis);
+				bestSplit = workIntervall[bestI].computerBestSplitSort(invSurfaceArea, leafTarget, newSortAxis);
 				//fill sort axis vector correctly: bestI is the id
 				int8_t left = 0;
 				int8_t right = 0;
@@ -248,7 +251,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 			else
 			{
 				//all splits slong the same common axis
-				bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget);
+				bestSplit = workIntervall[bestI].computerBestSplit(invSurfaceArea, leafTarget);
 			}
 
 		}
@@ -271,7 +274,7 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 					min = glm::min(min, centerDistance);
 					max = glm::max(max, centerDistance);
 				});
-			bestSplit = workIntervall[bestI].computerBestSplit(1 / getSurfaceArea(), leafTarget, bucketCount,
+			bestSplit = workIntervall[bestI].computerBestSplit(invSurfaceArea, leafTarget, bucketCount,
 				min, max, sortAxis);
 		}
 
@@ -294,7 +297,6 @@ void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 	{
 		std::cerr << "bvh is suspiciously deep: " << depth << std::endl;
 	}
-
 	primitiveBegin = primitiveEnd;
 
 	//constructs bvh of all children:
