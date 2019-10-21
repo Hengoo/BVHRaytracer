@@ -175,10 +175,13 @@ public:
 					result = nodeManager.intersect(ray);
 					break;
 				case 2:
-					result = nodeManager.intersectImmediately(ray);
+					result = nodeManager.intersectImmediately(ray, false);
+					break;
+				case 3:
+					result = nodeManager.intersectImmediately(ray, true);
 					break;
 				default:
-					result = nodeManager.intersectImmediately(ray);
+					result = nodeManager.intersectImmediately(ray, true);
 					break;
 				}
 
@@ -338,6 +341,12 @@ public:
 			std::cout << "node intersections: " << nodeIntersectionCount * factor << std::endl;
 			std::cout << "aabb intersections: " << aabbIntersections * factor << std::endl;
 			std::cout << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
+			//wastefactor = "verschwendungsgrad".
+			// basically number of nodes visited / number of aabb tested
+			//float wasteFactor = (leafIntersectionCount + nodeIntersectionCount * bvh.branchingFactor) / (float)aabbIntersections;
+			//the minus width*height is basically -1 for each ray -> needed to get right values
+			float wasteFactor = (leafIntersectionCount + nodeIntersectionCount - width * height) / (float)(nodeIntersectionCount * bvh.branchingFactor);
+			std::cout << "waste factor: " << 1 - wasteFactor << std::endl;
 			std::cout << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
 			std::cout << "primitive intersections: " << primitiveIntersections * factor << std::endl;
 			std::cout << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
@@ -345,6 +354,8 @@ public:
 			std::cout << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
 			std::cout << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
 			std::cout << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
+			wasteFactor = (shadowLeafIntersectionCount + shadowNodeIntersectionCount - shadowRayCount) / (float)(shadowNodeIntersectionCount * bvh.branchingFactor);
+			std::cout << "shadow waste factor: " << 1 - wasteFactor << std::endl;
 			std::cout << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
 			std::cout << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
 			std::cout << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
@@ -358,6 +369,8 @@ public:
 			myfile << "node intersections: " << nodeIntersectionCount * factor << std::endl;
 			myfile << "aabb intersections: " << aabbIntersections * factor << std::endl;
 			myfile << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
+			float wasteFactor = (leafIntersectionCount + nodeIntersectionCount - width * height) / (float)(nodeIntersectionCount * bvh.branchingFactor);
+			myfile << "waste factor: " << 1 - wasteFactor << std::endl;
 			myfile << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
 			myfile << "primitive intersections: " << primitiveIntersections * factor << std::endl;
 			myfile << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
@@ -365,6 +378,8 @@ public:
 			myfile << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
 			myfile << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
 			myfile << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
+			wasteFactor = (shadowLeafIntersectionCount + shadowNodeIntersectionCount - shadowRayCount) / (float)(shadowNodeIntersectionCount * bvh.branchingFactor);
+			myfile << "shadow waste factor: " << 1 - wasteFactor << std::endl;
 			myfile << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
 			myfile << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
 			myfile << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
@@ -382,7 +397,8 @@ public:
 			myfile << "average child fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 0; i < childFullness.size(); i++)
 			{
-				myfile << i << " : " << childFullness[i] * bothFactor << std::endl;
+				//myfile << i << " : " << childFullness[i] * bothFactor << std::endl;
+				myfile << i << " : " << childFullness[i] * factor << std::endl;
 			}
 
 			sum = 0;
@@ -396,7 +412,8 @@ public:
 			myfile << "averag leaf fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 0; i < primitiveFullness.size(); i++)
 			{
-				myfile << i << " : " << primitiveFullness[i] * bothFactor << std::endl;
+				//myfile << i << " : " << primitiveFullness[i] * bothFactor << std::endl;
+				myfile << i << " : " << primitiveFullness[i] * factor << std::endl;
 			}
 
 			myfile << std::endl;
@@ -540,10 +557,13 @@ private:
 			result = nodeManager.intersect(shadowRay);
 			break;
 		case 2:
-			result = nodeManager.intersectImmediately(shadowRay);
+			result = nodeManager.intersectImmediately(shadowRay, false);
+			break;
+		case 3:
+			result = nodeManager.intersectImmediately(shadowRay, true);
 			break;
 		default:
-			result = nodeManager.intersectImmediately(shadowRay);
+			result = nodeManager.intersectImmediately(shadowRay, true);
 			break;
 		}
 
@@ -571,7 +591,7 @@ private:
 		}
 		for (size_t i = 0; i < shadowRay.childFullness.size(); i++)
 		{
-			ray.childFullness[i] += shadowRay.childFullness[i];
+			//ray.childFullness[i] += shadowRay.childFullness[i];
 		}
 
 		if (ray.primitiveFullness.size() < shadowRay.primitiveFullness.size())
@@ -580,7 +600,7 @@ private:
 		}
 		for (size_t i = 0; i < shadowRay.primitiveFullness.size(); i++)
 		{
-			ray.primitiveFullness[i] += shadowRay.primitiveFullness[i];
+			//ray.primitiveFullness[i] += shadowRay.primitiveFullness[i];
 		}
 
 		shadowPrimitiveIntersectionsPerPixel[info.index] += shadowRay.primitiveIntersectionCount;

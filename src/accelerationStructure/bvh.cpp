@@ -174,7 +174,6 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	bvhDepth = treeDepth.size();
 	//allNodesSah /= analysisRoot->surfaceArea;
 
-	std::cerr << "todo remove, sah:" << allNodesSah << " b; " << branchingFactor << " l: " << leafSize << std::endl;
 	uint32_t nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 	uint32_t leafs = leafNodes.size();
 
@@ -183,7 +182,6 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	{
 		epo = calcEndPointOverlap();
 	}
-	std::cerr << "End-Point Overlap: " << epo << std::endl;
 
 	if (saveAndPrintResult)
 	{
@@ -193,7 +191,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 
 		std::set<uint32_t> trianglePrimitiveIds;
 		//different metrics analysis:
-		float nodeSah = 0, leafSah = 0, leafVolume = 0, leafSurfaceArea = 0, averageTreeDepth = 0;
+		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0, averageTreeDepth = 0;
 		for (auto& l : leafNodes)
 		{
 			leafSah += l->sah;

@@ -213,7 +213,7 @@ public:
 	bool intersect(Ray& ray);
 
 	//similar to normal intersect but instantly tests all child aabbs immediately (instead of only testing the closest)
-	bool intersectImmediately(Ray& ray);
+	bool intersectImmediately(Ray& ray, bool useDistance);
 
 	//first add all children of node, then rekusion for each child
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
@@ -223,12 +223,11 @@ public:
 
 	void depthFirstTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
 
-	inline bool aabbCheck(Ray& ray, int id)// CompactNodeV1& node)
+	inline bool aabbCheck(Ray& ray, int id)
 	{
 		ray.aabbIntersectionCount++;
 		//aabb intersection (same as in Aabb)
 		//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
-		float t;
 
 		glm::fvec3 t1 = (compactNodes[id].boundMin - ray.pos) * ray.invDirection;
 		glm::fvec3 t2 = (compactNodes[id].boundMax - ray.pos) * ray.invDirection;
@@ -238,13 +237,11 @@ public:
 		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
 		if (tmax < 0)
 		{
-			t = tmax;
 			return false;
 		}
 		// if tmin > tmax, ray doesn't intersect AABB
 		if (tmin > tmax)
 		{
-			t = tmax;
 			return false;
 		}
 		//stop when current ray distance is closer than minimum possible distance of the aabb
@@ -252,6 +249,37 @@ public:
 		{
 			return false;
 		}
+		ray.successfulAabbIntersectionCount++;
+		return true;
+	}
+
+	inline bool aabbCheck(Ray& ray, int id, float& distance)
+	{
+		ray.aabbIntersectionCount++;
+		//aabb intersection (same as in Aabb)
+		//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+
+		glm::fvec3 t1 = (compactNodes[id].boundMin - ray.pos) * ray.invDirection;
+		glm::fvec3 t2 = (compactNodes[id].boundMax - ray.pos) * ray.invDirection;
+		float tmin = glm::compMax(glm::min(t1, t2));
+		float tmax = glm::compMin(glm::max(t1, t2));
+
+		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+		if (tmax < 0)
+		{
+			return false;
+		}
+		// if tmin > tmax, ray doesn't intersect AABB
+		if (tmin > tmax)
+		{
+			return false;
+		}
+		//stop when current ray distance is closer than minimum possible distance of the aabb
+		if (ray.tMax < tmin)
+		{
+			return false;
+		}
+		distance = tmin;
 		ray.successfulAabbIntersectionCount++;
 		return true;
 	}

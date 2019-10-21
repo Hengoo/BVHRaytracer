@@ -58,8 +58,10 @@ class RayTracer
 	unsigned ambientSampleCount;
 	bool castShadows;
 
+	//both factors work, but for now i leave them 1 so we can adjust the sah cost in python 
+	//(i save the leafsah and node sah seperate)
 	float triangleCostFactor = 1;
-	float nodeCostFactor = 2;
+	float nodeCostFactor = 1;
 public:
 
 	RayTracer()
@@ -77,7 +79,7 @@ public:
 		minBranch = std::min(maxBranch, minBranch);
 		maxLeafSize = std::max(maxLeafSize, minLeafSize);
 		minLeafSize = std::min(maxLeafSize, minLeafSize);
-		if (renderType > 2)
+		if (renderType > 3)
 		{
 			std::cerr << "unknown renderType" << std::endl;
 			return;
@@ -102,6 +104,8 @@ public:
 		}
 		std::cout << "bucket count: " << bucketCount << std::endl;
 		std::cout << "compact Node order: " << compactNodeOrder << std::endl;
+		//std::cout << "Sah Node cost factor: " << nodeCostFactor << std::endl;
+		//std::cout << "Sah Triangle cost factor: " << triangleCostFactor << std::endl;
 		std::cout << std::endl;
 
 		mute = scenarios.size() > 1 || maxBranch != minBranch || maxLeafSize != minLeafSize;
@@ -444,6 +448,8 @@ public:
 				{
 					auto res = line.find("minLeafSize", 0);
 					auto res2 = res;
+
+					//integers:
 					if (res != std::string::npos)
 					{
 						minLeafSize = std::stoi(line.substr(line.find("=") + 1));
@@ -498,6 +504,19 @@ public:
 					{
 						ambientSampleCount = std::stoi(line.substr(line.find("=") + 1));
 					}
+
+					//floats:
+					/*
+					res = line.find("nodeCostFactor", 0);
+					if (res != std::string::npos)
+					{
+						nodeCostFactor = std::stof(line.substr(line.find("=") + 1));
+					}
+					res = line.find("triangleCostFactor", 0);
+					if (res != std::string::npos)
+					{
+						triangleCostFactor = std::stof(line.substr(line.find("=") + 1));
+					}*/
 
 					//booleans:
 					res = line.find("saveImage", 0);
