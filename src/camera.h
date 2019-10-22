@@ -121,7 +121,7 @@ public:
 	//spawns rays and collects results into image. Image is written on disk
 	template<typename T>
 	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
-		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount, bool castShadows, int renderType, bool mute)
+		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount, float ambientDistance, bool castShadows, int renderType, bool mute)
 	{
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -199,10 +199,10 @@ public:
 						float v = test(info.index * 61 + i * 7) / (float)(std::numeric_limits<size_t>::max());
 
 						auto direction = sampleHemisphere(u, v, ray.surfaceNormal);
-						Ray shadowRay(ray.surfacePosition + direction * 0.001f, direction, bvh, true);
+						Ray ambientRay(ray.surfacePosition + direction * 0.001f, direction, bvh, true);
+						ambientRay.tMax = ambientDistance;
 
-
-						if (shootShadowRay(shadowRay, ray, info, bvh, nodeManager, renderType))
+						if (shootShadowRay(ambientRay, ray, info, bvh, nodeManager, renderType))
 						{
 							ambientResult++;
 						}
@@ -343,7 +343,6 @@ public:
 			std::cout << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
 			//wastefactor = "verschwendungsgrad".
 			// basically number of nodes visited / number of aabb tested
-			//float wasteFactor = (leafIntersectionCount + nodeIntersectionCount * bvh.branchingFactor) / (float)aabbIntersections;
 			//the minus width*height is basically -1 for each ray -> needed to get right values
 			float wasteFactor = (leafIntersectionCount + nodeIntersectionCount - width * height) / (float)(nodeIntersectionCount * bvh.branchingFactor);
 			std::cout << "waste factor: " << 1 - wasteFactor << std::endl;
@@ -538,10 +537,7 @@ public:
 			myfile.close();
 		}
 	}
-
-
-
-
+	
 private:
 	template<typename T>
 	bool shootShadowRay(Ray& shadowRay, Ray& ray, RenderInfo& info, Bvh& bvh, CompactNodeManager<T>& nodeManager, int& renderType)

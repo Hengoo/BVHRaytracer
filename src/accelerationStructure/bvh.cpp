@@ -93,20 +93,21 @@ bool Bvh::intersect(Ray& ray)
 	return false;
 }
 
-float Bvh::calcEndPointOverlap()
+void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 {
 	//calculate epo:
 	//i think best approach is to go torugh bvh like a ray but with the triangles (aabb)
 	//then add the surface area of each triangle to each node -> need to do something smart about concurrency?
 
-	//its <primitiveId, epo of this triangle, triSurface of primitive>
-	std::vector<std::tuple<uint32_t, float, float>> workPairs(primitives->size());
+	//its <primitiveId, epoNode of this triangle, epoLeaf of this triangle, triSurface of primitive>
+	std::vector<std::tuple<uint32_t, float, float, float>> workPairs(primitives->size());
 
 	for (int i = 0; i < primitives->size(); i++)
 	{
 		std::get<0>(workPairs[i]) = i;
 		std::get<1>(workPairs[i]) = 0;
 		std::get<2>(workPairs[i]) = 0;
+		std::get<3>(workPairs[i]) = 0;
 	}
 
 	//for every primitive we go trough the bvh:
@@ -120,30 +121,39 @@ float Bvh::calcEndPointOverlap()
 			tri->getBounds(triMin, triMax);
 
 			//need length of all sides:
-			float a = 0, b = 0, c = 0, triSurfaceArea = 0;
+			float triSurfaceArea = 0;
 
+			//extract vertex
 			glm::vec3 v0, v1, v2;
 			tri->getVertexPositions(v0, v1, v2);
-			a = glm::distance(v0, v1);
-			b = glm::distance(v1, v2);
-			c = glm::distance(v2, v0);
 
-			float s = (a + b + c) / 2;
-			triSurfaceArea += sqrt(s * (s - a) * (s - b) * (s - c));
+			glm::vec3 a = v1 - v0;
+			glm::vec3 b = v2 - v0;
+			triSurfaceArea = 0.5 * glm::length(glm::cross(a, b));
 
-			//traverse analysisBvh
-			std::get<1>(info) = analysisRoot->traverseAnalysisBvh(tri, triMin, triMax, triSurfaceArea, primId);
-			std::get<2>(info) = triSurfaceArea;
+			//check against tri without surface
+			if (triSurfaceArea != 0)
+			{
+				//traverse analysisBvh
+				float nodeEpoPerTri = 0;
+				float leafEpoPerTri = 0;
+				analysisRoot->traverseAnalysisBvh(nodeEpoPerTri, leafEpoPerTri, tri, triMin, triMax, triSurfaceArea, primId, v0, v1, v2);
+				std::get<1>(info) = nodeEpoPerTri;
+				std::get<2>(info) = leafEpoPerTri;
+				std::get<3>(info) = triSurfaceArea;
+			}
 		});
-	float overlapSum = 0;
+	float nodeEpoSum = 0;
+	float leafEpoSum = 0;
 	float totalSum = 0;
 	for (auto& i : workPairs)
 	{
-		overlapSum += std::get<1>(i);
-		totalSum += std::get<2>(i);
+		nodeEpoSum += std::get<1>(i);
+		leafEpoSum += std::get<2>(i);
+		totalSum += std::get<3>(i);
 	}
-	//TODO: Cn (cost factor !!!!!!!!!!!!!!!!)
-	return overlapSum / totalSum;
+	nodeEpo = nodeEpoSum / (float)totalSum;
+	leafEpo = leafEpoSum / (float)totalSum;
 }
 
 void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
@@ -177,10 +187,11 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	uint32_t nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 	uint32_t leafs = leafNodes.size();
 
-	float epo = 0;
+	float nodeEpo = 0;
+	float leafEpo = 0;
 	if (saveAndPrintResult)
 	{
-		epo = calcEndPointOverlap();
+		calcEndPointOverlap(nodeEpo, leafEpo);
 	}
 
 	if (saveAndPrintResult)
@@ -298,9 +309,11 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 
 			//think volume and surface area need to be normalised by roof values
 			std::cout << "Sah everything: " << std::to_string(allNodesSah) << " average: " << std::to_string(allNodesSah / (double)nodes) << std::endl;
-			std::cout << "Sah of Nodes: " << std::to_string(allNodesSah - leafSah) << " average: " << std::to_string((allNodesSah - leafSah) / (nodes - (double)leafs)) << std::endl;
+			std::cout << "Sah of Nodes: " << std::to_string(allNodesSah - leafSah) << " average: " << std::to_string((allNodesSah - leafSah) / (double)(nodes - leafs)) << std::endl;
 			std::cout << "Sah of leafs: " << std::to_string(leafSah) << " average: " << std::to_string(leafSah / (double)leafs) << std::endl;
-			std::cout << "End-Point Overlap: " << std::to_string(epo) << " average: " << std::to_string(epo / (double)nodes) << std::endl;
+			std::cout << "End-Point Overlap everything: " << std::to_string(nodeEpo + leafEpo) << " average: " << std::to_string((nodeEpo + leafEpo) / (double)(nodes)) << std::endl;
+			std::cout << "End-Point Overlap of Nodes: " << std::to_string(nodeEpo) << " average: " << std::to_string(nodeEpo / (double)(nodes - leafs)) << std::endl;
+			std::cout << "End-Point Overlap of Leafs: " << std::to_string(leafEpo) << " average: " << std::to_string(leafEpo / (double)leafs) << std::endl;
 			std::cout << "Volume of leafs: " << std::to_string(leafVolume) << " average: " << customToString(leafVolume / (double)leafs, 10) << std::endl;
 			std::cout << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
 			std::cout << std::endl;
@@ -356,7 +369,9 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 			myfile << "Sah everything: " << std::to_string(allNodesSah) << " average: " << std::to_string(allNodesSah / (double)nodes) << std::endl;
 			myfile << "Sah of Nodes: " << std::to_string(allNodesSah - leafSah) << " average: " << std::to_string((allNodesSah - leafSah) / (nodes - (double)leafs)) << std::endl;
 			myfile << "Sah of leafs: " << std::to_string(leafSah) << " average: " << std::to_string(leafSah / (double)leafs) << std::endl;
-			myfile << "End-Point Overlap: " << std::to_string(epo) << " average: " << std::to_string(epo / (double)nodes) << std::endl;
+			myfile << "End-Point Overlap everything: " << std::to_string(nodeEpo + leafEpo) << " average: " << std::to_string((nodeEpo + leafEpo) / (double)(nodes)) << std::endl;
+			myfile << "End-Point Overlap of Nodes: " << std::to_string(nodeEpo) << " average: " << std::to_string(nodeEpo / (double)(nodes - leafs)) << std::endl;
+			myfile << "End-Point Overlap of Leafs: " << std::to_string(leafEpo) << " average: " << std::to_string(leafEpo / (double)leafs) << std::endl;
 			myfile << "Volume of leafs: " << std::to_string(leafVolume) << " average: " << customToString(leafVolume / (double)leafs, 10) << std::endl;
 			myfile << "Surface area of leafs: " << std::to_string(leafSurfaceArea) << " average: " << customToString(leafSurfaceArea / (double)leafs, 10) << std::endl;
 			myfile << std::endl;

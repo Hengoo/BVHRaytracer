@@ -56,12 +56,15 @@ class RayTracer
 	unsigned compactNodeOrder;
 
 	unsigned ambientSampleCount;
+	float ambientDistance = 222222.f;
+
 	bool castShadows;
 
 	//both factors work, but for now i leave them 1 so we can adjust the sah cost in python 
 	//(i save the leafsah and node sah seperate)
 	float triangleCostFactor = 1;
 	float nodeCostFactor = 1;
+
 public:
 
 	RayTracer()
@@ -395,14 +398,14 @@ public:
 					CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
 					//create camera and render image
 					Camera c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, castShadows, renderType, mute);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 				}
 				else
 				{
 					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 					//create camera and render image
 					Camera c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, castShadows, renderType, mute);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 				}
 			}
 			else
@@ -415,7 +418,7 @@ public:
 				CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 				//create camera and render image
 				Camera c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, castShadows, renderType, mute);
+				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 			}
 
 			std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();

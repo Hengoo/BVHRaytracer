@@ -65,7 +65,7 @@ public:
 	void bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
 		std::string problem, float triangleCostFactor, float nodeCostFactor, bool mute);
 
-	float calcEndPointOverlap();
+	void calcEndPointOverlap(float& nodeEpo, float& leafEpo);
 protected:
 	std::shared_ptr<Node> root;
 	std::shared_ptr<NodeAnalysis> analysisRoot;
