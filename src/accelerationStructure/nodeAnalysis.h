@@ -17,14 +17,6 @@
 //can be discared when bvh analysis is finshed
 class  NodeAnalysis
 {
-	//some constants for line clipping
-	const int INSIDE = 0; // 000000
-	const int LEFT = 1;   // 000001
-	const int RIGHT = 2;  // 000010
-	const int BOTTOM = 4; // 000100
-	const int TOP = 8;    // 001000
-	const int FRONT = 16; // 010000
-	const int BACK = 32;  // 100000
 
 public:
 	unsigned int depth;
@@ -44,6 +36,9 @@ public:
 	//node id
 	int id;
 
+	glm::vec3 boundMin;
+	glm::vec3 boundMax;
+
 	uint32_t allPrimitiveBeginId;
 	uint32_t allPrimitiveEndId;
 
@@ -60,6 +55,9 @@ public:
 		sah = 0;
 		allPrimitiveBeginId = std::distance(primitives->begin(), node->allPrimitiveBegin);
 		allPrimitiveEndId = std::distance(primitives->begin(), node->allPrimitiveEnd);
+		auto aabb = static_cast<Aabb*>(node);
+		boundMin = aabb->boundMin;
+		boundMax = aabb->boundMax;
 		for (auto& n : node->children)
 		{
 			children.push_back(std::make_unique<NodeAnalysis>(n.get(), this, branchingFactor, targetPrimitiveCount,
@@ -75,6 +73,10 @@ public:
 		primitiveCount = node->getPrimCount();
 		volume = node->getVolume();
 		surfaceArea = node->getSurfaceArea();
+
+		auto aabb = static_cast<Aabb*>(node);
+		boundMin = aabb->boundMin;
+		boundMax = aabb->boundMax;
 
 		//calc sah according to https://users.aalto.fi/~laines9/publications/aila2013hpg_paper.pdf
 		//so its  surface area / surface area of root * cost of node
@@ -136,8 +138,6 @@ public:
 		const glm::vec3& triMin, const glm::vec3& triMax, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2,
 		std::vector <glm::vec3>& points, std::vector<std::pair<int, int>>& lines, uint16_t& count1, uint16_t& count2, uint16_t& count3)
 	{
-		float area = 0;
-
 		//look if tri is part of this subtree: if yes, go on with child nodes, else calculate surface area
 		if (allPrimitiveBeginId <= primId && allPrimitiveEndId > primId)
 		{
@@ -150,15 +150,17 @@ public:
 		else
 		{
 			//cheap aabb aabb intersection first
-			auto aabb = dynamic_cast<Aabb*>(node);
 
-			if (aabbAabbIntersection(triMin, triMax, aabb->boundMin, aabb->boundMax))
+			//auto aabb = dynamic_cast<Aabb*>(node);
+			//auto aabb = static_cast<Aabb*>(node);
+			float area = 0;
+			if (aabbAabbIntersection(triMin, triMax, boundMin, boundMax))
 			{
 				//no "collision" guaranteed yet...
 
 				//check if all vertices are inside aabb -> trivial surface area
-				if (aabbPointIntersection(aabb->boundMin, aabb->boundMax, triMin)
-					&& aabbPointIntersection(aabb->boundMin, aabb->boundMax, triMax))
+				if (aabbPointIntersection(boundMin, boundMax, triMin)
+					&& aabbPointIntersection(boundMin, boundMax, triMax))
 				{
 					//should be a rather rare case
 					area += triSurfaceArea;
@@ -190,11 +192,11 @@ public:
 							glm::vec3 axisPosition;
 							if (b < 3)
 							{
-								axisPosition = aabb->boundMin;
+								axisPosition = boundMin;
 							}
 							else
 							{
-								axisPosition = aabb->boundMax;
+								axisPosition = boundMax;
 							}
 
 							if (clipLine(point0, point1, changedP, axisPosition, axis, b >= 3))
@@ -366,6 +368,15 @@ public:
 		//modified version of this algorithm https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
 		//major modification: works in 3d
 
+		//some constants for line clipping
+		const int INSIDE = 0; // 000000
+		const int LEFT = 1;   // 000001
+		const int RIGHT = 2;  // 000010
+		const int BOTTOM = 4; // 000100
+		const int TOP = 8;    // 001000
+		const int FRONT = 16; // 010000
+		const int BACK = 32;  // 100000
+
 		// compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
 		int outcode0 = computeOutCode(p0, boundMin, boundMax);
 		int outcode1 = computeOutCode(p1, boundMin, boundMax);
@@ -457,6 +468,15 @@ public:
 	int computeOutCode(const glm::vec3& p, const glm::vec3& boundMin, const glm::vec3& boundMax)
 	{
 		//modified version of this algorithm https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
+
+		//some constants for line clipping
+		const int INSIDE = 0; // 000000
+		const int LEFT = 1;   // 000001
+		const int RIGHT = 2;  // 000010
+		const int BOTTOM = 4; // 000100
+		const int TOP = 8;    // 001000
+		const int FRONT = 16; // 010000
+		const int BACK = 32;  // 100000
 
 		int code;
 
