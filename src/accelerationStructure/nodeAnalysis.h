@@ -10,7 +10,7 @@
 #include "../glmUtil.h"
 
 // this is to count bits in integers
-#include <intrin.h>
+//#include <intrin.h>
 
 //class is only there to analyse bvhs
 //it saves additional information about nodes that are not needed for raytracing, like parent
@@ -132,59 +132,51 @@ public:
 		}
 	}
 
-	void traverseAnalysisBvh(float& epoNode, float& epoLeaf, Triangle* tri, const glm::vec3& triMin, const glm::vec3& triMax,
-		const float& triSurfaceArea, uint16_t primId, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
+	void traverseAnalysisBvh(float& epoNode, float& epoLeaf, Triangle* tri, const float& triSurfaceArea, const uint32_t primId,
+		const glm::vec3& triMin, const glm::vec3& triMax, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2,
+		std::vector <glm::vec3>& points, std::vector<std::pair<int, int>>& lines, uint16_t& count1, uint16_t& count2, uint16_t& count3)
 	{
 		float area = 0;
-		//look if tri is part of this subtree:
 
+		//look if tri is part of this subtree: if yes, go on with child nodes, else calculate surface area
 		if (allPrimitiveBeginId <= primId && allPrimitiveEndId > primId)
 		{
+			count1++;
 			for (auto& c : children)
 			{
-				c->traverseAnalysisBvh(epoNode, epoLeaf, tri, triMin, triMax, triSurfaceArea, primId, v0, v1, v2);
+				c->traverseAnalysisBvh(epoNode, epoLeaf, tri, triSurfaceArea, primId, triMin, triMax, v0, v1, v2, points, lines, count1, count2, count3);
 			}
 		}
 		else
 		{
 			//cheap aabb aabb intersection first
 			auto aabb = dynamic_cast<Aabb*>(node);
-			bool triMinInsideAabb = aabbPointIntersection(aabb->boundMin, aabb->boundMax, triMin);
-			bool triMaxInsideAabb = aabbPointIntersection(aabb->boundMin, aabb->boundMax, triMax);
-			bool aabbMinInsideTri = aabbPointIntersection(triMin, triMax, aabb->boundMin);
-			bool aabbMaxInsideTri = aabbPointIntersection(triMin, triMax, aabb->boundMax);
 
-
-			if (triMinInsideAabb || triMaxInsideAabb || aabbMinInsideTri || aabbMaxInsideTri)
+			if (aabbAabbIntersection(triMin, triMax, aabb->boundMin, aabb->boundMax))
 			{
 				//no "collision" guaranteed yet...
 
 				//check if all vertices are inside aabb -> trivial surface area
-				if (triMinInsideAabb && triMaxInsideAabb)
+				if (aabbPointIntersection(aabb->boundMin, aabb->boundMax, triMin)
+					&& aabbPointIntersection(aabb->boundMin, aabb->boundMax, triMax))
 				{
 					//should be a rather rare case
 					area += triSurfaceArea;
+					count2++;
 				}
 				else
 				{
+					count3++;
 					//yeay triangle clipping -> this can be really complex 
 					//approach: take each line of the polygon and clip it against one of the boundaries
 					//after each boundary recover the polygon by going trough the lines and filling the "hole"
 					//since we have convex polygons there can always only be one missing line per boundary intersection
 
-					std::vector <glm::vec3> points;
-					std::vector<std::pair<int, int>> lines;
-					//TODO: performance check if its faster when i keep sizes in average area
-					//worst possible case 9 edges in the polygon
-					lines.reserve(9);
-					//since we dont delete points: worst case i observed was 15
-					points.reserve(16);
-					points.push_back(v0);
-					points.push_back(v1);
-					points.push_back(v2);
-					lines.push_back({ 0 ,1 });
-					lines.push_back({ 1 ,2 });
-					lines.push_back({ 2 ,0 });
+					points.clear();
+					lines.clear();
+					points.insert(points.end(), { v0,v1,v2 });
+					lines.insert(lines.end(), { { 0 ,1 } ,{ 1 ,2 } ,{ 2 ,0 } });
+
 					bool change = false;
 
 					for (int b = 0; b < 6; b++)
@@ -242,11 +234,13 @@ public:
 						}
 						if (change)
 						{
+							//fix the hole in the lines
 							for (int lineId = 0; lineId < lines.size(); lineId++)
 							{
 								if (lines[lineId].second != lines[(lineId + 1) % lines.size()].first)
 								{
 									lines.insert(lines.begin() + lineId + 1, { lines[lineId].second , lines[(lineId + 1) % lines.size()].first });
+									//per cut there can only be one hole
 									break;
 								}
 							}
@@ -256,9 +250,7 @@ public:
 					if (lines.size() == 3)
 					{
 						//simple triangle area:
-						glm::vec3 a = points[lines[0].second] - points[lines[0].first];
-						glm::vec3 b = points[lines[2].first] - points[lines[2].second];
-						area += 0.5 * glm::length(glm::cross(a, b));
+						area += calcTriangleSurfaceArea(points[lines[0].first], points[lines[1].first], points[lines[2].first]);
 					}
 					else if (lines.size() > 3)
 					{
@@ -269,20 +261,21 @@ public:
 					}
 				}
 			}
-			if (primitiveCount == 0)
-			{
-				epoNode += area;
-			}
-			else
-			{
-				epoLeaf += area;
-			}
+
 			//only continue when it contributes area
 			if (area >= 0)
 			{
+				if (primitiveCount == 0)
+				{
+					epoNode += area;
+				}
+				else
+				{
+					epoLeaf += area;
+				}
 				for (auto& c : children)
 				{
-					c->traverseAnalysisBvh(epoNode, epoLeaf, tri, triMin, triMax, triSurfaceArea, primId, v0, v1, v2);
+					c->traverseAnalysisBvh(epoNode, epoLeaf, tri, triSurfaceArea, primId, triMin, triMax, v0, v1, v2, points, lines, count1, count2, count3);
 				}
 			}
 		}
@@ -300,28 +293,11 @@ public:
 		// liable for any real or imagined damage resulting from its use.
 		// Users of this code must verify correctness for their application.
 		int dimensionToSkip = maxAbsDimension(normal);
-		int dim0 = 0, dim1 = 0;
+		int dim0 = (dimensionToSkip + 1) % 3, dim1 = (dimensionToSkip + 2) % 3;
 
-		if (dimensionToSkip == 0)
-		{
-			dim0 = 1;
-			dim1 = 2;
-		}
-		else if (dimensionToSkip == 1)
-		{
-			dim0 = 2;
-			dim1 = 0;
-		}
-		else if ((dimensionToSkip == 2))
-		{
-			dim0 = 0;
-			dim1 = 1;
-		}
 		//compute area of the 2d projection
-
 		float area = 0;
 		for (int i = 1; i < lines.size(); i++)
-			//area += (V[i].y * (V[j].z - V[k].z));
 		{
 			area += points[lines[i].first][dim0] * (points[lines[i].second][dim1] - points[lines[i - 1].first][dim1]);
 		}

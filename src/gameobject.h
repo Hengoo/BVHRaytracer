@@ -115,7 +115,13 @@ public:
 				for (int i = 0; i < m->indices->size(); i += 3)
 				{
 					//triangle version:
-					primitives.push_back(std::make_shared<Triangle>(this, m.get(), i));
+					auto tri = std::make_shared<Triangle>(this, m.get(), i);
+					glm::vec3 v0, v1, v2;
+					tri->getVertexPositions(v0, v1, v2);
+					if (calcTriangleSurfaceArea(v0, v1, v2) != 0)
+					{
+						primitives.push_back(tri);
+					}
 				}
 			}
 		}

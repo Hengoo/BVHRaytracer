@@ -22,6 +22,11 @@
 #include"../mesh.h"
 #include"../meshBin.h"
 
+//includes for the timer
+#include <ctime>
+#include <ratio>
+#include <chrono>
+
 Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit)
 	:branchingFactor(branchingFactor), leafSize(leafSize), sortEachSplit(sortEachSplit)
 {
@@ -95,12 +100,13 @@ bool Bvh::intersect(Ray& ray)
 
 void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 {
+	std::chrono::high_resolution_clock::time_point timeBegin = std::chrono::high_resolution_clock::now();
 	//calculate epo:
 	//i think best approach is to go torugh bvh like a ray but with the triangles (aabb)
 	//then add the surface area of each triangle to each node -> need to do something smart about concurrency?
 
 	//its <primitiveId, epoNode of this triangle, epoLeaf of this triangle, triSurface of primitive>
-	std::vector<std::tuple<uint32_t, float, float, float>> workPairs(primitives->size());
+	std::vector<std::tuple<uint32_t, float, float, float, uint16_t, uint16_t, uint16_t>> workPairs(primitives->size());
 
 	for (int i = 0; i < primitives->size(); i++)
 	{
@@ -126,34 +132,55 @@ void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 			//extract vertex
 			glm::vec3 v0, v1, v2;
 			tri->getVertexPositions(v0, v1, v2);
-
-			glm::vec3 a = v1 - v0;
-			glm::vec3 b = v2 - v0;
-			triSurfaceArea = 0.5 * glm::length(glm::cross(a, b));
+			triSurfaceArea = calcTriangleSurfaceArea(v0, v1, v2);
 
 			//check against tri without surface
 			if (triSurfaceArea != 0)
 			{
 				//traverse analysisBvh
-				float nodeEpoPerTri = 0;
-				float leafEpoPerTri = 0;
-				analysisRoot->traverseAnalysisBvh(nodeEpoPerTri, leafEpoPerTri, tri, triMin, triMax, triSurfaceArea, primId, v0, v1, v2);
+				float nodeEpoPerTri = 0, leafEpoPerTri = 0;
+				uint16_t count1 = 0, count2 = 0, count3 = 0;
+
+				std::vector <glm::vec3> points;
+				std::vector<std::pair<int, int>> lines;
+				//should check if its better to not allocate worst case but average?
+				//worst possible case 9 edges in the polygon
+				lines.reserve(9);
+				//since we dont delete points: worst case i observed was 15
+				points.reserve(16);
+
+				analysisRoot->traverseAnalysisBvh(nodeEpoPerTri, leafEpoPerTri, tri, triSurfaceArea,
+					primId, triMin, triMax, v0, v1, v2, points, lines, count1, count2, count3);
 				std::get<1>(info) = nodeEpoPerTri;
 				std::get<2>(info) = leafEpoPerTri;
 				std::get<3>(info) = triSurfaceArea;
+				std::get<4>(info) = count1;
+				std::get<5>(info) = count2;
+				std::get<6>(info) = count3;
 			}
 		});
 	float nodeEpoSum = 0;
 	float leafEpoSum = 0;
 	float totalSum = 0;
+	uint64_t sum1 = 0, sum2 = 0, sum3 = 0;
 	for (auto& i : workPairs)
 	{
 		nodeEpoSum += std::get<1>(i);
 		leafEpoSum += std::get<2>(i);
 		totalSum += std::get<3>(i);
+		sum1 += std::get<4>(i);
+		sum2 += std::get<5>(i);
+		sum3 += std::get<6>(i);
 	}
+	std::cout << "sum1 " << sum1 << std::endl;
+	std::cout << "sum2 " << sum2 << std::endl;
+	std::cout << "sum3 " << sum3 << std::endl;
 	nodeEpo = nodeEpoSum / (float)totalSum;
 	leafEpo = leafEpoSum / (float)totalSum;
+
+	std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> time_spanAll = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeBegin);
+	std::cout << "Epo took " << time_spanAll.count() << " seconds." << std::endl;
 }
 
 void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
