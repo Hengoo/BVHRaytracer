@@ -60,7 +60,7 @@ public:
 	virtual bool intersect(Node* node) override
 	{
 		//i really dislike how this turned out but i need to determine what primitive to intersect with what node.
-		Aabb* aabb = dynamic_cast<Aabb*>(node);
+		Aabb* aabb = static_cast<Aabb*>(node);
 		if (aabb)
 		{
 			//aabb sphere intersection

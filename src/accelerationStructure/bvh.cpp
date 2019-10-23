@@ -17,10 +17,13 @@
 #include "../util.h"
 
 #include "../glmInclude.h"
+#include "../glmUtil.h"
 #include "../lodepng/lodepng.h"
 
 #include"../mesh.h"
 #include"../meshBin.h"
+
+
 
 //includes for the timer
 #include <ctime>
@@ -98,6 +101,169 @@ bool Bvh::intersect(Ray& ray)
 	return false;
 }
 
+void Bvh::traverseAnalysisBvh(float& epoNode, float& epoLeaf, Triangle* tri, const float& triSurfaceArea, const uint32_t primId,
+	const glm::vec3& triMin, const glm::vec3& triMax, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
+{
+	std::vector<NodeAnalysis*> queue;
+	queue.reserve(50);
+	queue.push_back(analysisRoot.get());
+
+	std::vector <glm::vec3> points;
+	std::vector<std::pair<int, int>> lines;
+	//should check if its better to not allocate worst case but average?
+	//worst possible case 9 edges in the polygon
+	lines.reserve(9);
+	//since we dont delete points: worst case i observed was 15
+	points.reserve(16);
+
+	float area = 0;
+	while (!queue.empty())
+	{
+		NodeAnalysis* n = queue.back();
+		queue.pop_back();
+		//check if triangle is part of this subtree. if yes -> continue inside
+		if (n->allPrimitiveBeginId <= primId && n->allPrimitiveEndId > primId)
+		{
+			for (auto& c : n->children)
+			{
+				queue.push_back(c.get());
+			}
+		}
+		else
+		{
+			//cheap aabb aabb intersection first
+
+			if (aabbAabbIntersection(triMin, triMax, n->boundMin, n->boundMax))
+			{
+				//no "collision" guaranteed yet...
+				
+				//check if all vertices are inside aabb -> trivial surface area
+				if (aabbPointIntersection(n->boundMin, n->boundMax, triMin)
+					&& aabbPointIntersection(n->boundMin, n->boundMax, triMax))
+				{
+					//should be a rather rare case
+					area = triSurfaceArea;
+				}
+				else
+				{
+					//yeay triangle clipping -> this can be really complex 
+					//approach: take each line of the polygon and clip it against one of the boundaries
+					//after each boundary recover the polygon by going trough the lines and filling the "hole"
+					//since we have convex polygons there can always only be one missing line per boundary intersection
+
+					points.clear();
+					lines.clear();
+					points.insert(points.end(), { v0,v1,v2 });
+					lines.insert(lines.end(), { { 0 ,1 } ,{ 1 ,2 } ,{ 2 ,0 } });
+
+					bool change = false;
+
+					//clipping triangle to polygon that is inside aabb:
+					for (int b = 0; b < 6; b++)
+					{
+						for (int i = 0; i < lines.size(); i++)
+						{
+							glm::vec3 point0 = points[lines[i].first];
+							glm::vec3 point1 = points[lines[i].second];
+							int axis = b % 3;
+							int changedP = -1;
+							glm::vec3 axisPosition;
+							if (b < 3)
+							{
+								axisPosition = n->boundMin;
+							}
+							else
+							{
+								axisPosition = n->boundMax;
+							}
+
+							if (clipLine(point0, point1, changedP, axisPosition, axis, b >= 3))
+							{
+
+								if (changedP == 0)
+								{
+									lines[i].first = points.size();
+
+									points.push_back(point0);
+									change = true;
+								}
+								else if (changedP == 1)
+								{
+									lines[i].second = points.size();
+
+									points.push_back(point1);
+									change = true;
+								}
+								else
+								{
+									//both points inside -> do nothing
+								}
+							}
+							else
+							{
+								//both points outside -> erase
+								lines.erase(lines.begin() + i);
+								i--;
+								change = true;
+							}
+						}
+						if (lines.size() == 1)
+						{
+							//rare case of triangle where 1 edge lies on boundary and both other edges are outside
+							break;
+						}
+						if (change)
+						{
+							//fix the hole in the lines
+							for (int lineId = 0; lineId < lines.size(); lineId++)
+							{
+								if (lines[lineId].second != lines[(lineId + 1) % lines.size()].first)
+								{
+									lines.insert(lines.begin() + lineId + 1, { lines[lineId].second , lines[(lineId + 1) % lines.size()].first });
+									//per cut there can only be one hole
+									break;
+								}
+							}
+						}
+						change = false;
+					}
+					if (lines.size() == 3)
+					{
+						//simple triangle area:
+						area = calcTriangleSurfaceArea(points[lines[0].first], points[lines[1].first], points[lines[2].first]);
+					}
+					else if (lines.size() > 3)
+					{
+						//polygon surface:
+						glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+						area = calcSurfaceAreaPolygon(points, lines, normal);
+					}
+					else
+					{
+						area = 0;
+					}
+				}
+				//only continue when it contributes area
+				if (area >= 0)
+				{
+					if (n->primitiveCount == 0)
+					{
+						epoNode += area;
+					}
+					else
+					{
+						epoLeaf += area;
+					}
+					for (auto& c : n->children)
+					{
+						queue.push_back(c.get());
+					}
+				}
+			}
+		}
+	}
+}
+
 void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 {
 	std::chrono::high_resolution_clock::time_point timeBegin = std::chrono::high_resolution_clock::now();
@@ -106,7 +272,7 @@ void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 	//then add the surface area of each triangle to each node -> need to do something smart about concurrency?
 
 	//its <primitiveId, epoNode of this triangle, epoLeaf of this triangle, triSurface of primitive>
-	std::vector<std::tuple<uint32_t, float, float, float, uint16_t, uint16_t, uint16_t>> workPairs(primitives->size());
+	std::vector<std::tuple<uint32_t, float, float, float>> workPairs(primitives->size());
 
 	for (int i = 0; i < primitives->size(); i++)
 	{
@@ -122,7 +288,7 @@ void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 		{
 			//get bounds:
 			uint32_t primId = std::get<0>(info);
-			auto tri = dynamic_cast<Triangle*>((*primitives)[primId].get());
+			auto tri = static_cast<Triangle*>((*primitives)[primId].get());
 			glm::vec3 triMin, triMax;
 			tri->getBounds(triMin, triMax);
 
@@ -139,42 +305,34 @@ void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 			{
 				//traverse analysisBvh
 				float nodeEpoPerTri = 0, leafEpoPerTri = 0;
-				uint16_t count1 = 0, count2 = 0, count3 = 0;
-
+				/*
 				std::vector <glm::vec3> points;
 				std::vector<std::pair<int, int>> lines;
 				//should check if its better to not allocate worst case but average?
 				//worst possible case 9 edges in the polygon
 				lines.reserve(9);
 				//since we dont delete points: worst case i observed was 15
-				points.reserve(16);
+				points.reserve(16);*/
 
-				analysisRoot->traverseAnalysisBvh(nodeEpoPerTri, leafEpoPerTri, tri, triSurfaceArea,
-					primId, triMin, triMax, v0, v1, v2, points, lines, count1, count2, count3);
+				traverseAnalysisBvh(nodeEpoPerTri, leafEpoPerTri, tri, triSurfaceArea,
+					primId, triMin, triMax, v0, v1, v2);
+				//analysisRoot->traverseAnalysisBvhRekursive(nodeEpoPerTri, leafEpoPerTri, tri, triSurfaceArea,
+				//	primId, triMin, triMax, v0, v1, v2, points, lines, count1, count2, count3);
 				std::get<1>(info) = nodeEpoPerTri;
 				std::get<2>(info) = leafEpoPerTri;
 				std::get<3>(info) = triSurfaceArea;
-				std::get<4>(info) = count1;
-				std::get<5>(info) = count2;
-				std::get<6>(info) = count3;
 			}
 		});
 	float nodeEpoSum = 0;
 	float leafEpoSum = 0;
 	float totalSum = 0;
-	uint64_t sum1 = 0, sum2 = 0, sum3 = 0;
 	for (auto& i : workPairs)
 	{
 		nodeEpoSum += std::get<1>(i);
 		leafEpoSum += std::get<2>(i);
 		totalSum += std::get<3>(i);
-		sum1 += std::get<4>(i);
-		sum2 += std::get<5>(i);
-		sum3 += std::get<6>(i);
+
 	}
-	std::cout << "sum1 " << sum1 << std::endl;
-	std::cout << "sum2 " << sum2 << std::endl;
-	std::cout << "sum3 " << sum3 << std::endl;
 	nodeEpo = nodeEpoSum / (float)totalSum;
 	leafEpo = leafEpoSum / (float)totalSum;
 
@@ -277,7 +435,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		{
 
 			auto p = (*i->node->primitiveBegin).get();
-			auto tri = dynamic_cast<Triangle*>(p);
+			auto tri = static_cast<Triangle*>(p);
 			uint32_t a, b, c;
 			tri->getVertexIds(a, b, c);
 			if (std::distance(primitives->begin(), i->node->primitiveBegin) < 100)

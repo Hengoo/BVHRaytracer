@@ -222,7 +222,7 @@ bool Triangle::intersect(Ray& ray)
 bool Triangle::intersect(Node* node)
 {
 	//i really dislike how this turned out but i need to determine what primitive to intersect with what node.
-	Aabb* aabb = dynamic_cast<Aabb*>(node);
+	Aabb* aabb = static_cast<Aabb*>(node);
 	if (aabb)
 	{
 		//aabb triangle intersection
