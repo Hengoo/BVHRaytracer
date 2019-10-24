@@ -3,15 +3,15 @@
 #include "glmInclude.h"
 
 //returns the index of the largest dimension http://www.pbr-book.org/3ed-2018/Geometry_and_Transformations/Vectors.html#Vector3::MaxDimension
-static inline int maxDimension(glm::vec3& v)
+static inline int maxDimension(const glm::vec3& v)
 {
 	return (v.x > v.y) ? ((v.x > v.z) ? 0 : 2) :
 		((v.y > v.z) ? 1 : 2);
 }
 
-static inline int maxAbsDimension(glm::vec3 v)
+static inline int maxAbsDimension(const glm::vec3& vector)
 {
-	v = glm::abs(v);
+	auto v = glm::abs(vector);
 	return (v.x > v.y) ? ((v.x > v.z) ? 0 : 2) :
 		((v.y > v.z) ? 1 : 2);
 }

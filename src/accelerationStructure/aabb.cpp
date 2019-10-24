@@ -68,7 +68,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSu
 
 //compute best split with buckets
 primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget,
-	int bucketCount, glm::vec3 centerMin, glm::vec3 centerMax, uint16_t sortAxis)
+	int bucketCount, glm::vec3& centerMin, glm::vec3& centerMax, uint16_t sortAxis)
 {
 	//method should be usable for all nodes?
 
@@ -145,7 +145,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 	return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
 
 }
-void Aabb::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafTarget, int bucketCount, bool sortEachSplit)
+void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount, const bool sortEachSplit)
 {
 	allPrimitiveBegin = primitiveBegin;
 	allPrimitiveEnd = primitiveEnd;

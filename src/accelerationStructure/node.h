@@ -32,10 +32,10 @@ public:
 	virtual bool intersectNode(Ray& ray, float& distance) = 0;
 
 	//might want to add tree depth here?
-	virtual void recursiveOctree(const unsigned int leafSize);
+	virtual void recursiveOctree(const unsigned leafSize);
 
 	//unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount
-	virtual  void recursiveBvh(const unsigned int branchingFactor, const unsigned int leafSize, int bucketCount, bool sortEachSplit);
+	virtual  void recursiveBvh(const unsigned branchingFactor, const unsigned leafSize, int bucketCount, bool sortEachSplit);
 
 	virtual size_t getChildCount();
 	virtual size_t getPrimCount();
@@ -56,7 +56,7 @@ public:
 	//using sah approach from pbrt http://www.pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies.html
 	//TODO: what is this cost factor sometimes used? either + const or * constant or both
 	//		since we search for the min value it doesnt change anything????
-	inline float sah(float invArea, int leafSize)
+	inline float sah(const float invArea, const int leafSize)
 	{
 		//inv area is 1/area of root node
 

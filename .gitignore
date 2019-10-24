@@ -73,6 +73,7 @@ LatexPlots/*.dat
 LatexPlots/*.script
 LatexPlots/*.table
 LatexPlots/*.cmd
+LatexPlots/Data/Old
 
 #debug and compied folder:
 Debug/
@@ -81,6 +82,8 @@ Release/
 #models and textures:
 textures/
 models/
-#ignore all analysis files but keep analysis pythong script
+
+#ignore all analysis files but keep analysis python script
 Analysis/*
 !Analysis/DataManager.py
+!Analysis/DataManagerRework.py

@@ -338,26 +338,26 @@ public:
 		if (!mute)
 		{
 			std::cout << "intersections counts are normalized per Ray" << std::endl << std::endl;
-			std::cout << "node intersections: " << nodeIntersectionCount * factor << std::endl;
-			std::cout << "aabb intersections: " << aabbIntersections * factor << std::endl;
-			std::cout << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
+			std::cout << "primary intersections node: " << nodeIntersectionCount * factor << std::endl;
+			std::cout << "primary aabb intersections: " << aabbIntersections * factor << std::endl;
+			std::cout << "primary aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
 			//wastefactor = "verschwendungsgrad".
 			// basically number of nodes visited / number of aabb tested
 			//the minus width*height is basically -1 for each ray -> needed to get right values
 			float wasteFactor = (leafIntersectionCount + nodeIntersectionCount - width * height) / (float)(nodeIntersectionCount * bvh.branchingFactor);
-			std::cout << "waste factor: " << 1 - wasteFactor << std::endl;
-			std::cout << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
-			std::cout << "primitive intersections: " << primitiveIntersections * factor << std::endl;
-			std::cout << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
+			std::cout << "primary waste factor: " << 1 - wasteFactor << std::endl;
+			std::cout << "primary intersections leaf: " << leafIntersectionCount * factor << std::endl;
+			std::cout << "primary primitive intersections: " << primitiveIntersections * factor << std::endl;
+			std::cout << "primary primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
 			std::cout << std::endl;
-			std::cout << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
-			std::cout << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
-			std::cout << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
+			std::cout << "secondary intersections node: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
+			std::cout << "secondary aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
+			std::cout << "secondary aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
 			wasteFactor = (shadowLeafIntersectionCount + shadowNodeIntersectionCount - shadowRayCount) / (float)(shadowNodeIntersectionCount * bvh.branchingFactor);
-			std::cout << "shadow waste factor: " << 1 - wasteFactor << std::endl;
-			std::cout << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
-			std::cout << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
-			std::cout << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
+			std::cout << "secondary waste factor: " << 1 - wasteFactor << std::endl;
+			std::cout << "secondary intersections leaf: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
+			std::cout << "secondary primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
+			std::cout << "secondary primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
 		}
 		std::ofstream myfile(path + "/" + name + problem + "_Info.txt");
 		if (myfile.is_open())
@@ -365,23 +365,23 @@ public:
 			myfile << "scenario " << name << " with branching factor of " << std::to_string(bvh.branchingFactor) << " and leafsize of " << bvh.leafSize << std::endl;
 			myfile << "intersections counts are normalized per Ray" << std::endl << std::endl;
 
-			myfile << "node intersections: " << nodeIntersectionCount * factor << std::endl;
-			myfile << "aabb intersections: " << aabbIntersections * factor << std::endl;
-			myfile << "aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
+			myfile << "primary intersections node: " << nodeIntersectionCount * factor << std::endl;
+			myfile << "primary aabb intersections: " << aabbIntersections * factor << std::endl;
+			myfile << "primary aabb success ration: " << successfulAabbIntersections / (float)aabbIntersections << std::endl;
 			float wasteFactor = (leafIntersectionCount + nodeIntersectionCount - width * height) / (float)(nodeIntersectionCount * bvh.branchingFactor);
-			myfile << "waste factor: " << 1 - wasteFactor << std::endl;
-			myfile << "leaf intersections: " << leafIntersectionCount * factor << std::endl;
-			myfile << "primitive intersections: " << primitiveIntersections * factor << std::endl;
-			myfile << "primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
+			myfile << "primary waste factor: " << 1 - wasteFactor << std::endl;
+			myfile << "primary intersections leaf: " << leafIntersectionCount * factor << std::endl;
+			myfile << "primary primitive intersections: " << primitiveIntersections * factor << std::endl;
+			myfile << "primary primitive success ratio: " << successfulPrimitiveIntersections / (float)primitiveIntersections << std::endl;
 			myfile << std::endl;
-			myfile << "shadow node intersections: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
-			myfile << "shadow aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
-			myfile << "shadow aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
+			myfile << "secondary intersections node: " << shadowNodeIntersectionCount * shadowFactor << std::endl;
+			myfile << "secondary aabb intersections: " << shadowAabbIntersections * shadowFactor << std::endl;
+			myfile << "secondary aabb success ration: " << shadowSuccessfulAabbIntersections / (float)shadowAabbIntersections << std::endl;
 			wasteFactor = (shadowLeafIntersectionCount + shadowNodeIntersectionCount - shadowRayCount) / (float)(shadowNodeIntersectionCount * bvh.branchingFactor);
-			myfile << "shadow waste factor: " << 1 - wasteFactor << std::endl;
-			myfile << "shadow leaf intersections: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
-			myfile << "shadow primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
-			myfile << "shadow primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
+			myfile << "secondary waste factor: " << 1 - wasteFactor << std::endl;
+			myfile << "secondary intersections leaf: " << shadowLeafIntersectionCount * shadowFactor << std::endl;
+			myfile << "secondary primitive intersections: " << shadowPrimitiveIntersections * shadowFactor << std::endl;
+			myfile << "secondary primitive success ratio: " << shadowSuccessfulPrimitiveIntersections / (float)shadowPrimitiveIntersections << std::endl;
 
 			//this number is smaller than the nodecount + leafcount because the depth 0 intersections are left out
 			//In addition: with shadow rays those also dont fit because shadowrays can stop when they find a tirangle
@@ -408,7 +408,7 @@ public:
 				sum += primitiveFullness[i] * i;
 			}
 			sum /= std::accumulate(primitiveFullness.begin(), primitiveFullness.end(), 0);
-			myfile << "averag leaf fullness: " << std::to_string(sum) << std::endl;
+			myfile << "average leaf fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 0; i < primitiveFullness.size(); i++)
 			{
 				//myfile << i << " : " << primitiveFullness[i] * bothFactor << std::endl;
@@ -416,25 +416,25 @@ public:
 			}
 
 			myfile << std::endl;
-			myfile << "primaryRay node intersections at depth x :" << std::endl;
+			myfile << "primary node intersections at depth x :" << std::endl;
 			for (size_t i = 0; i < nodeIntersectionPerDepthCount.size(); i++)
 			{
 				myfile << i << " : " << nodeIntersectionPerDepthCount[i] * factor << std::endl;
 			}
 			myfile << std::endl;
-			myfile << "primaryRay leaf intersections at depth x :" << std::endl;
+			myfile << "primary leaf intersections at depth x :" << std::endl;
 			for (size_t i = 0; i < leafIntersectionPerDepthCount.size(); i++)
 			{
 				myfile << i << " : " << leafIntersectionPerDepthCount[i] * factor << std::endl;
 			}
 			myfile << std::endl;
-			myfile << "shadowRay node intersections at depth x :" << std::endl;
+			myfile << "secondary node intersections at depth x :" << std::endl;
 			for (size_t i = 0; i < shadowNodeIntersectionPerDepthCount.size(); i++)
 			{
 				myfile << i << " : " << shadowNodeIntersectionPerDepthCount[i] * shadowFactor << std::endl;
 			}
 			myfile << std::endl;
-			myfile << "shadowRay leaf intersections at depth x :" << std::endl;
+			myfile << "secondary leaf intersections at depth x :" << std::endl;
 			for (size_t i = 0; i < shadowLeafIntersectionPerDepthCount.size(); i++)
 			{
 				myfile << i << " : " << shadowLeafIntersectionPerDepthCount[i] * shadowFactor << std::endl;
@@ -454,7 +454,7 @@ public:
 		if (saveDepthDebugImage)
 		{
 			myfile << std::endl;
-			myfile << " max node intersections at depth x :" << std::endl;
+			myfile << "max node intersections at depth x :" << std::endl;
 			//save an image with all the aabb intersections for every depth
 			for (size_t d = 0; d < nodeIntersectionPerDepthCount.size(); d++)
 			{

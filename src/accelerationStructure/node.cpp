@@ -19,7 +19,7 @@ void Node::addNode(std::shared_ptr<Node> n)
 //	primitives.push_back(p);
 //}
 
-void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int leafSize, int bucketCount, bool sortEachSplit)
+void Node::recursiveBvh(const unsigned branchingFactor, const unsigned leafSize,const int bucketCount,const bool sortEachSplit)
 {
 	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
 		[&](auto& c)
@@ -28,7 +28,7 @@ void Node::recursiveBvh(const unsigned int branchingFactor, const unsigned int l
 		});
 }
 
-void Node::recursiveOctree(const unsigned int leafSize)
+void Node::recursiveOctree(const unsigned leafSize)
 {
 	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
 		[&](auto& c)
