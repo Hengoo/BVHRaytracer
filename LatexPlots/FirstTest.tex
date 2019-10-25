@@ -95,7 +95,7 @@
 		ylabel = \branchf,
 		colorbar style={title=\leafi}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{leafIntersections}]
+		\addplot[matrix plot*,point meta=\thisrow{primaryLeafIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -109,7 +109,7 @@
 		%ylabel = branching factpr,
 		colorbar style={title=\nodei}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{nodeIntersections}]
+		\addplot[matrix plot*,point meta=\thisrow{primaryNodeIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -123,7 +123,7 @@
 		ylabel = \branchf,
 		colorbar style={title=\sleafi}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{shadowLeafIntersections}]
+		\addplot[matrix plot*,point meta=\thisrow{secondaryLeafIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -137,7 +137,7 @@
 		%ylabel = branching factpr,
 		colorbar style={title=\snodei}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{shadowNodeIntersections}]
+		\addplot[matrix plot*,point meta=\thisrow{secondaryNodeIntersections}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -151,7 +151,7 @@
 		ylabel = \branchf,
 		colorbar style={title=\cost}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{cost}]
+		\addplot[matrix plot*,point meta=\thisrow{PrimaryCost}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -166,7 +166,7 @@
 		%		ylabel = branching factpr,
 		colorbar style={title=\scost}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{shadowCost}]
+		\addplot[matrix plot*,point meta=\thisrow{SecondaryCost}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -180,7 +180,7 @@
 		ylabel = \branchf,
 		colorbar style={title=\sah}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{sah}]
+		\addplot[matrix plot*,point meta=\thisrow{Sah}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -194,7 +194,7 @@
 		%		ylabel = branching factpr,
 		colorbar style={title=\epo}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{epo}]
+		\addplot[matrix plot*,point meta=\thisrow{Epo}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{#1};
 		\end{axis}
 		\end{tikzpicture}
@@ -229,11 +229,13 @@
 	}
 }
 
-Cost factor for nodes: 1, leafs: 4
+Cost factor for nodes: 1/4, leafs: 1
 
 This is used for Cost Function, Sah and Epo
 
 Currently all scenes are rendered with Sorted and with efficient rendering (saving distance of aabb and not intersecting when the ray already found a closer triangle)
+
+\iffalse
 
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth} 
@@ -244,7 +246,7 @@ Currently all scenes are rendered with Sorted and with efficient rendering (savi
 		ylabel = \branchf,
 		colorbar style={title=\waste  shift happens}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{wasteFactor}]
+		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{Data/shiftHappensTableSorted.txt};
 		\end{axis}
 		\end{tikzpicture}
@@ -258,7 +260,7 @@ Currently all scenes are rendered with Sorted and with efficient rendering (savi
 		%ylabel = branching factpr,
 		colorbar style={title=\waste  sponza}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{wasteFactor}]
+		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{Data/sponzaTableSorted.txt};
 		\end{axis}
 		\end{tikzpicture}
@@ -272,7 +274,7 @@ Currently all scenes are rendered with Sorted and with efficient rendering (savi
 		ylabel = \branchf,
 		colorbar style={title=\waste  rungholt}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{wasteFactor}]
+		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{Data/rungholtTableSorted.txt};
 		\end{axis}
 		\end{tikzpicture}
@@ -286,7 +288,7 @@ Currently all scenes are rendered with Sorted and with efficient rendering (savi
 		%ylabel = branching factpr,
 		colorbar style={title=\waste  erato}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{wasteFactor}]
+		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{Data/eratoTableSorted.txt};
 		\end{axis}
 		\end{tikzpicture}
@@ -300,7 +302,7 @@ Currently all scenes are rendered with Sorted and with efficient rendering (savi
 		ylabel = \branchf,
 		colorbar style={title=\waste  average}
 		]
-		\addplot[matrix plot*,point meta=\thisrow{wasteFactor}]
+		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
 		table[x = leafSize, y = branchFactor, col sep=comma]{Data/AverageTableSorted.txt};
 		\end{axis}
 		\end{tikzpicture}
@@ -309,6 +311,8 @@ Currently all scenes are rendered with Sorted and with efficient rendering (savi
 
 	\caption{Waste Factor of all scenes. There seems to be no real difference}
 \end{figure}
+
+\fi
 
 %\plot{Data/shiftHappensTable.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles}
 %\newpage
@@ -335,52 +339,5 @@ Currently all scenes are rendered with Sorted and with efficient rendering (savi
 \plot{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
 \newpage
 \
-
-\iffalse
-First tests with 3D Plots, but i prefer the 2D Color representation since the 3D surface can be really hard to interpret.
-\begin{tikzpicture}
-\begin{axis}
-[grid=both,
-width = \textwidth,
-height= 0.7\textwidth,
-%	legend entries = {leaf Intersections},
-%	enlargelimits=false , font = \tiny,
-%	legend style={draw=none},
-%	legend image post style={scale=0.5},
-ylabel = leaf size,
-xlabel = branching factor,
-zlabel = leaf Intersections
-%	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
-]
-%faceted interp, scatter, point meta=\thisrow{childFullness}
-%\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[y = branchFactor, x =leafSize, z =  leafIntersections, col sep=comma]{Data/sponzaTable.txt};
-
-%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
-
-\addplot3[contour filled={number=8, labels = {false}}, thick] table[y = leafSize, x = branchFactor, z = leafIntersections, col sep=comma] {Data/sponzaTable.txt};
-\end{axis}
-\end{tikzpicture}
-
-\begin{tikzpicture}
-\begin{axis}
-[grid=both,
-width = \textwidth,
-height= 0.7\textwidth,
-%	legend entries = {leaf Intersections},
-%	enlargelimits=false , font = \tiny,
-%	legend style={draw=none},
-%	legend image post style={scale=0.5},
-ylabel = leaf size,
-xlabel = branching factor,
-zlabel = node Intersections
-colorbar style={Leaf Fullness}
-%	y label style={at={(axis description cs:0.14,.5)},anchor=south},]
-]
-%faceted interp, scatter, point meta=\thisrow{childFullness}
-\addplot3[surf, point meta=\thisrow{leafFullness}, shader=interp] table[x = branchFactor, y =leafSize, z =  nodeIntersections, col sep=comma]{Data/sponzaTable.txt};
-%		\addplot3[surf, point meta={w} ] file {Data/TestData4D.txt};
-\end{axis}
-\end{tikzpicture}
-\fi
 
 \end{document}
