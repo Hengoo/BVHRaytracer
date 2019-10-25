@@ -47,6 +47,8 @@ class RayTracer
 	//true -> take new axis and sort for each split. False -> only do it once in the beginning
 	bool sortEachSplit;
 
+
+
 	//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 	unsigned renderType;
 	std::vector<unsigned> scenarios;
@@ -56,7 +58,6 @@ class RayTracer
 	unsigned compactNodeOrder;
 
 	unsigned ambientSampleCount;
-	float ambientDistance = 222222.f;
 
 	bool castShadows;
 
@@ -369,6 +370,9 @@ public:
 		//bvh of loaded model:
 		Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit);
 		bvh.recursiveOctree(bucketCount);
+
+		float ambientDistance = cbrt(bvh.getRoot()->getVolume()) / 10.f;
+		std::cout << ambientDistance << std::endl;
 
 		//bvh.recursiveOctree(2, leafCount);
 
