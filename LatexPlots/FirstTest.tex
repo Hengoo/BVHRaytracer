@@ -46,6 +46,10 @@
 \usepackage{pgfplots}
 \usepgfplotslibrary{colormaps}
 
+%for external pgfplots: https://tex.stackexchange.com/questions/7953/how-to-expand-texs-main-memory-size-pgfplots-memory-overload
+\usepgfplotslibrary{external} 
+\tikzexternalize
+
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -83,8 +87,53 @@
 \newcommand{\epo}{Epo}
 \newcommand{\waste}{Waste Factor}
 
+%plots a value for given scene: titleName, rowName , fileName
+\newcommand{\plot} [3]
+{
+	\begin{tikzpicture}
+	\begin{axis}
+	[
+	xlabel = \leafs,
+	ylabel = \branchf,
+	colorbar style={#1}
+	]
+	\addplot[matrix plot*,point meta=\thisrow{#2}]
+	table[x = leafSize, y = branchFactor, col sep=comma]{#3};
+	\end{axis}
+	\end{tikzpicture}
+}
 
-\newcommand{\plot} [2]
+%plots a value for all scenenes titleName, rowName
+\newcommand{\plotValue} [2]
+{
+	\begin{figure}[!htb]
+		\begin{minipage}[t]{0.4\textwidth} 
+			\plot{title= #1  shift happens}{#2}{Data/shiftHappensTableSorted.txt}
+		\end{minipage}\hfil \hfil
+		\begin{minipage}[t]{0.4\textwidth}
+			%TODO move label to the right side?
+			\plot{title= #1  sponza}{#2}{Data/sponzaTableSorted.txt}
+		\end{minipage}
+		
+		\begin{minipage}[t]{0.4\textwidth} 
+			\plot{title=#1  rungholt}{#2}{Data/rungholtTableSorted.txt}
+		\end{minipage}\hfil \hfil
+		\begin{minipage}[t]{0.4\textwidth}
+			%TODO move label to the right side?
+			\plot{title=#1  erato}{#2}{Data/eratoTableSorted.txt}
+		\end{minipage}
+	
+		\begin{minipage}[t]{0.4\textwidth} 
+			\plot{title=#1  average}{#2}{Data/AverageTableSorted.txt}
+		\end{minipage}\hfil \hfil
+		
+		
+		\caption{#1 of all scenes.}
+	\end{figure}
+}
+
+%plots a selection of intresting values for given scene
+\newcommand{\plotAll} [2]
 {
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth} 
@@ -212,16 +261,14 @@
 \begin{document}
 
 \pgfplotsset{
-	%colormap={X}{ gray(0cm)=(1); gray(1cm)=(0);},
 	colormap/viridis,
 	every axis/.append style={
 		scale only axis,
 		width=0.8\textwidth,
 %		height = 5.9cm
 		mark size=4pt,
-		%colormap = {blue}{rgb = (1,0,0), rgb = (0,0,1)},
+		%point meta max = 10,
 		colorbar,
-		%colormap/viridis,
 		colormap={reverse viridis}{
 			indices of colormap={
 				\pgfplotscolormaplastindexof{viridis},...,0 of viridis}
@@ -229,115 +276,51 @@
 	}
 }
 
-Cost factor for nodes: 1/4, leafs: 1
+Cost factor for nodes: 1, leafs: 1
 
 This is used for Cost Function, Sah and Epo
 
 Currently all scenes are rendered with Sorted and with efficient rendering (saving distance of aabb and not intersecting when the ray already found a closer triangle)
 
 \iffalse
-
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth} 
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\waste  shift happens}
-		]
-		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
-		table[x = leafSize, y = branchFactor, col sep=comma]{Data/shiftHappensTableSorted.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%ylabel = branching factpr,
-		colorbar style={title=\waste  sponza}
-		]
-		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
-		table[x = leafSize, y = branchFactor, col sep=comma]{Data/sponzaTableSorted.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	
-	\begin{minipage}[t]{0.4\textwidth} 
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\waste  rungholt}
-		]
-		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
-		table[x = leafSize, y = branchFactor, col sep=comma]{Data/rungholtTableSorted.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		%ylabel = branching factpr,
-		colorbar style={title=\waste  erato}
-		]
-		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
-		table[x = leafSize, y = branchFactor, col sep=comma]{Data/eratoTableSorted.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-
-	\begin{minipage}[t]{0.4\textwidth} 
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		xlabel = \leafs,
-		ylabel = \branchf,
-		colorbar style={title=\waste  average}
-		]
-		\addplot[matrix plot*,point meta=\thisrow{primaryWasteFactor}]
-		table[x = leafSize, y = branchFactor, col sep=comma]{Data/AverageTableSorted.txt};
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}\hfil \hfil
-
-
-	\caption{Waste Factor of all scenes. There seems to be no real difference}
-\end{figure}
-
+\plotValue{Tree Depth}{primaryWasteFactor}
+\newpage
+\plotValue{Tree Depth}{averageLeafDepth}
+\newpage
+\plotValue{fake aabb Tests}{primaryIntersectionMultBranch}
+\newpage
+\plotValue{fake prim Tests}{primaryIntersectionsMultLeaf}
+\newpage
 \fi
 
-%\plot{Data/shiftHappensTable.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles}
-%\newpage
-\plot{Data/shiftHappensTableSorted.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles. Sorted}
+\plotAll{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
 \newpage
 
-%\plot{Data/sponzaTable.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles}
+\iffalse
+%\plotAll{Data/shiftHappensTable.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles}
 %\newpage
-\plot{Data/sponzaTableSorted.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles. Sorted}
+\plotAll{Data/shiftHappensTableSorted.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles. Sorted}
 \newpage
 
-%\plot{Data/rungholtTable.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles}
+%\plotAll{Data/sponzaTable.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles}
 %\newpage
-\plot{Data/rungholtTableSorted.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles. Sorted}
+\plotAll{Data/sponzaTableSorted.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles. Sorted}
 \newpage
 
-%\plot{Data/eratoTable.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles}
+%\plotAll{Data/rungholtTable.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles}
 %\newpage
-\plot{Data/eratoTableSorted.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles. Sorted}
+\plotAll{Data/rungholtTableSorted.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles. Sorted}
 \newpage
 
-%\plot{Data/AverageTable.txt}{Average of all normalized results}
+%\plotAll{Data/eratoTable.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles}
 %\newpage
-\plot{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
+\plotAll{Data/eratoTableSorted.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles. Sorted}
 \newpage
-\
+
+%\plotAll{Data/AverageTable.txt}{Average of all normalized results}
+%\newpage
+\plotAll{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
+\newpage
+\fi
 
 \end{document}
