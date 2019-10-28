@@ -10,7 +10,7 @@ folderNames = ["shiftHappensSaveSorted", "sponzaSaveSorted", "rungholtSaveSorted
 
 #if a singe id is chosen [2] it creates the table for this one scene
 #if multiple ids [0,1,2,3] are given then it creates the average table
-idsToSum = [0,1,2,3]
+idsToSum = [3]
 
 
 #maximum branchingfactor and max leafsite
@@ -18,8 +18,8 @@ maxBranchingFactor = 16
 maxLeafSize = 16
 
 #temprary cost function. needs replacement
-nodeCostFactor = 1
-leafCostFactor = 4
+nodeCostFactor = 1/4
+leafCostFactor = 1
 
 if (len(idsToSum) == 1):
 	fResult = open(names[idsToSum[0]] + "TableSorted.txt", "w+")
