@@ -18,9 +18,9 @@ class everything:
 		self.singeIdOverride = -1
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 3
+		self.minBranchingFactor = 2
 		self.maxBranchingFactor = 16
-		self.minLeafSize = 2
+		self.minLeafSize = 1
 		self.maxLeafSize = 16
 
 		#temprary cost function. needs replacement
@@ -136,10 +136,11 @@ class everything:
 			firstLine += ", " + name
 
 		for i in range(len(self.names)):
-			fResult = open(self.names[i] + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
-			# write the first line in the table (the one with the variable names)
-
+			fResult = open(self.names[i] + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
+			fResult2 = open(self.names[i] + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				# write the first line in the table (the one with the variable names)
 			fResult.write(firstLine + "\n")
+			fResult2.write(firstLine + "\n")
 
 			for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
 				#one empty line after each branching factor
@@ -178,11 +179,14 @@ class everything:
 					#write file:
 					res = self.getLine(i, branch, leaf)
 					fResult.write(res)
+					fResult2.write(res)
 
 		#now loop over b and l again and write average file:
-		fResult = open("AverageTable" + self.outputPrefix + ".txt", "w+")
+		fResult = open("AverageTableWithSpace" + self.outputPrefix + ".txt", "w+")
+		fResult2 = open("AverageTable" + self.outputPrefix + ".txt", "w+")
 		# write the first line in the table (the one with the variable names)
 		fResult.write(firstLine + "\n")
+		fResult2.write(firstLine + "\n")
 		for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
 			#one empty line after each branching factor
 			fResult.write("\n")
@@ -216,6 +220,7 @@ class everything:
 				#write file:
 				res = self.getAverageLine(branch, leaf)
 				fResult.write(res)
+				fResult2.write(res)
 
 		
 	#returns the line that is written in the averagetable.txt
