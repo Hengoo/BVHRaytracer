@@ -1,0 +1,41 @@
+\section{RandomPlots}
+
+\pgfplotsset{
+	every axis/.append style={colorbar}
+}
+
+%overview over sah and epo.
+\iftrue
+Following 6 pages are the Sah and Epo for every scene.
+
+A problem with the Surface are heuristic is that the leaf portion  of the heuristic is to large in comparison to the node portion. As an example, for N16L16 (rungholt) the leaf Sah is 177 and the node Sah is 15, but we have 2.3 leaf intersections with 10.4 node intersections. (it should be noted that the nodes and leafs both have a cost factor of 1)
+
+The end point overlap heavily depends on the specific geometry of the scene. Scenes like rungholt and eratio have a very low epo in comparison to scenes like shift happens and sponza. The reason for this is that the rungholt and eratio consist out of evenly sized triangles, while the others use large triangles when there is no change in the surface geometry. Example for this are the walls and the floor of sponza.
+
+Spikes in the leaf epo often correlate with higher leaf intersections caused by unfortunate splits of the scene, but its not guaranteed. The node part of the epo looks very similar
+
+\newpage
+
+\plotValue{Node Sah}{nodeSah}
+\plotValue{Leaf Sah}{leafSah}
+\plotValue{Sah}{Sah}
+%node basically doesnt care about scenes
+\plotValue{Node Epo}{nodeEpo}
+%leaf Epo heavily depends on scene
+\plotValue{Leaf Epo}{leafEpo}
+\plotValue{Epo}{Epo}
+\fi
+
+\iftrue
+Following 2 pages: Leaf volume and leaf surface area of the scenes. Values dont seem to correlate much with any results. The only thing you can see in the surface area that most scenes are better dividable by even numbers.
+\newpage
+
+\plotValue{Leaf Volume}{leafVolume}
+\plotValue{Leaf surface area}{leafSurfaceArea}
+\fi
+
+\iftrue
+\plotValue{waste factor}{primaryWasteFactor}
+Average tree depth explains slight arc in erato plots.
+\plotValue{Average leaf depth}{averageLeafDepth}
+\fi

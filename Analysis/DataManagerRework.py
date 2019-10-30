@@ -35,7 +35,13 @@ class everything:
 			"secondary intersections leaf:",
 			"average leaf depth:",
 			"primary aabb intersections:",
-			"primary primitive intersections:"
+			"primary primitive intersections:",
+			"sah of node:",
+			"sah of leaf:",
+			"end point overlap of node:",
+			"end point overlap of leaf:",
+			"volume of leafs:",
+			"surface area of leafs:",
 			]
 		self.variableOutputNames = [
 			"primaryNodeIntersections",
@@ -45,6 +51,12 @@ class everything:
 			"averageLeafDepth",
 			"primaryAabb",
 			"primaryPrimitive",
+			"nodeSah",
+			"leafSah",
+			"nodeEpo",
+			"leafEpo",
+			"leafVolume",
+			"leafSurfaceArea",
 			]
 
 		#cost metrics that are split into node and leaf version. -> leaf * leaffactor and node * nodefactor to get total thing

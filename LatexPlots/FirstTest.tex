@@ -165,6 +165,7 @@
 		
 		\caption{#1 of all scenes.}
 	\end{figure}
+	\newpage
 }
 
 %plots a selection of intresting values for given scene
@@ -285,6 +286,7 @@
 	\end{minipage}
 	\caption{#2}
 \end{figure}
+\newpage
 }
 
 %fcommands to manage plots.
@@ -292,300 +294,6 @@
 \newcommand{\labelText}{xxx}
 
 \titleformat{\paragraph}[hang]{\normalfont\bfseries}{\theparagraph}{.5em}{}
-
-\begin{document}
-
-\pgfplotsset{
-	colormap/viridis,
-	every axis/.append style={
-		scale only axis,
-		width=0.8\textwidth,
-%		height = 5.9cm
-		mark size=4pt,
-		%point meta max = 10,
-		colorbar,
-		colormap={reverse viridis}{
-			indices of colormap={
-				\pgfplotscolormaplastindexof{viridis},...,0 of viridis}
-		}
-	}
-}
-
-Cost factor for nodes: 1, leafs: 1
-
-This is used for Cost Function, Sah and Epo
-
-Currently all scenes are rendered with Sorted and with efficient rendering (saving distance of aabb and not intersecting when the ray already found a closer triangle)
-
-General knowledge from previous plots not mentioned here: The number of leaf intersections is very low in comparison to the number of Node intersections. This is good because the Leaf intersections behave very randomly depending on scene and Leaf Size, and dont change with the Branching factor. Therefore we try to pick a good Branching factor to minimize the Node intersections and dont have to worry about the Leaf intersections much.
-
-Nomenclature:
-
-Nx = Node size of x (also called branching factor)
-
-Lx = Leaf size of x
-
-\newpage
-
-\iffalse
-\plotValue{Tree Depth}{primaryWasteFactor}
-\newpage
-\plotValue{Tree Depth}{averageLeafDepth}
-\newpage
-\plotValue{loaded Node Memory}{primaryIntersectionMultBranch}
-\newpage
-\plotValue{loaded Leaf Memory}{primaryIntersectionsMultLeaf}
-\newpage
-\fi
-
-
-%block that compares some values of the average tables:
-\iftrue
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth} 
-	\plot{Node intersections}{primaryNodeIntersections}{Data/AverageTableWithSpaceSorted.txt}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-	\plotr{Node memory loaded}{primaryIntersectionMultBranch}{Data/AverageTableWithSpaceSorted.txt}
-	\end{minipage}
-	
-	\begin{minipage}[t]{0.4\textwidth} 
-	\plot{Leaf intersections}{primaryLeafIntersections}{Data/AverageTableWithSpaceSorted.txt}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-	\plotr{Leaf memory loaded}{primaryIntersectionsMultLeaf}{Data/AverageTableWithSpaceSorted.txt}
-	\end{minipage}
-	
-	\caption{Overview of important values on the normalized average of all scenes.}
-\end{figure}
-
-%plots a value for given scene: titleName, rowName , fileName
-\newpage
-\fi
-
-%\plotAll{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
-%\newpage
-
-\pgfplotsset{
-	every axis/.append style={
-		scale only axis,
-%		width=0.8\textwidth,
-		colorbar = false,
-	}
-}
-
-
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={0}{0},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = loaded Node Memory,
-		cycle list name=exotic,
-		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={3: 3}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\legend{N = 2, N = 3, N = 4}
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-	%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={0}{0},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = \nodei,
-		cycle list name=exotic,
-		legend style={at={(0.99,1.1)}, anchor = north east},
-		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={3: 3}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\legend{N = 2, N = 3, N = 4}
-		\end{axis}
-	\end{tikzpicture}
-	\end{minipage}
-
-	\caption{Comparison of N2, N3 and N4 with the normalized average result. This shows that N=3 is significantly better than N2. It only loads minimally more Node Memory but has about 2/3 of the node Intersections of N2.}
-\end{figure}
-
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={90}{00},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = loaded Node Memory,
-		legend style={at={(0.01,0.99)}, anchor = north west},
-		cycle list name=exotic,
-		ytick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		yticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict x to domain={1:1}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict x to domain={2:2}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict x to domain={3:3}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\legend{L1,L2,L3,L4}
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={90}{0},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = \nodei,
-		cycle list name=exotic,
-		ytick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		yticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict x to domain={1:1}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict x to domain={2:2}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict x to domain={3:3}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\legend{L1,L2,L3,L4}
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	\caption{Comparison of L1, L2, L3, L4 with the normalized average result. No significant difference between the different leafsizes. The loaded Node memory is lower for higher leafsizes because the Bvh is smaller. Those two plots also visualize the effect of increasing the branching factor. It increases the memory usage linearly, but the improvement in Node intersections is asymptotic. }
-\end{figure}
-
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={0}{0},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = loaded Node Memory,
-		cycle list name=exotic,
-		legend style={at={(0.99,1.3)}, anchor = north east},
-		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={5: 5}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={6: 6}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={7: 7}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionMultBranch, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\legend{N = 4, N = 5, N = 6, N = 7, N = 8}
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={0}{0},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = \nodei,
-		cycle list name=exotic,
-		legend style={at={(0.99,1.3)}, anchor = north east},
-		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={5: 5}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={6: 6}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={7: 7}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\legend{N = 4, N = 5, N = 6, N = 7, N = 8}
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	
-	\caption{Comparison of N4, N5, N6, N7, N8 with the normalized average result. Here we can observe the effect that the difference between an odd N and the next larger even N is smaller than of a even N to the next larger odd N. Therefore it should be better to choose odd numbers like 5 and 7 than even numbers like 3, 6, and 8.}
-\end{figure}
-\newpage
-\begin{figure}[!htb]
-	\begin{minipage}[t]{0.4\textwidth}
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={0}{0},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = loaded Leaf Memory,
-		cycle list name=exotic,
-		legend style={at={(0.99,1.3)}, anchor = north east},
-		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict y to domain={1: 1}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={3: 3}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={5: 5}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={6: 6}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={7: 7}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = primaryIntersectionsMultLeaf, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}\hfil \hfil
-	\begin{minipage}[t]{0.4\textwidth}
-		%TODO move label to the right side
-		\begin{tikzpicture}
-		\begin{axis}
-		[
-		%view={90}{0} for x, view={0}{0} for y restriction
-		view={0}{0},
-		xlabel = \leafs,
-		ylabel = \branchf,
-		zlabel = \leafi,
-		cycle list name=exotic,
-		legend style={at={(0.99,1.3)}, anchor = north east},
-		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
-		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
-		]
-		\addplot3+[thick, restrict y to domain={1: 1}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={3: 3}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={5: 5}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={6: 6}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={7: 7}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = primaryLeafIntersections, col sep=comma]{Data/AverageTableSorted.txt};
-		
-		\end{axis}
-		\end{tikzpicture}
-	\end{minipage}
-	
-	\caption{Comparison of N1 to N8 with the normalized average result. The different branching factor has no effect on the leaf Intersections. The Leaf memory usage in respect to the Leafsize behaves very similar to the Node Memory usage in respect to the Branching Factor. But the \leafi are not very predictable. The odd numbers are better on most scenes (especially noticeable for rungholt and sponza), but the overall difference is minimal, so it seems the best to adjust the Leafsize to the hardware.}
-\end{figure}
-
 
 \pgfplotsset{
 	colormap/viridis,
@@ -603,46 +311,63 @@ Lx = Leaf size of x
 	}
 }
 
+\begin{document}
+
+
+
+Cost factor for nodes: 1, leafs: 1
+
+This is used for Cost Function, Sah and Epo
+
+Currently all scenes are rendered with Sorted and with efficient rendering (saving distance of aabb and not intersecting when the ray already found a closer triangle)
+
+Nomenclature:
+
+Nx = Node size of x (also called branching factor)
+
+Lx = Leaf size of x
+
+\iffalse
+\include{FirstAnalysis}
+\fi
+
+\iftrue
+\include{RandomPlots}
+\fi
+
+
+
+
+%\plotAll{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
+%\newpage
+
+
+
+
 %newPages so this text is below figures
 
-\newpage
-\newpage
-\newpage
-
-Current selection of N and L:
-
-N2L1 as the most generic version, and N4L4 for QBvh
-
-N3L1, N3L2 and N3L4 to compare it to the generic versions since our data suggests that N3 is very beneficial
-
-N5LX and N7LX as described in Figure 4. X stands for arbitrary Leaf size depending on hardware preferences. If i had to choose i would take either L2, L4 or L6 because it seems to be good to have even Leaf Sizes for all our scenes.
 
 
 \iffalse
 %\plotAll{Data/shiftHappensTable.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles}
 %\newpage
 \plotAll{Data/shiftHappensTableWithSpaceSorted.txt}{Shift happens \url{https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295}. Low poly scene. 53,857 Vertices and 240,865 Triangles. Sorted}
-\newpage
 
 %\plotAll{Data/sponzaTable.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles}
 %\newpage
 \plotAll{Data/sponzaTableWithSpaceSorted.txt}{Sponza \url{http://casual-effects.com/data/index.html}. Interior scene. 192,676 Vertices and 262,267 Triangles. Sorted}
-\newpage
 
 %\plotAll{Data/rungholtTable.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles}
 %\newpage
 \plotAll{Data/rungholtTableWithSpaceSorted.txt}{Rungholt \url{http://casual-effects.com/data/index.html}. Large minecraft city. 11,630,990 Vertices and 5,815,444 Triangles. Sorted}
-\newpage
 
-%\plotAll{Data/eratoTable.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles}
+%\plotAll{Data/eratoTable.txt}{Erato \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles}
 %\newpage
-\plotAll{Data/eratoTableWithSpaceSorted.txt}{Eratio \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles. Sorted}
-\newpage
+\plotAll{Data/eratoTableWithSpaceSorted.txt}{Erato \url{http://casual-effects.com/data/index.html}. Scan of a marble statue. 235,332 Vertices and 412,669 Triangles. Sorted}
 
 %\plotAll{Data/AverageTable.txt}{Average of all normalized results}
 %\newpage
 \plotAll{Data/AverageTableWithSpaceSorted.txt}{Average of all normalized results. Sorted}
-\newpage
 \fi
 
 \end{document}
