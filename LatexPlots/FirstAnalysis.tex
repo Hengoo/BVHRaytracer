@@ -262,3 +262,114 @@ N2L1 as the most generic version, and N4L4 for QBvh
 N3L1, N3L2 and N3L4 to compare it to the generic versions since our data suggests that N3 is very beneficial
 
 N5LX and N7LX as described in Figure 4. X stands for arbitrary Leaf size depending on hardware preferences. If i had to choose i would take either L2, L4 or L6 because it seems to be good to have even Leaf Sizes for all our scenes.
+
+
+\section{LATE ADDITION: node cache lines Analysis}
+
+The following space is needed for one node):
+
+\begin{itemize}
+	\item 6 byte: Position of next node / triangle + number of nodes / number of triangles (could probably be reduced to 5)
+	\item 24 * N byte: space needed to save aabb (cannot be smaller when we use float)
+	\item (N-1) * 2 byte: space needed to save the order in witch the aabb should be traversed. (dont think this can be smaller)
+\end{itemize}
+Short form is 4 + 26*N.
+This results in the following Node sizes (in byte):
+\begin{enumerate}[label=\arabic*]
+	\item = not useful, wasted space for axis order
+	\item = 56 (also wasted space for axis order)
+	\item = 82
+	\item = 108
+	\item = 134
+	\item = 160
+	\item = 186
+	\item = 212
+	\item = 238
+	\item = 264
+	\item = 290
+	\item = 316
+	\item = 342
+	\item = 368
+	\item = 394
+	\item = 420
+	
+\end{enumerate}
+
+With a 128 byte cache line this leads to:
+\begin{itemize}
+	\item[] N = 1,2,3,4 $\rightarrow$ 1 cache line
+	\item[] N = 5,6,7,8,9 $\rightarrow$ 2 cache lines
+	\item[] N = 10,11,12,13,14 $\rightarrow$ 3 cache lines
+	\item[] N = 15,16 $\rightarrow$ 4 cache lines
+\end{itemize}
+
+
+\pgfplotsset{
+	every axis/.append style={colorbar}
+}
+
+%block that adds node cacheline plots
+\iftrue
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth} 
+		\plot{Primary Node cache lines}{primaryNodeCachelines}{Data/AverageTableWithSpaceSorted.txt}
+	\end{minipage}\hfil \hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		\plotr{Secondary Node cache lines}{secondaryNodeCachelines}{Data/AverageTableWithSpaceSorted.txt}
+	\end{minipage}
+	
+	\caption{Loaded node cache lines of the normalized average of all scenes. Now with this information N4 N9 and N15 would be the only reasonable configurations}
+\end{figure}
+\fi
+
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={90}{00},
+		xlabel = \leafs,
+		ylabel = \branchf,
+		zlabel = loaded Node cache lines,
+		legend style={at={(0.01,1.3)}, anchor = north west},
+		cycle list name=exotic,
+		ytick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
+		yticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
+		]
+		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeCachelines, col sep=comma]{Data/AverageTableSorted.txt};
+		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeCachelines, col sep=comma]{Data/AverageTableSorted.txt};
+		\addplot3+[thick, restrict x to domain={12:12}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeCachelines, col sep=comma]{Data/AverageTableSorted.txt};
+		\addplot3+[thick, restrict x to domain={16:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeCachelines, col sep=comma]{Data/AverageTableSorted.txt};
+		
+		\legend{L4,L8,L12,L16}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}\hfil \hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={90}{0},
+		xlabel = \leafs,
+		ylabel = \branchf,
+		zlabel = \nodei,
+		cycle list name=exotic,
+		ytick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
+		yticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
+		]
+		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
+		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
+		\addplot3+[thick, restrict x to domain={12:12}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
+		\addplot3+[thick, restrict x to domain={16:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = primaryNodeIntersections, col sep=comma]{Data/AverageTableSorted.txt};
+		
+		\legend{L4,L8,L12,L16}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Comparison of L4, L8, L12, L16 with the normalized average result.}
+\end{figure}
+

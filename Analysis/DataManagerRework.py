@@ -27,6 +27,8 @@ class everything:
 		self.nodeCostFactor = 1
 		self.leafCostFactor = 1
 
+		self.cachelineSize = 128
+
 		#names of variables like node Intersection count
 		self.variableNames = [
 			"primary intersections node:",
@@ -103,6 +105,16 @@ class everything:
 			"secondaryIntersectionsMultLeaf"
 		]
 
+		#Variables that are multiplied cachline they use
+		self.variableNodeCachelinesNames = [
+			"primary intersections node:",
+			"secondary intersections node:"
+		]
+		self.variableNodeCachelinesOutputNames = [
+			"primaryNodeCachelines",
+			"secondaryNodeCachelines"
+		]
+
 		#fullness would be some special thing becuase its divided by leafsize
 		# -> could do variables divided by leafsize and ones divided by branchFactor
 		# -> and ones multiplied by it?
@@ -119,6 +131,8 @@ class everything:
 		self.variableMultBranchMin = [[2000000 for i in self.variableMultBranchNames] for i in self.names]
 		self.variableMultLeafMax = [[0 for i in self.variableMultBranchNames]for i in self.names]
 		self.variableMultLeafMin = [[2000000 for i in self.variableMultBranchNames] for i in self.names]
+		self.variableNodeCachelineMax = [[0 for i in self.variableMultBranchNames]for i in self.names]
+		self.variableNodeCachelineMin = [[2000000 for i in self.variableMultBranchNames] for i in self.names]
 		#could also store min and max id (b and l)
 
 		# for each type of variable: array[nameId] -> value of current file.
@@ -128,7 +142,7 @@ class everything:
 		self.normalizedVariables = [[0 for i in self.normalizedVariableNames] for i in self.names]
 		self.variableMultBranch = [[0 for i in self.variableMultBranchNames] for i in self.names]
 		self.variableMultLeaf = [[0 for i in self.variableMultLeafNames] for i in self.names]
-
+		self.variableNodeCacheline = [[0 for i in self.variableMultBranchNames] for i in self.names]
 
 
 	def run(self):
@@ -145,6 +159,8 @@ class everything:
 		for name in self.variableMultBranchOutputNames:
 			firstLine += ", " + name
 		for name in self.variableMultLeafOutputNames:
+			firstLine += ", " + name
+		for name in self.variableNodeCachelinesOutputNames:
 			firstLine += ", " + name
 
 		for i in range(len(self.names)):
@@ -274,6 +290,13 @@ class everything:
 				self.variableMultLeaf[i][valueId] = 0
 			result += ", " + str(value / sceneNumber)
 
+		for valueId in range(len(self.variableNodeCachelinesNames)):
+			value = 0
+			for i in range(len(self.names)):
+				value += self.variableNodeCacheline[i][valueId] / self.variableNodeCachelineMax[i][valueId]
+				self.variableNodeCacheline[i][valueId] = 0
+			result += ", " + str(value / sceneNumber)
+
 		return result + "\n"
 
 	#returns the line to for the table.txt and resets the current values
@@ -293,13 +316,16 @@ class everything:
 			self.normalizedVariables[sceneId][id] = 0
 		for id in range(len(self.variableMultBranchNames)):
 			value = self.variableMultBranch[sceneId][id]
-
 			result += ", " + str(value)
 			self.variableMultBranch[sceneId][id] = 0
 		for id in range(len(self.variableMultLeafNames)):
 			value = self.variableMultLeaf[sceneId][id]
 			result += ", " + str(value)
 			self.variableMultLeaf[sceneId][id] = 0
+		for id in range(len(self.variableNodeCachelinesNames)):
+			value = self.variableNodeCacheline[sceneId][id]
+			result += ", " + str(value)
+			self.variableNodeCacheline[sceneId][id] = 0
 		return result + "\n"
 
 	def gatherAll(self, i, x, branch, leaf):
@@ -313,6 +339,8 @@ class everything:
 			self.gatherMultBranchVariables(i, v, x, branch)
 		for v in range(len(self.variableMultLeafNames)):
 			self.gatherMultLeafVariables(i, v, x, leaf)
+		for v in range(len(self.variableMultBranchNames)):
+			self.gatherNodeCachelineVariables(i, v, x, branch)
 
 	def gatherVariables(self, sceneId, variableId, string):
 		if(string.find(self.variableNames[variableId]) != -1):
@@ -384,6 +412,20 @@ class everything:
 					break
 				except ValueError:
 					pass
-
+	
+	def gatherNodeCachelineVariables(self, sceneId, variableId, string, branch):
+		if(string.find(self.variableMultBranchNames[variableId]) != -1):
+			for t in string.split():
+				try:
+					byteNeeded = 4 + branch * 26
+					factor = byteNeeded // self.cachelineSize
+					value = float(t) * (factor+1)
+					self.variableNodeCachelineMax[sceneId][variableId] = max(self.variableMultBranchMax[sceneId][variableId], value)
+					self.variableNodeCachelineMin[sceneId][variableId] = min(self.variableMultBranchMin[sceneId][variableId], value)
+					self.variableNodeCacheline[sceneId][variableId] += value
+					#only take first value (second one might be average)
+					break
+				except ValueError:
+					pass
 e = everything()
 e.run()
