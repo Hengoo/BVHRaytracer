@@ -1,5 +1,7 @@
 import os.path
+import math
 from os import path
+
 
 #To use this:
 
@@ -417,9 +419,9 @@ class everything:
 		if(string.find(self.variableMultBranchNames[variableId]) != -1):
 			for t in string.split():
 				try:
-					byteNeeded = 4 + branch * 26
-					factor = byteNeeded // self.cachelineSize
-					value = float(t) * (factor+1)
+					byteNeeded = branch * 32
+					factor = byteNeeded / self.cachelineSize
+					value = float(t) * math.ceil(factor)
 					self.variableNodeCachelineMax[sceneId][variableId] = max(self.variableMultBranchMax[sceneId][variableId], value)
 					self.variableNodeCachelineMin[sceneId][variableId] = min(self.variableMultBranchMin[sceneId][variableId], value)
 					self.variableNodeCacheline[sceneId][variableId] += value

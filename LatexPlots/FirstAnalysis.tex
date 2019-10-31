@@ -266,6 +266,18 @@ N5LX and N7LX as described in Figure 4. X stands for arbitrary Leaf size dependi
 
 \section{LATE ADDITION: node cache lines Analysis}
 
+We assume that for each child wee need 32 bytes. For each child need 24 bytes for the aabb bounds, and have 8 free for rest. The node index (once 4 byte), and then the rest for the order and axis of the splits.
+
+With a 128 byte cache line this leads to:
+\begin{itemize}
+	\item[] N = 1, 2, 3, 4 $\rightarrow$ 1 cache line
+	\item[] N = 5, 6, 7, 8 $\rightarrow$ 2 cache lines
+	\item[] N = 9, 10, 11 ,12 $\rightarrow$ 3 cache lines
+	\item[] N = 13, 14, 15, 16 $\rightarrow$ 4 cache lines
+\end{itemize}
+
+
+\iffalse
 The following space is needed for one node):
 
 \begin{itemize}
@@ -297,12 +309,13 @@ This results in the following Node sizes (in byte):
 
 With a 128 byte cache line this leads to:
 \begin{itemize}
-	\item[] N = 1,2,3,4 $\rightarrow$ 1 cache line
-	\item[] N = 5,6,7,8,9 $\rightarrow$ 2 cache lines
+	\item[] N = 1, 2, 3, 4 $\rightarrow$ 1 cache line
+	\item[] N = 5, 6, 7, 8 ,9 $\rightarrow$ 2 cache lines
 	\item[] N = 10,11,12,13,14 $\rightarrow$ 3 cache lines
 	\item[] N = 15,16 $\rightarrow$ 4 cache lines
 \end{itemize}
 
+\fi
 
 \pgfplotsset{
 	every axis/.append style={colorbar}
