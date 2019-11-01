@@ -87,3 +87,6 @@ models/
 Analysis/*
 !Analysis/DataManager.py
 !Analysis/DataManagerRework.py
+
+#ignore all ispc build results (also the build header)
+src/ISPC/ISPCBuild

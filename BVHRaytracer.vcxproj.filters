@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ISPC">
+      <UniqueIdentifier>{702cb63e-95af-4c75-b886-6be50cdc9f1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ISPC Header">
+      <UniqueIdentifier>{be92c8e6-e6db-4c64-a662-73c6d2d454c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -128,5 +134,18 @@
     <ClInclude Include="src\accelerationStructure\compactNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ISPC\ISPCBuild\test_ISPC.h">
+      <Filter>ISPC Header</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\ISPC\test.ispc">
+      <Filter>ISPC</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="src\ISPC\ISPCBuild\test.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
   </ItemGroup>
 </Project>

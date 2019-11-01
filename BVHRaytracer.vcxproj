@@ -39,6 +39,7 @@
     <ClInclude Include="src\gameobject.h" />
     <ClInclude Include="src\glmInclude.h" />
     <ClInclude Include="src\glmUtil.h" />
+    <ClInclude Include="src\ISPC\ISPCBuild\test_ISPC.h" />
     <ClInclude Include="src\lights\directionalLight.h" />
     <ClInclude Include="src\lights\light.h" />
     <ClInclude Include="src\lights\pointLight.h" />
@@ -58,6 +59,12 @@
     <ClInclude Include="src\typedef.h" />
     <ClInclude Include="src\util.h" />
     <ClInclude Include="src\vertex.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\ISPC\test.ispc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="src\ISPC\ISPCBuild\test.obj" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -110,7 +117,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <CustomBuildBeforeTargets>PreBuildEvent</CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <CustomBuildBeforeTargets>PreBuildEvent</CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <CustomBuildBeforeTargets>PreBuildEvent</CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <CustomBuildBeforeTargets>PreBuildEvent</CustomBuildBeforeTargets>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -123,6 +141,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <CustomBuildStep>
+      <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\simpleISPC.h;$(MSBuildProjectDirectory)\src\ISPC\simple.obj;%(Outputs)</Outputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\simple.ispc;%(Inputs)</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -136,6 +159,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <CustomBuildStep>
+      <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\simpleISPC.h;$(MSBuildProjectDirectory)\src\ISPC\simple.obj;%(Outputs)</Outputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\simple.ispc;%(Inputs)</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -153,6 +181,15 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <CustomBuildStep>
+      <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test.obj;%(Outputs)</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\test.ispc;%(Inputs)</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -170,6 +207,15 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <CustomBuildStep>
+      <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test.obj;%(Outputs)</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\test.ispc;%(Inputs)</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

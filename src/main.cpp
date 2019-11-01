@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <direct.h>
+#include <future>
 
 #include "accelerationStructure/aabb.h"
 #include "accelerationStructure/node.h"
@@ -20,6 +21,11 @@
 #include <ctime>
 #include <ratio>
 #include <chrono>
+
+//test ispc:
+// Include the header file that the ispc compiler generates
+#include "ISPC/ISPCBuild/test_ISPC.h"
+using namespace ispc;
 
 //#include "primitives/triangle.h"
 
@@ -616,8 +622,45 @@ public:
 	}
 };
 
+static void testIspc()
+{
+	std::cout << "starting Ispc test" << std::endl;
+	int count = 1000000;
+
+	std::vector<float> input(count);
+	std::iota(input.begin(), input.end(), 0);
+	std::chrono::high_resolution_clock::time_point timeBegin = std::chrono::high_resolution_clock::now();
+	// call the ispc function:
+	firstTest(input.data(), input.size());
+	std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();
+
+
+
+	std::vector<float> input2(count);
+	std::iota(input2.begin(), input2.end(), 0);
+	std::chrono::high_resolution_clock::time_point timeBegin2 = std::chrono::high_resolution_clock::now();
+	for (auto& i : input2)
+	{
+		i = sqrt(i);
+	}
+	std::chrono::high_resolution_clock::time_point timeEnd2 = std::chrono::high_resolution_clock::now();
+
+
+	std::chrono::duration<double> time_spanAll = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeBegin);
+	std::cout << "ISPC took " << time_spanAll.count() << " seconds." << std::endl;
+	std::chrono::duration<double> time_spanAll2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd2 - timeBegin2);
+	std::cout << "Normal took " << time_spanAll2.count() << " seconds." << std::endl;
+	// Print results
+	for (int i = 0; i < 16; ++i)
+		printf("%d, %f, %f\n", i, input[i], input2[i]);
+
+}
+
 int main()
 {
+	testIspc();
+	return EXIT_SUCCESS;
+
 	RayTracer rayTracer;
 	try
 	{

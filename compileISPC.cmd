@@ -1,0 +1,1 @@
+ispc src/ISPC/test.ispc -o src/ISPC/ISPCBuild/test.obj -h src/ISPC/ISPCBuild/test_ISPC.h
