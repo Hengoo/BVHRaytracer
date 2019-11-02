@@ -187,7 +187,8 @@ bool Triangle::intersect(Ray& ray)
 	Color color(1.f, 1.f, 1.f, 1.f);
 	if (mesh->texture)
 	{
-		color.scale(mesh->texture->getColor(uvHit));
+		//color.scale(mesh->texture->getColor(uvHit));
+		color = mesh->texture->getColor(uvHit);
 	}
 	color.scale(mesh->color);
 

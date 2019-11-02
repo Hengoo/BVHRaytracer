@@ -99,7 +99,7 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 			}
 			else if constexpr (std::is_same<T, CompactNodeV3>::value)
 			{
-				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxisEachSplit));
+				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->traverseOrderEachAxis));
 			}
 		}
 	}
@@ -294,57 +294,39 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 			}
 			else if (std::is_same<T, CompactNodeV3>::value)
 			{
-				//first get order we have to traverse the childs:
-				smallQueue.push_back({ 0, false });
-				while (!smallQueue.empty())
+				//traverse nodes with children that can have arbitrary sorting
+				//new version that saves traverse order
+				uint8_t code = 0;
+				code = code | (ray.direction[0] <= 0);
+				code = code | ((ray.direction[1] <= 0) << 1);
+				bool reverse = ray.direction[2] <= 0;
+				if (reverse)
 				{
-					auto current = smallQueue.back();
-					smallQueue.pop_back();
-
-					//faster to copy than to do reference or pointer
-					auto a = node->sortAxisEachSplit[current.first];
-					//side. true = left, false = right
-					bool side = ray.direction[a[0]] > 0;
-					if (current.second)
-					{
-						side = !side;
-					}
-
-					int8_t id = 0;
-					if (side)
-					{
-						id = a[1];
-					}
-					else
-					{
-						id = a[2];
-					}
-					//add second part to queue
-					if (!current.second)
-					{
-						smallQueue.push_back({ current.first,true });
-					}
-					if (id < 0)
-					{
-						childIds.push_back(abs(id) - 1);
-					}
-					else
-					{
-						smallQueue.push_back({ id, false });
-					}
-				}
-				std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
-					[&](auto& cId)
-					{
-						if (aabbCheck(ray, node->childIdBegin + cId, distance))
+					code = code ^ 3;
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						[&](auto& cId)
 						{
-							queue.push_back(node->childIdBegin + cId);
-							depths.push_back(depth + 1);
-							distances.push_back(distance);
-						}
-					});
-				childIds.clear();
-				smallQueue.clear();
+							if (aabbCheck(ray, node->childIdBegin + cId, distance))
+							{
+								queue.push_back(node->childIdBegin + cId);
+								depths.push_back(depth + 1);
+								distances.push_back(distance);
+							}
+						});
+				}
+				else
+				{
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+						[&](auto& cId)
+						{
+							if (aabbCheck(ray, node->childIdBegin + cId, distance))
+							{
+								queue.push_back(node->childIdBegin + cId);
+								depths.push_back(depth + 1);
+								distances.push_back(distance);
+							}
+						});
+				}
 			}
 		}
 	}
@@ -485,53 +467,32 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 			}
 			else if constexpr (std::is_same<T, CompactNodeV3>::value)
 			{
-				//first get order we have to traverse the childs:
-				smallQueue.push_back({ 0, false });
-				while (!smallQueue.empty())
+				//traverse nodes with children that can have arbitrary sorting
+
+				//new version that saves traverse order
+				uint8_t code = 0;
+				code = code | (ray.direction[0] <= 0);
+				code = code | ((ray.direction[1] <= 0) << 1);
+				bool reverse = ray.direction[2] <= 0;
+				if (reverse)
 				{
-					auto current = smallQueue.back();
-					smallQueue.pop_back();
-
-					//faster to copy than to do reference or pointer
-					auto a = node->sortAxisEachSplit[current.first];
-					//side. true = left, false = right
-					bool side = ray.direction[a[0]] > 0;
-					if (current.second)
-					{
-						side = !side;
-					}
-
-					int8_t id = 0;
-					if (side)
-					{
-						id = a[1];
-					}
-					else
-					{
-						id = a[2];
-					}
-					//add second part to queue
-					if (!current.second)
-					{
-						smallQueue.push_back({ current.first,true });
-					}
-					if (id < 0)
-					{
-						childIds.push_back(abs(id) - 1);
-					}
-					else
-					{
-						smallQueue.push_back({ id, false });
-					}
+					code = code ^ 3;
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						[&](auto& cId)
+						{
+							queue.push_back(node->childIdBegin + cId);
+							depths.push_back(depth + 1);
+						});
 				}
-				std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
-					[&](auto& cId)
-					{
-						queue.push_back(node->childIdBegin + cId);
-						depths.push_back(depth + 1);
-					});
-				childIds.clear();
-				smallQueue.clear();
+				else
+				{
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+						[&](auto& cId)
+						{
+							queue.push_back(node->childIdBegin + cId);
+							depths.push_back(depth + 1);
+						});
+				}
 			}
 		}
 	}

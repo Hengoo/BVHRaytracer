@@ -167,14 +167,14 @@ struct CompactNodeV3
 	uint32_t primIdBegin;
 	uint8_t childIdEndOffset;
 	uint8_t primIdEndOffset;
-	std::vector<std::array<int8_t, 3>> sortAxisEachSplit;
+	std::array<std::vector<int8_t>, 4> traverseOrderEachAxis;
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
 	CompactNodeV3(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin,
-		uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, std::vector<std::array<int8_t, 3>> sortAxisEachSplit)
+		uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
 		: childIdBegin(childIdBegin), primIdBegin(primIdBegin), boundMin(boundMin),
-		boundMax(boundMax), sortAxisEachSplit(sortAxisEachSplit)
+		boundMax(boundMax), traverseOrderEachAxis(traverseOrderEachAxis)
 	{
 		childIdEndOffset = childIdEnd - childIdBegin;
 		primIdEndOffset = primIdEnd - primIdBegin;

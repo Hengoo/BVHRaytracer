@@ -77,7 +77,7 @@ private:
 	//collapses the next collapeCount child hierarchies to this node
 	void collapseChilds(std::shared_ptr<Node> node, int collapseCount);
 
-	void iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& primitives);
+	//void iterateGo(const GameObject& go, std::shared_ptr<primPointVector>& primitives);
 
 	void traverseAnalysisBvh(float& epoNode, float& epoLeaf, Triangle* tri, const float& triSurfaceArea, const uint32_t primId,
 		const glm::vec3& triMin, const glm::vec3& triMax, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);

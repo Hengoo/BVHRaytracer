@@ -147,6 +147,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 }
 void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount, const bool sortEachSplit)
 {
+	std::vector<std::array<int8_t, 3>> sortAxisEachSplit;
 	allPrimitiveBegin = primitiveBegin;
 	allPrimitiveEnd = primitiveEnd;
 	//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
@@ -290,6 +291,13 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 	for (auto& i : workIntervall)
 	{
 		addNode(std::make_shared<Aabb>(depth + 1, i.primitiveBegin, i.primitiveEnd));
+	}
+
+	//calculate the traversal order for each axis:
+	//first get order we have to traverse the childs:
+	if (sortEachSplit)
+	{
+		calculateTraverseOrderEachAxis(branchingFactor, sortAxisEachSplit);
 	}
 
 	//just a debug output to get warned abount eventual loop

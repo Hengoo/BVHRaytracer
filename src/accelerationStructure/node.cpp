@@ -19,7 +19,7 @@ void Node::addNode(std::shared_ptr<Node> n)
 //	primitives.push_back(p);
 //}
 
-void Node::recursiveBvh(const unsigned branchingFactor, const unsigned leafSize,const int bucketCount,const bool sortEachSplit)
+void Node::recursiveBvh(const unsigned branchingFactor, const unsigned leafSize, const int bucketCount, const bool sortEachSplit)
 {
 	std::for_each(std::execution::par_unseq, children.begin(), children.end(),
 		[&](auto& c)
@@ -99,8 +99,7 @@ bool Node::intersect(Ray& ray)
 		std::vector<std::shared_ptr<Node>>::iterator begin = children.begin();
 		std::vector<std::shared_ptr<Node>>::iterator end = children.end();
 
-
-		if (sortAxisEachSplit.empty())
+		if (traverseOrderEachAxis[0].empty())
 		{
 			//code duplication because it is about 10% faster to do it this way instead of calling a method in lambda or using std::bind
 			if (ray.direction[sortAxis] > 0)
@@ -193,53 +192,25 @@ bool Node::intersect(Ray& ray)
 		{
 			//traverse nodes with children that can have arbitrary sorting
 
-			//queue saves the id of elelemnts of sortAxisEachSplit where we still need to explore the 2. option
-			//true = visited, false = not visited
-			std::vector<std::pair<int8_t, bool>>queue;
-			queue.reserve(children.size());
-
-			queue.push_back({ 0, false });
-			while (!queue.empty())
+			//new version that saves traverse order
+			uint8_t code = 0;
+			code = code | (ray.direction[0] <= 0);
+			code = code | ((ray.direction[1] <= 0) << 1);
+			bool reverse = ray.direction[2] <= 0;
+			if (reverse)
 			{
-				auto current = queue.back();
-				queue.pop_back();
-
-				//faster to copy than to do reference or pointer
-				auto& a = sortAxisEachSplit[current.first];
-				//side. true = left, false = right
-				bool side = ray.direction[a[0]] > 0;
-				if (current.second)
+				code = code ^ 3;
+				for (int i = traverseOrderEachAxis[code].size() - 1; i >= 0; i--)
 				{
-					side = !side;
-				}
-
-				int8_t id = 0;
-				if (side)
-				{
-					id = a[1];
-				}
-				else
-				{
-					id = a[2];
-				}
-				//add second part to queue
-				if (!current.second)
-				{
-					queue.push_back({ current.first,true });
-				}
-				if (id < 0)
-				{
-					//traverse aabb
-					uint8_t c = abs(id) - 1;
+					uint8_t cid = traverseOrderEachAxis[code][i];
 					ray.aabbIntersectionCount++;
 
 					float dist;
-					if (children[c]->intersectNode(ray, dist))
+					if (children[cid]->intersectNode(ray, dist))
 					{
 						ray.successfulAabbIntersectionCount++;
-
 						//node intersection successful: rekursion continues
-						if (children[c]->intersect(ray))
+						if (children[cid]->intersect(ray))
 						{
 							result = true;
 							if (ray.shadowRay)
@@ -249,9 +220,28 @@ bool Node::intersect(Ray& ray)
 						}
 					}
 				}
-				else
+			}
+			else
+			{
+				for (auto& cid : traverseOrderEachAxis[code])
 				{
-					queue.push_back({ id, false });
+					ray.aabbIntersectionCount++;
+
+					float dist;
+					if (children[cid]->intersectNode(ray, dist))
+					{
+						ray.successfulAabbIntersectionCount++;
+						//node intersection successful: rekursion continues
+						if (children[cid]->intersect(ray))
+						{
+							result = true;
+							if (ray.shadowRay)
+							{
+								return true;
+							}
+						}
+					}
+
 				}
 			}
 		}
@@ -267,4 +257,64 @@ size_t Node::getChildCount()
 size_t Node::getPrimCount()
 {
 	return std::distance(primitiveBegin, primitiveEnd);
+}
+
+void Node::calculateTraverseOrderEachAxis(unsigned int branchingFactor, std::vector<std::array<int8_t, 3>>& sortAxisEachSplit)
+{
+	std::vector<std::pair<int8_t, bool>> smallQueue;
+	std::vector<uint8_t>childIds;
+	childIds.reserve(branchingFactor);
+	smallQueue.reserve(branchingFactor);
+	for (int code = 0; code < 4; code++)
+	{
+		traverseOrderEachAxis[code].reserve(branchingFactor);
+
+		smallQueue.push_back({ 0, false });
+		while (!smallQueue.empty())
+		{
+			auto current = smallQueue.back();
+			smallQueue.pop_back();
+
+			//faster to copy than to do reference or pointer
+			auto a = sortAxisEachSplit[current.first];
+			//side. true = left, false = right
+			uint8_t tmp = (code >> a[0]);
+			bool side = tmp & 1;
+			//bool side = ray.direction[a[0]] > 0;
+			if (current.second)
+			{
+				side = !side;
+			}
+
+			int8_t id = 0;
+			if (side)
+			{
+				id = a[1];
+			}
+			else
+			{
+				id = a[2];
+			}
+			//add second part to queue
+			if (!current.second)
+			{
+				smallQueue.push_back({ current.first,true });
+			}
+			if (id < 0)
+			{
+				childIds.push_back(abs(id) - 1);
+			}
+			else
+			{
+				smallQueue.push_back({ id, false });
+			}
+		}
+		std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
+			[&](auto& cId)
+			{
+				traverseOrderEachAxis[code].push_back(cId);
+			});
+		childIds.clear();
+		smallQueue.clear();
+	}
 }

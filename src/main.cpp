@@ -658,8 +658,10 @@ static void testIspc()
 
 int main()
 {
+	/*
 	testIspc();
 	return EXIT_SUCCESS;
+	*/
 
 	RayTracer rayTracer;
 	try

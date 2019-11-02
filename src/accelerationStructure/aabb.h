@@ -92,7 +92,7 @@ class Aabb : public Node
 			return std::distance(primitiveBegin, primitiveEnd);
 		}
 	};
-
+protected:
 public:
 	//edge with smallest value in each dimension
 	glm::vec3 boundMin;
