@@ -244,12 +244,16 @@ void loadGltfModel(std::string modelPath, std::vector<std::shared_ptr<GameObject
 			//gltfModel.materials[matId].name might be right here instead of m.name. m is the name of the hole mesh
 			auto mesh = std::make_shared<Mesh>(vertices[meshVertexId], indices[meshIndexId], Color(color), m.name);
 
-			if (texId >= textures.size())
+			if (texId != -1)
 			{
-				//this is for the one runholt minecraft map because the textures seme to go wrong and use to large indices
-				//TODO check speck what is going on
-				texId = textures.size() - 1;
+				if (texId >= textures.size())
+				{
+					//this is for the one rungholt minecraft map because the textures seme to go wrong and use to large indices
+					//TODO check speck what is going on
+					texId = textures.size() - 1;
+				}
 			}
+
 			//add the different textures if they are specified
 			if (texId != -1)
 			{
