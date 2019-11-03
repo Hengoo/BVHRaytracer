@@ -5,6 +5,8 @@
 #include <array>
 #include "lodepng/lodepng.h"
 
+#include <iostream>
+
 #include <iomanip>
 #include <sstream>
 //for gamma
@@ -55,7 +57,7 @@ static void encodeTwoSteps(std::string encodeFilename, std::vector<uint8_t>& enc
 	if (!error) lodepng::save_file(png, encodeFilename);
 
 	//if there's an error, display it
-	if (error) std::cout << "encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+	if (error) std::cerr << "encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 }
 
 static std::string customToString(double d, int digits)

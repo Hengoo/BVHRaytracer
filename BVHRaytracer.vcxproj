@@ -23,6 +23,7 @@
     <ClCompile Include="src\accelerationStructure\bvh.cpp" />
     <ClCompile Include="src\accelerationStructure\compactNode.cpp" />
     <ClCompile Include="src\accelerationStructure\node.cpp" />
+    <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\lodepng\lodepng.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\primitives\triangle.cpp" />
@@ -35,7 +36,9 @@
     <ClInclude Include="src\accelerationStructure\node.h" />
     <ClInclude Include="src\accelerationStructure\nodeAnalysis.h" />
     <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\cameraData.h" />
     <ClInclude Include="src\color.h" />
+    <ClInclude Include="src\cameraISPC.h" />
     <ClInclude Include="src\gameobject.h" />
     <ClInclude Include="src\glmInclude.h" />
     <ClInclude Include="src\glmUtil.h" />

@@ -8,7 +8,7 @@
 #include "accelerationStructure/bvh.h"
 #include "accelerationStructure/compactNode.h"
 #include "primitives/triangle.h"
-#include "camera.h"
+#include "cameraData.h"
 
 #include "glmInclude.h"
 #include "modelLoader.h"
@@ -407,14 +407,14 @@ public:
 				{
 					CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
 					//create camera and render image
-					Camera c(path, name, problem, cameraPos, cameraTarget);
+					CameraData c(path, name, problem, cameraPos, cameraTarget);
 					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 				}
 				else
 				{
 					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 					//create camera and render image
-					Camera c(path, name, problem, cameraPos, cameraTarget);
+					CameraData c(path, name, problem, cameraPos, cameraTarget);
 					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 				}
 			}
@@ -427,7 +427,7 @@ public:
 				}
 				CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				Camera c(path, name, problem, cameraPos, cameraTarget);
+				CameraData c(path, name, problem, cameraPos, cameraTarget);
 				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 			}
 

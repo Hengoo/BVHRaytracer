@@ -45,6 +45,9 @@
     <ClCompile Include="src\accelerationStructure\bvh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\primitives\primitive.h">
@@ -63,9 +66,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lodepng\lodepng.h">
@@ -136,6 +136,15 @@
     </ClInclude>
     <ClInclude Include="src\ISPC\ISPCBuild\test_ISPC.h">
       <Filter>ISPC Header</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cameraData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cameraISPC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\camera.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
