@@ -20,9 +20,9 @@ void Camera::fillRenderInfo()
 glm::vec3 Camera::getAmbientDirection(RenderInfo& info, int i, glm::vec3& surfaceNormal)
 {
 	//i need two deterministic random values. Currently pixel index but could also be intersect position
-	auto test = std::hash<size_t>();
-	float u = test(info.index * 37 + i * 13) / (float)(std::numeric_limits<size_t>::max());
-	float v = test(info.index * 61 + i * 7) / (float)(std::numeric_limits<size_t>::max());
+	auto hashFunction = std::hash<size_t>();
+	float u = hashFunction(info.index * 599 + i * 223) / (float)(std::numeric_limits<size_t>::max());
+	float v = hashFunction(info.index * 181 + i * 691) / (float)(std::numeric_limits<size_t>::max());
 
 	auto direction = sampleHemisphere(u, v, surfaceNormal);
 	return direction;

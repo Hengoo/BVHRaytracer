@@ -18,8 +18,6 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 	std::vector<NodeAnalysis*> nodeVector;
 	//LevelOrder
 
-
-
 	switch (nodeOrder)
 	{
 	case 0:
@@ -121,14 +119,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 {
 	//traverse compact node vector
 
-	//this is only for the NodeV3 -> should be optimised away for the other nodes.
-	std::vector<std::pair<int8_t, bool>> smallQueue;
-	std::vector<uint8_t>childIds;
-	if (std::is_same<T, CompactNodeV3>::value)
-	{
-		childIds.reserve(branchingFactor);
-		smallQueue.reserve(branchingFactor);
-	}
 	//check root node
 	T* node = &compactNodes[0];
 	if (!aabbCheck(ray, 0))
@@ -337,15 +327,6 @@ template<typename T>
 bool CompactNodeManager<T>::intersect(Ray& ray)
 {
 	//traverse compact node vector
-
-	//this is only for the NodeV3 -> should be optimised away for the other nodes.
-	std::vector<std::pair<int8_t, bool>> smallQueue;
-	std::vector<uint8_t>childIds;
-	if (std::is_same<T, CompactNodeV3>::value)
-	{
-		childIds.reserve(branchingFactor);
-		smallQueue.reserve(branchingFactor);
-	}
 
 	//ids of ndodes that we still need to test:
 	std::vector<uint32_t> queue;

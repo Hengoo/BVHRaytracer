@@ -10,8 +10,8 @@ Ray::Ray(glm::vec3 pos, glm::vec3 direction, Bvh bvh, bool shadowRay)
 	primitiveFullness.resize(bvh.leafSize + 1);
 
 	this->direction = glm::normalize(direction);
-	//the possible inv here should be no problem
-	
+
+	//fix infinite because 0 / 0 is NaN
 	invDirection = 1.0f / (this->direction);
 	if (direction.x == 0)
 	{

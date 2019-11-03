@@ -145,6 +145,7 @@ public:
 						float factor = 1 - ambientResult / (float)ambientSampleCount;
 						factor = (factor + 1) / 2.f;
 						ray.surfaceColor.scale(factor);
+						ray.surfaceColor = Color(factor);
 					}
 
 					float factor = 1;

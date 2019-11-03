@@ -7,8 +7,10 @@
 #include "accelerationStructure/node.h"
 #include "accelerationStructure/bvh.h"
 #include "accelerationStructure/compactNode.h"
+#include "accelerationStructure/fastNodeManager.h"
 #include "primitives/triangle.h"
 #include "cameraData.h"
+#include "cameraISPC.h"
 
 #include "glmInclude.h"
 #include "modelLoader.h"
@@ -49,6 +51,8 @@ class RayTracer
 	bool bvhAnalysis;
 	bool saveBvhImage;
 	bool mute;
+
+	bool doPerformanceTest = true;
 
 	//true -> take new axis and sort for each split. False -> only do it once in the beginning
 	bool sortEachSplit;
@@ -121,10 +125,12 @@ public:
 		mute = scenarios.size() > 1 || maxBranch != minBranch || maxLeafSize != minLeafSize;
 		if (mute)
 		{
-			//mute cout (so we dont have to place an if arround every cout
+			//mute cout (so we dont have to place an if arround every cout)
 			std::cout.setstate(std::ios_base::failbit);
 		}
-		std::for_each(std::execution::par_unseq, scenarios.begin(), scenarios.end(),
+
+		//multiple scenarios in parallel are not really needed. it also takes quite some ram
+		std::for_each(std::execution::seq, scenarios.begin(), scenarios.end(),
 			[&](auto& scenario)
 			{
 				std::string name;
@@ -283,8 +289,11 @@ public:
 				//two versions:
 				//non parallel when we already have multiple scenes
 
-				if (scenarios.size() > 1 || (maxBranch == minBranch && maxLeafSize == minLeafSize))
+				//TODO: rework this. I dont think
+
+				if (maxBranch == minBranch && maxLeafSize == minLeafSize || doPerformanceTest)
 				{
+					//non parallel version:
 					for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
 					{
 						for (size_t b = minBranch; b < maxBranch + 1; b++)
@@ -295,7 +304,7 @@ public:
 				}
 				else
 				{
-					//parallel version for when we have one scenario: (like one that takes ages (rungholt))
+					//parallel version
 
 					//number of renders that should run in parallel:
 					unsigned parallelCount = 4;
@@ -378,7 +387,7 @@ public:
 		bvh.recursiveOctree(bucketCount);
 
 		float ambientDistance = cbrt(bvh.getRoot()->getVolume()) / 10.f;
-		std::cout << ambientDistance << std::endl;
+		//std::cout << ambientDistance << std::endl;
 
 		//bvh.recursiveOctree(2, leafCount);
 
@@ -401,39 +410,50 @@ public:
 
 		if (renderImageOption)
 		{
-			if (compactNodeOrder == 0 || compactNodeOrder == 1)
+			if (doPerformanceTest)
 			{
-				if (sortEachSplit)
-				{
-					CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
-					//create camera and render image
-					CameraData c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
-				}
-				else
-				{
-					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
-					//create camera and render image
-					CameraData c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
-				}
+				FastNodeManager manager(bvh);
+				CameraISPC c(path, name, problem, cameraPos, cameraTarget);
+				c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 			}
 			else
 			{
-				if (sortEachSplit)
+
+				if (compactNodeOrder == 0 || compactNodeOrder == 1)
 				{
-					std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
-					throw(20);
+					if (sortEachSplit)
+					{
+						CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
+						//create camera and render image
+						CameraData c(path, name, problem, cameraPos, cameraTarget);
+						c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+					}
+					else
+					{
+						CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
+						//create camera and render image
+						CameraData c(path, name, problem, cameraPos, cameraTarget);
+						c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+					}
 				}
-				CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
-				//create camera and render image
-				CameraData c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+				else
+				{
+					if (sortEachSplit)
+					{
+						std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
+						throw(20);
+					}
+					CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
+					//create camera and render image
+					CameraData c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+				}
 			}
+
 
 			std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop3 - timeLoop2);
-			std::cout << "Rendering took " << time_span2.count() << " seconds." << std::endl;
+			std::cout << "All to do with rendering took " << time_span2.count() << " seconds." << std::endl;
 		}
 	}
 

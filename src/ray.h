@@ -27,7 +27,6 @@ public:
 	glm::vec3 surfaceNormal;
 	glm::vec3 surfacePosition;
 
-	//TODO check that i dont render things behind the camera (and throw node collisions away that are behind the camera)
 	//float distance;
 	float tMax;
 
@@ -39,7 +38,6 @@ public:
 	uint16_t successfulPrimitiveIntersectionCount;
 	uint16_t successfulAabbIntersectionCount;
 	uint16_t aabbIntersectionCount;
-	//result would be primitive + distance + normal +  ?vector of secondary rays?
 
 	Ray(glm::vec3 pos, glm::vec3 direction, Bvh bvh, bool shadowRay = false);
 

@@ -223,6 +223,9 @@ public:
 
 	void depthFirstTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
 
+	//debug method returns number of nodes that are connected to root
+	int fullTraverse();
+
 	inline bool aabbCheck(Ray& ray, int id)
 	{
 		ray.aabbIntersectionCount++;
@@ -283,7 +286,4 @@ public:
 		ray.successfulAabbIntersectionCount++;
 		return true;
 	}
-
-	//debug method returns number of nodes that are connected to root
-	int fullTraverse();
 };
