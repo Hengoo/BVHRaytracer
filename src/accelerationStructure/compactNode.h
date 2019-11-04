@@ -262,6 +262,7 @@ public:
 		//aabb intersection (same as in Aabb)
 		//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
 
+		/*
 		glm::fvec3 t1 = (compactNodes[id].boundMin - ray.pos) * ray.invDirection;
 		glm::fvec3 t2 = (compactNodes[id].boundMax - ray.pos) * ray.invDirection;
 		float tmin = glm::compMax(glm::min(t1, t2));
@@ -284,6 +285,36 @@ public:
 		}
 		distance = tmin;
 		ray.successfulAabbIntersectionCount++;
-		return true;
+		return true;*/
+
+		//faster version -> from ISPC ratracer exmaple https://github.com/ispc/ispc/blob/master/examples/rt/rt_serial.cpp
+		float t0 = 0, t1 = ray.tMax;
+		glm::fvec3 tNear = (compactNodes[id].boundMin - ray.pos) * ray.invDirection;
+		glm::fvec3 tFar = (compactNodes[id].boundMax - ray.pos) * ray.invDirection;
+		if (tNear.x > tFar.x)
+		{
+			std::swap(tNear.x, tFar.x);
+		}
+		t0 = std::max(tNear.x, t0);
+		t1 = std::min(tFar.x, t1);
+
+		if (tNear.y > tFar.y)
+		{
+			std::swap(tNear.y, tFar.y);
+		}
+		t0 = std::max(tNear.y, t0);
+		t1 = std::min(tFar.y, t1);
+
+		if (tNear.z > tFar.z)
+		{
+			std::swap(tNear.z, tFar.z);
+		}
+		t0 = std::max(tNear.z, t0);
+		t1 = std::min(tFar.z, t1);
+		distance = t0;
+
+		bool result = t0 <= t1;
+		ray.successfulAabbIntersectionCount += !result;
+		return result;
 	}
 };

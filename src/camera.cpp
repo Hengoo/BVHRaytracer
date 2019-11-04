@@ -30,6 +30,7 @@ glm::vec3 Camera::getAmbientDirection(RenderInfo& info, int i, glm::vec3& surfac
 
 glm::vec3 Camera::sampleHemisphere(float u, float v, glm::vec3& normal, int m)
 {
+	//inspired by this blogpost and adjusted for my needs
 	//https://blog.thomaspoulet.fr/uniform-sampling-on-unit-hemisphere/
 	float theta = acos(pow(1 - u, 1 / (float)(1 + m)));
 	float phi = 2 * M_PI * v;
@@ -41,7 +42,7 @@ glm::vec3 Camera::sampleHemisphere(float u, float v, glm::vec3& normal, int m)
 	//i dont like this approach but for now it has to do
 	glm::vec4 tmp(x, y, z, 0);
 	glm::vec3 up(0);
-	if (normal.y != 1)
+	if (abs(normal.y) < 0.9f)
 	{
 		up.y = 1;
 	}

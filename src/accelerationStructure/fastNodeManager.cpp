@@ -2,8 +2,9 @@
 #include "nodeAnalysis.h"
 #include "..\primitives\triangle.h"
 #include "..\util.h"
+#include <algorithm>
 
-FastNodeManager::FastNodeManager(Bvh bvh)
+FastNodeManager::FastNodeManager(Bvh& bvh)
 {
 	//very similar to compactNodeManager
 
@@ -159,8 +160,9 @@ void FastNodeManager::customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*
 	}
 }
 
-inline bool FastNodeManager::triangleCheck(FastRay& ray, uint32_t id)
+inline bool FastNodeManager::triangleCheck(FastRay& ray, uint32_t& id)
 {
+	/*
 	//mostly from here: http://www.pbr-book.org/3ed-2018/Shapes/Triangle_Meshes.html
 	//code here https://github.com/mmp/pbrt-v3/blob/master/src/shapes/triangle.cpp
 
@@ -279,13 +281,49 @@ inline bool FastNodeManager::triangleCheck(FastRay& ray, uint32_t id)
 	ray.surfaceNormal = -computeNormal(triangles[id].points[0], triangles[id].points[1], triangles[id].points[2]);
 	ray.surfacePosition = pHit;
 	return true;
+	*/
+
+	//faster version -> from ISPC ratracer exmaple https://github.com/ispc/ispc/blob/master/examples/rt/rt_serial.cpp
+	glm::vec3 e1 = triangles[id].points[1] - triangles[id].points[0];
+	glm::vec3 e2 = triangles[id].points[2] - triangles[id].points[0];
+
+	glm::vec3 s1 = glm::cross(ray.direction, e2);
+	float divisor = glm::dot(s1, e1);
+
+	if (divisor == 0.)
+		return false;
+	float invDivisor = 1.f / divisor;
+
+	// Compute first barycentric coordinate
+	glm::vec3 d = ray.pos - triangles[id].points[0];
+	float b1 = glm::dot(d, s1) * invDivisor;
+	if (b1 < 0. || b1 > 1.)
+		return false;
+
+	// Compute second barycentric coordinate
+	glm::vec3 s2 = glm::cross(d, e1);
+	float b2 = glm::dot(ray.direction, s2) * invDivisor;
+	if (b2 < 0. || b1 + b2 > 1.)
+		return false;
+
+	// Compute _t_ to intersection point
+	float t = glm::dot(e2, s2) * invDivisor;
+	if (t < 0 || t > ray.tMax)
+		return false;
+
+	ray.surfacePosition = triangles[id].points[0] + e1 * b1 + e2 * b2;
+	ray.tMax = t;
+	ray.surfaceNormal = -computeNormal(triangles[id].points[0], triangles[id].points[1], triangles[id].points[2]);
+	return true;
 }
 
 inline bool FastNodeManager::aabbCheck(FastRay& ray, glm::vec3& boundMin, glm::vec3& boundMax, float& distance)
 {
+
 	//aabb intersection (same as in Aabb)
 	//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
 
+	/*
 	glm::fvec3 t1 = (boundMin - ray.pos) * ray.invDirection;
 	glm::fvec3 t2 = (boundMax - ray.pos) * ray.invDirection;
 	float tmin = glm::compMax(glm::min(t1, t2));
@@ -308,4 +346,33 @@ inline bool FastNodeManager::aabbCheck(FastRay& ray, glm::vec3& boundMin, glm::v
 	}
 	distance = tmin;
 	return true;
+	*/
+
+	//faster version -> from ISPC ratracer exmaple https://github.com/ispc/ispc/blob/master/examples/rt/rt_serial.cpp
+	float t0 = 0, t1 = ray.tMax;
+	glm::fvec3 tNear = (boundMin - ray.pos) * ray.invDirection;
+	glm::fvec3 tFar = (boundMax - ray.pos) * ray.invDirection;
+	if (tNear.x > tFar.x)
+	{
+		std::swap(tNear.x, tFar.x);
+	}
+	t0 = std::max(tNear.x, t0);
+	t1 = std::min(tFar.x, t1);
+
+	if (tNear.y > tFar.y)
+	{
+		std::swap(tNear.y, tFar.y);
+	}
+	t0 = std::max(tNear.y, t0);
+	t1 = std::min(tFar.y, t1);
+
+	if (tNear.z > tFar.z)
+	{
+		std::swap(tNear.z, tFar.z);
+	}
+	t0 = std::max(tNear.z, t0);
+	t1 = std::min(tFar.z, t1);
+
+	distance = t0;
+	return (t0 <= t1);
 }

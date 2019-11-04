@@ -62,6 +62,8 @@ public:
 				//shoot primary ray.
 				bool result = nodeManager.intersect(ray);
 
+				//glm::vec3 ambientSum = glm::vec3(0);
+
 				if (result)
 				{
 					//shoot secondary ray:
@@ -71,6 +73,7 @@ public:
 					{
 						//deterministic random direction
 						auto direction = getAmbientDirection(info, i, ray.surfaceNormal);
+						//ambientSum += direction;
 						auto secondaryRay = FastRay(ray.surfacePosition + direction * 0.001f, direction, true);
 						secondaryRay.tMax = ambientDistance;
 						//shoot secondary ray
@@ -87,12 +90,26 @@ public:
 						imageResult = (uint8_t)(factor * 255);
 					}
 				}
+				//distance render version (for large scenes)
+				//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
+				//imageResult = (uint8_t)(distanceToCamera / 50.f);
+
+				//render ambient sum average:
+				//ambientSum = glm::normalize(ambientSum);
+				//image[info.index * 4 + 0] = (uint8_t)(ambientSum.x * 127 + 127);
+				//image[info.index * 4 + 1] = (uint8_t)(ambientSum.y * 127 + 127);
+				//image[info.index * 4 + 2] = (uint8_t)(ambientSum.z * 127 + 127);
+
+				//normal render version:
+				//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
+				//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
+				//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+
 
 				image[info.index * 4 + 0] = imageResult;
 				image[info.index * 4 + 1] = imageResult;
 				image[info.index * 4 + 2] = imageResult;
 				image[info.index * 4 + 3] = 255;
-
 			});
 
 		std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();

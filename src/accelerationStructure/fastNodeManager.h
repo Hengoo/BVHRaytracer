@@ -62,13 +62,17 @@ struct FastTriangle
 	//transformed point coordinates
 	std::array<glm::vec3, 3> points = {};
 
+	//padding doesnt seem to change performance
+	uint64_t pad0;
+	uint64_t pad1;
+	uint64_t pad2;
+
 	FastTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2)
 	{
 		points = { p0,p1,p2 };
 	}
-
-	//TODO: padding
 };
+
 
 class FastNodeManager
 {
@@ -77,13 +81,13 @@ class FastNodeManager
 public:
 	bool intersect(FastRay& ray);
 	//copies a bvh and rearanges it into a single vector of compact nodes
-	FastNodeManager(Bvh bvh);
+	FastNodeManager(Bvh& bvh);
 
 	//first add all children of node, then recusion for each child
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
 
 	inline bool aabbCheck(FastRay& ray, glm::vec3& boundMin, glm::vec3& boundMax, float& distance);
 
-	inline bool triangleCheck(FastRay& ray, uint32_t id);
+	inline bool triangleCheck(FastRay& ray, uint32_t& id);
 
 };

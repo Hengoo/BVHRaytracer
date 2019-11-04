@@ -145,7 +145,7 @@ public:
 						float factor = 1 - ambientResult / (float)ambientSampleCount;
 						factor = (factor + 1) / 2.f;
 						ray.surfaceColor.scale(factor);
-						ray.surfaceColor = Color(factor);
+						//ray.surfaceColor = Color(factor);
 					}
 
 					float factor = 1;
@@ -185,6 +185,11 @@ public:
 				image[info.index * 4 + 1] = (uint8_t)(ray.surfaceColor.g * 255);
 				image[info.index * 4 + 2] = (uint8_t)(ray.surfaceColor.b * 255);
 				image[info.index * 4 + 3] = (uint8_t)(ray.surfaceColor.a * 255);
+
+				//renders normal
+				//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
+				//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
+				//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
 
 				//copy vectors
 				nodeIntersectionPerPixelCount[info.index] = ray.nodeIntersectionCount;
