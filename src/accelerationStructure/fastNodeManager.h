@@ -25,13 +25,14 @@ struct FastNode
 	bool hasChildren;
 
 	//sorting:
-	std::array<std::vector<int8_t>, 4> traverseOrderEachAxis;
+	//std::array<std::vector<int8_t>, 4> traverseOrderEachAxis;
+	std::array<std::array<int8_t, 16>, 4> traverseOrderEachAxis;
 
 	//array of bounds of children.
 	std::vector<glm::vec3> bounds;
 
 	FastNode(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, std::vector<glm::vec3> bounds, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
-		: traverseOrderEachAxis(traverseOrderEachAxis), bounds(bounds)
+		: bounds(bounds)
 	{
 		if (childIdBegin != childIdEnd)
 		{
@@ -48,6 +49,14 @@ struct FastNode
 		else
 		{
 			std::cerr << "ERROR assigning both child and prim to fast compact node" << std::endl;
+		}
+
+		for (int j = 0; j < 4; j++)
+		{
+			for (int i = 0; i < traverseOrderEachAxis[0].size(); i++)
+			{
+				this->traverseOrderEachAxis[j][i] = traverseOrderEachAxis[j][i];
+			}
 		}
 	}
 

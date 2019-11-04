@@ -117,7 +117,7 @@ bool FastNodeManager::intersect(FastRay& ray)
 			if (reverse)
 			{
 				code = code ^ 3;
-				std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+				std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].begin() + node->childIdEndOffset + 1,
 					[&](auto& cId)
 					{
 
@@ -130,7 +130,7 @@ bool FastNodeManager::intersect(FastRay& ray)
 			}
 			else
 			{
-				std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+				std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin() + (15 - node->childIdEndOffset), node->traverseOrderEachAxis[code].rend(),
 					[&](auto& cId)
 					{
 						if (aabbCheck(ray, node->bounds[cId * 2], node->bounds[cId * 2 + 1], distance))
@@ -141,7 +141,6 @@ bool FastNodeManager::intersect(FastRay& ray)
 					});
 			}
 		}
-
 	}
 	return result;
 }
