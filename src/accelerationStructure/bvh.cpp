@@ -23,12 +23,7 @@
 #include"../mesh.h"
 #include"../meshBin.h"
 
-
-
-//includes for the timer
-#include <ctime>
-#include <ratio>
-#include <chrono>
+#include "..\timing.h"
 
 Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit)
 	:branchingFactor(branchingFactor), leafSize(leafSize), sortEachSplit(sortEachSplit)
@@ -266,7 +261,7 @@ void Bvh::traverseAnalysisBvh(float& epoNode, float& epoLeaf, Triangle* tri, con
 
 void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 {
-	std::chrono::high_resolution_clock::time_point timeBegin = std::chrono::high_resolution_clock::now();
+	auto timeBeginEpo = getTime();
 	//calculate epo:
 	//i think best approach is to go torugh bvh like a ray but with the triangles (aabb)
 	//then add the surface area of each triangle to each node -> need to do something smart about concurrency?
@@ -336,9 +331,7 @@ void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 	nodeEpo = nodeEpoSum / (float)totalSum;
 	leafEpo = leafEpoSum / (float)totalSum;
 
-	std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> time_spanAll = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeBegin);
-	std::cout << "Epo took " << time_spanAll.count() << " seconds." << std::endl;
+	std::cout << "Epo took " << getTimeSpan(timeBeginEpo) << " seconds." << std::endl;
 }
 
 void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
@@ -424,7 +417,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 				});
 			trianglePrimitiveIds.clear();
 		}
-		//could "normalise" those by the root node
+		//could "normalize" those by the root node
 		//leafVolume = leafVolume / analysisRoot->volume;
 		//leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
 		averageTreeDepth /= (float)leafs;

@@ -29,7 +29,7 @@ static inline float maxComponent(glm::vec3& v)
 
 static inline glm::vec3 computeNormal(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3)
 {
-	return glm::normalize(glm::cross(p3 - p1, p2 - p1));
+	return glm::normalize(glm::cross(p2 - p1, p3 - p1));
 }
 
 static inline bool aabbPointIntersection(const glm::vec3& aabbMin, const glm::vec3& aabbMax, const  glm::vec3& point)

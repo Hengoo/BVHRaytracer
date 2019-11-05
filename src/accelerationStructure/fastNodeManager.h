@@ -7,6 +7,9 @@
 #include "bvh.h"
 #include "../fastRay.h"
 
+// Include the header file that the ispc compiler generates
+#include "..\ISPC/ISPCBuild/rayTracer_ISPC.h"
+
 struct FastNode
 {
 	//TODO padding and size improvements
@@ -68,17 +71,17 @@ struct FastNode
 
 struct FastTriangle
 {
-	//transformed point coordinates
-	std::array<glm::vec3, 3> points = {};
+	//transformed point coordinates. I
+	//TODO: shoud try vec4 to get 16 align (and respective thing on ispc
+	std::array<glm::vec4, 3> points = {};
 
-	//padding doesnt seem to change performance
-	uint64_t pad0;
-	uint64_t pad1;
-	uint64_t pad2;
+	//pad to 64 byte
+	//padding doesnt seem to change performance?
+	uint32_t pad3[4];
 
 	FastTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2)
 	{
-		points = { p0,p1,p2 };
+		points = { glm::vec4(p0,0),glm::vec4(p1,0) ,glm::vec4(p2,0) };
 	}
 };
 
@@ -87,8 +90,12 @@ class FastNodeManager
 {
 	std::vector<FastNode> compactNodes;
 	std::vector<FastTriangle> triangles;
+	//std::vector<ispc::Triangle> triangles;
+
+	int branchingFactor;
+	int leafSize;
 public:
-	bool intersect(FastRay& ray);
+	bool intersect(FastRay& ray, double& timeTriangleTest);
 	//copies a bvh and rearanges it into a single vector of compact nodes
 	FastNodeManager(Bvh& bvh);
 

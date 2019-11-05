@@ -4,6 +4,8 @@
 #include "..\util.h"
 #include <algorithm>
 
+#include "..\timing.h"
+
 FastNodeManager::FastNodeManager(Bvh& bvh)
 {
 	//very similar to compactNodeManager
@@ -15,6 +17,9 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 	std::vector<NodeAnalysis*> nodeVector;
 	nodeVector.push_back(bvh.getAnalysisRoot());
 	customTreeOrder(bvh.getAnalysisRoot(), nodeVector);
+
+	branchingFactor = bvh.branchingFactor;
+	leafSize = bvh.leafSize;
 
 	//set ids:
 	for (size_t i = 0; i < nodeVector.size(); i++)
@@ -64,7 +69,7 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 	}
 }
 
-bool FastNodeManager::intersect(FastRay& ray)
+bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 {
 	//ids of ndodes that we still need to test:
 	//TODO: test perfroamnce if pair is faster !!
@@ -75,6 +80,15 @@ bool FastNodeManager::intersect(FastRay& ray)
 	distances.reserve(40);
 	distances.push_back(0);
 	bool result = false;
+
+
+
+	std::vector<glm::vec3> surfaceNormals(leafSize);
+	for (auto& i : surfaceNormals)
+	{
+		i.x = 2;
+	}
+	std::vector<glm::vec3> surfacePositions(leafSize);
 
 	while (queue.size() != 0)
 	{
@@ -92,7 +106,33 @@ bool FastNodeManager::intersect(FastRay& ray)
 
 		if (!node->hasChildren)
 		{
+			auto timeBeforeTriangleTest = getTime();
+			
 			//primitive test: ispc instruction
+			if (triIntersect((ispc::Triangle*)triangles.data(), node->primIdBegin, (ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
+			{
+				//find  the elements in surfacenormals and surfacepositions because ... yeay
+				for (int i = 0; i < surfaceNormals.size(); i++)
+				{
+					//since i currently need to find the right element, surfaceNormal x = 2 is wrong.
+					//The rest of the data can be random, the ispc programm overwrites the random data to what we want
+					if (surfaceNormals[i].x != 2)
+					{
+						ray.surfaceNormal = surfaceNormals[i];
+						surfaceNormals[i].x = 2;
+						ray.surfacePosition = surfacePositions[i];
+						break;
+					}
+				}
+				if (ray.shadowRay)
+				{
+					return true;
+				}
+				result = true;
+			}
+			
+			/*
+			//serial version here:
 			for (uint32_t pId = node->primIdBegin; pId < node->primIdBegin + node->primIdEndOffset; pId++)
 			{
 				//if shadowray :  return true if hit
@@ -104,7 +144,8 @@ bool FastNodeManager::intersect(FastRay& ray)
 					}
 					result = true;
 				}
-			}
+			}*/
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 		}
 		else
 		{
@@ -283,9 +324,25 @@ inline bool FastNodeManager::triangleCheck(FastRay& ray, uint32_t& id)
 	*/
 
 	//faster version -> from ISPC ratracer exmaple https://github.com/ispc/ispc/blob/master/examples/rt/rt_serial.cpp
-	glm::vec3 e1 = triangles[id].points[1] - triangles[id].points[0];
-	glm::vec3 e2 = triangles[id].points[2] - triangles[id].points[0];
 
+	//glm::vec3 e1 = triangles[id].points[1] - triangles[id].points[0];
+	//glm::vec3 e2 = triangles[id].points[2] - triangles[id].points[0];
+
+	glm::vec3 p0 = triangles[id].points[0];
+	glm::vec3 p1 = triangles[id].points[1];
+	glm::vec3 p2 = triangles[id].points[2];
+
+	//glm::vec3 p0(triangles[id].p[0][0], triangles[id].p[0][1], triangles[id].p[0][2]);
+	//glm::vec3 p1(triangles[id].p[1][0], triangles[id].p[1][1], triangles[id].p[1][2]);
+	//glm::vec3 p2(triangles[id].p[2][0], triangles[id].p[2][1], triangles[id].p[2][2]);
+
+	//glm::vec3 p0 = glm::make_vec3(triangles[id].p[0]);
+	//glm::vec3 p1 = glm::make_vec3(triangles[id].p[1]);
+	//glm::vec3 p2 = glm::make_vec3(triangles[id].p[2]);
+
+
+	glm::vec3 e1 = p1 - p0;
+	glm::vec3 e2 = p2 - p0;
 	glm::vec3 s1 = glm::cross(ray.direction, e2);
 	float divisor = glm::dot(s1, e1);
 
@@ -294,7 +351,7 @@ inline bool FastNodeManager::triangleCheck(FastRay& ray, uint32_t& id)
 	float invDivisor = 1.f / divisor;
 
 	// Compute first barycentric coordinate
-	glm::vec3 d = ray.pos - triangles[id].points[0];
+	glm::vec3 d = ray.pos - p0;
 	float b1 = glm::dot(d, s1) * invDivisor;
 	if (b1 < 0. || b1 > 1.)
 		return false;
@@ -310,9 +367,9 @@ inline bool FastNodeManager::triangleCheck(FastRay& ray, uint32_t& id)
 	if (t < 0 || t > ray.tMax)
 		return false;
 
-	ray.surfacePosition = triangles[id].points[0] + e1 * b1 + e2 * b2;
+	ray.surfacePosition = p0 + e1 * b1 + e2 * b2;
 	ray.tMax = t;
-	ray.surfaceNormal = -computeNormal(triangles[id].points[0], triangles[id].points[1], triangles[id].points[2]);
+	ray.surfaceNormal = computeNormal(p0, p1, p2);
 	return true;
 }
 

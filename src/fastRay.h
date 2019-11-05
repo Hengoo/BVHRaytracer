@@ -18,13 +18,12 @@ public:
 	glm::vec3 direction;
 	glm::vec3 invDirection;
 
-	bool shadowRay;
-
 	glm::vec3 surfaceNormal;
 	glm::vec3 surfacePosition;
 
 	//float distance;
 	float tMax;
+	bool shadowRay;
 
 	FastRay(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false);
 };

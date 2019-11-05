@@ -10,7 +10,7 @@
 #include "accelerationStructure/fastNodeManager.h"
 #include "primitives/triangle.h"
 #include "cameraData.h"
-#include "cameraISPC.h"
+#include "cameraFast.h"
 
 #include "glmInclude.h"
 #include "modelLoader.h"
@@ -19,10 +19,7 @@
 #include "lights/pointLight.h"
 #include "lights/directionalLight.h"
 
-//includes for the timer
-#include <ctime>
-#include <ratio>
-#include <chrono>
+#include "timing.h"
 
 //test ispc:
 // Include the header file that the ispc compiler generates
@@ -84,9 +81,9 @@ public:
 
 	void run()
 	{
-		std::chrono::high_resolution_clock::time_point timeBegin = std::chrono::high_resolution_clock::now();
-		//working progress options that should go to config soon:
+		auto timeProgrammBegin = getTime();
 
+		//working progress options that should go to config soon:
 
 		//settings sanity checks:
 		maxBranch = std::max(maxBranch, minBranch);
@@ -145,7 +142,7 @@ public:
 				gameObjects[0]->hasParent = true;
 				std::vector<std::shared_ptr<MeshBin>> meshBins;
 
-				std::chrono::high_resolution_clock::time_point time1 = std::chrono::high_resolution_clock::now();
+				auto timeModelLoadBegin = getTime();
 
 				//reminder : blender coordiantes of this (0, 360, 50) are -> glm::vec3(0, 50, -360);
 				switch (scenario)
@@ -282,9 +279,7 @@ public:
 				//gameObjects.clear();
 				//meshBins.clear();
 
-				std::chrono::high_resolution_clock::time_point time2 = std::chrono::high_resolution_clock::now();
-				std::chrono::duration<double> time_span0 = std::chrono::duration_cast<std::chrono::duration<double>>(time2 - time1);
-				std::cout << std::endl << "Model loading took " << time_span0.count() << " seconds." << std::endl;
+				std::cout << std::endl << "Model loading took " << getTimeSpan(timeModelLoadBegin) << " seconds." << std::endl;
 
 				//two versions:
 				//non parallel when we already have multiple scenes
@@ -360,9 +355,7 @@ public:
 			std::cout.clear();
 		}
 		std::cout << std::endl;
-		std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double> time_spanAll = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeBegin);
-		std::cout << "Everything took " << time_spanAll.count() << " seconds." << std::endl;
+		std::cout << "Everything took " << getTimeSpan(timeProgrammBegin) << " seconds." << std::endl;
 	}
 
 
@@ -380,7 +373,7 @@ public:
 		//bvh of (seeded) random sphere
 		//auto bvh = std::make_unique<Bvh>();
 
-		std::chrono::high_resolution_clock::time_point timeLoop1 = std::chrono::high_resolution_clock::now();
+		auto timeBeginBvhBuild = getTime();
 
 		//bvh of loaded model:
 		Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit);
@@ -403,18 +396,19 @@ public:
 		//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 		//This also duplicates the node system. the copy is used for the compact nodes
 		bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem, triangleCostFactor, nodeCostFactor, mute);
-
-		std::chrono::high_resolution_clock::time_point timeLoop2 = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double> time_span1 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop2 - timeLoop1);
-		std::cout << std::endl << "BVH building and bvh Analysis took " << time_span1.count() << " seconds." << std::endl;
+		std::cout << std::endl << "BVH building and bvh Analysis took " << getTimeSpan(timeBeginBvhBuild) << " seconds." << std::endl;
+		auto timeBeginRendering = getTime();
 
 		if (renderImageOption)
 		{
 			if (doPerformanceTest)
 			{
-				FastNodeManager manager(bvh);
-				CameraISPC c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+				for (int i = 0; i < 10; i++)
+				{
+					FastNodeManager manager(bvh);
+					CameraFast c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+				}
 			}
 			else
 			{
@@ -450,10 +444,7 @@ public:
 				}
 			}
 
-
-			std::chrono::high_resolution_clock::time_point timeLoop3 = std::chrono::high_resolution_clock::now();
-			std::chrono::duration<double> time_span2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeLoop3 - timeLoop2);
-			std::cout << "All to do with rendering took " << time_span2.count() << " seconds." << std::endl;
+			std::cout << "All to do with rendering took " << getTimeSpan(timeBeginRendering) << " seconds." << std::endl;
 		}
 	}
 
@@ -649,39 +640,26 @@ static void testIspc()
 
 	std::vector<float> input(count);
 	std::iota(input.begin(), input.end(), 0);
-	std::chrono::high_resolution_clock::time_point timeBegin = std::chrono::high_resolution_clock::now();
+
 	// call the ispc function:
 	firstTest(input.data(), input.size());
-	std::chrono::high_resolution_clock::time_point timeEnd = std::chrono::high_resolution_clock::now();
 
-
-
-	std::vector<float> input2(count);
-	std::iota(input2.begin(), input2.end(), 0);
-	std::chrono::high_resolution_clock::time_point timeBegin2 = std::chrono::high_resolution_clock::now();
-	for (auto& i : input2)
-	{
-		i = sqrt(i);
-	}
-	std::chrono::high_resolution_clock::time_point timeEnd2 = std::chrono::high_resolution_clock::now();
-
-
-	std::chrono::duration<double> time_spanAll = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeBegin);
-	std::cout << "ISPC took " << time_spanAll.count() << " seconds." << std::endl;
-	std::chrono::duration<double> time_spanAll2 = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd2 - timeBegin2);
-	std::cout << "Normal took " << time_spanAll2.count() << " seconds." << std::endl;
 	// Print results
 	for (int i = 0; i < 16; ++i)
-		printf("%d, %f, %f\n", i, input[i], input2[i]);
+		printf("%d, %f\n", i, input[i]);
 
 }
 
 int main()
 {
-	/*
-	testIspc();
-	return EXIT_SUCCESS;
-	*/
+
+	/*testIspc();
+	std::array<glm::vec3, 3> array = { glm::vec3(0,3,4), glm::vec3(8,9,0), glm::vec3(1,2,6) };
+	glmTest(&array[0][0], 3);
+	return EXIT_SUCCESS;*/
+
+
+	std::cout << sizeof(FastTriangle) << std::endl;
 
 	RayTracer rayTracer;
 	try
