@@ -636,28 +636,26 @@ public:
 static void testIspc()
 {
 	std::cout << "starting Ispc test" << std::endl;
-	int count = 1000000;
+	int count = 11;
 
 	std::vector<float> input(count);
 	std::iota(input.begin(), input.end(), 0);
 
 	// call the ispc function:
-	firstTest(input.data(), input.size());
+	varyingTest(input.data(), input.size());
 
 	// Print results
-	for (int i = 0; i < 16; ++i)
-		printf("%d, %f\n", i, input[i]);
+	//for (int i = 0; i < 16; ++i)
+	//	printf("%d, %f\n", i, input[i]);
 
 }
 
 int main()
 {
-
-	/*testIspc();
-	std::array<glm::vec3, 3> array = { glm::vec3(0,3,4), glm::vec3(8,9,0), glm::vec3(1,2,6) };
-	glmTest(&array[0][0], 3);
-	return EXIT_SUCCESS;*/
-
+	/*
+	testIspc();
+	return EXIT_SUCCESS;
+	*/
 
 	std::cout << sizeof(FastTriangle) << std::endl;
 

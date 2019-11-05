@@ -107,22 +107,38 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 		if (!node->hasChildren)
 		{
 			auto timeBeforeTriangleTest = getTime();
-			
+
 			//primitive test: ispc instruction
-			if (triIntersect((ispc::Triangle*)triangles.data(), node->primIdBegin, (ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
+			if (triIntersect((ispc::Triangle*)triangles.data(), node->primIdBegin,
+				(ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
 			{
 				//find  the elements in surfacenormals and surfacepositions because ... yeay
+				bool hit = false;
 				for (int i = 0; i < surfaceNormals.size(); i++)
 				{
 					//since i currently need to find the right element, surfaceNormal x = 2 is wrong.
 					//The rest of the data can be random, the ispc programm overwrites the random data to what we want
+
 					if (surfaceNormals[i].x != 2)
 					{
+						if (hit)
+						{
+							//std::cerr << "multihit" << std::endl;
+						}
 						ray.surfaceNormal = surfaceNormals[i];
 						surfaceNormals[i].x = 2;
 						ray.surfacePosition = surfacePositions[i];
-						break;
+						hit = true;
+
 					}
+				}
+				if (!hit)
+				{
+					std::cerr << "no result despite hit";
+				}
+				if (ray.tMax == 1000000)
+				{
+					std::cerr << "wat";
 				}
 				if (ray.shadowRay)
 				{
@@ -130,7 +146,7 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 				}
 				result = true;
 			}
-			
+
 			/*
 			//serial version here:
 			for (uint32_t pId = node->primIdBegin; pId < node->primIdBegin + node->primIdEndOffset; pId++)

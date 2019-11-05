@@ -82,6 +82,11 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 {
 	//need to make result vector and later gather the smallest hit and itsurface normal
 	uniform bool result = false;
+
+	//large value so reduce_min never gets masked variables
+	varying float tStore = 1000000;
+	varying float3 surfaceNormal;
+	varying float3 surfacePosition;
 	foreach(index = 0 ... count)
 	{
 		//those p might be uniform?
@@ -98,8 +103,8 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 
 		float3 s1 = cross(dir, e2);
 		float divisor = dot(s1, e1);
-		bool hit = true;
 
+		float hit = true;
 		if (divisor == 0.)
 			hit = false;
 		float invDivisor = 1.f / divisor;
@@ -123,22 +128,35 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 
 		if (hit)
 		{
-			uniform float tmaxmin = reduce_min(t);
-			if(tmaxmin == t)
+			//only overwrite result if we have a closer hit. (only needed if count > lane number)
+			if(tStore > t)
 			{
-				//print("%", index);
-				ray->tmax = tmaxmin;
+				tStore = t;
 				float3 normal = computeNormal(p0,p1,p2);
-				normalize(normal);
-				surfaceNormals[index * 3 ] = normal.x;
-				surfaceNormals[index * 3 + 1] = normal.y;
-				surfaceNormals[index * 3 + 2] = normal.z;
-
-				float3 position = p0 + e1 * b1 + e2 * b2;
-				surfacePositions[index * 3 ] = position.x;
-				surfacePositions[index * 3 + 1] = position.y;
-				surfacePositions[index * 3 + 2] = position.z;
+				//its faster to normalize it later.
+				surfaceNormal = normal;
+				surfacePosition = p0 + e1 * b1 + e2 * b2;
 				result = true;
+			}
+		}
+	}
+	if(result)
+	{	
+		uniform float tmax = reduce_min(tStore);
+		ray->tmax = tmax;
+		foreach(index = 0 ... count)
+		{
+			if(tmax == tStore)
+			{
+				normalize(surfaceNormal);
+				surfaceNormals[index*3 ] = surfaceNormal.x;
+				surfaceNormals[index*3 + 1] = surfaceNormal.y;
+				surfaceNormals[index*3 + 2] = surfaceNormal.z;
+
+				surfacePositions[index *3 ] = surfacePosition.x;
+				surfacePositions[index *3 +1] = surfacePosition.y;
+				surfacePositions[index *3 +2] = surfacePosition.z;
+				
 			}
 		}
 	}
