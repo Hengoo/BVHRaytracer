@@ -144,19 +144,23 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 	{	
 		uniform float tmax = reduce_min(tStore);
 		ray->tmax = tmax;
-		foreach(index = 0 ... count)
+
+		//looping over gang size
+		//foreach(index = 0 ... programCount)
+
+		//Since most of the entries should be 100000 we can use foreach unique to save some time
+		foreach_unique(val in tStore)
 		{
-			if(tmax == tStore)
+			if(tmax == val)
 			{
 				normalize(surfaceNormal);
-				surfaceNormals[index*3 ] = surfaceNormal.x;
-				surfaceNormals[index*3 + 1] = surfaceNormal.y;
-				surfaceNormals[index*3 + 2] = surfaceNormal.z;
+				surfaceNormals[programIndex*3 ] = surfaceNormal.x;
+				surfaceNormals[programIndex*3 + 1] = surfaceNormal.y;
+				surfaceNormals[programIndex*3 + 2] = surfaceNormal.z;
 
-				surfacePositions[index *3 ] = surfacePosition.x;
-				surfacePositions[index *3 +1] = surfacePosition.y;
-				surfacePositions[index *3 +2] = surfacePosition.z;
-				
+				surfacePositions[programIndex *3 ] = surfacePosition.x;
+				surfacePositions[programIndex *3 +1] = surfacePosition.y;
+				surfacePositions[programIndex *3 +2] = surfacePosition.z;
 			}
 		}
 	}
