@@ -6,6 +6,8 @@ Needed libary:
 
 	-GLM in ../../Libraries/glm
 	(or change visual studio setting if you dont like that location)
+	
+	-ISPC compiler needs to be installed (exe has to be in path)
 
 Needed models:
 
