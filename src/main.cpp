@@ -42,14 +42,14 @@ class RayTracer
 	unsigned minBranch;
 	unsigned maxBranch;
 
-	bool renderImageOption;
+	bool renderAnalysisImage;
 	bool saveImage;
 	bool saveDepthDetailedImage;
 	bool bvhAnalysis;
 	bool saveBvhImage;
 	bool mute;
 
-	bool doPerformanceTest = true;
+	bool doPerformanceTest;
 
 	//true -> take new axis and sort for each split. False -> only do it once in the beginning
 	bool sortEachSplit;
@@ -288,6 +288,11 @@ public:
 
 				if (maxBranch == minBranch && maxLeafSize == minLeafSize || doPerformanceTest)
 				{
+					if (doPerformanceTest)
+					{
+						std::cerr << "press button to continue performance test (set high periority fist)" << std::endl;
+						system("pause");
+					}
 					//non parallel version:
 					for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
 					{
@@ -399,53 +404,49 @@ public:
 		std::cout << std::endl << "BVH building and bvh Analysis took " << getTimeSpan(timeBeginBvhBuild) << " seconds." << std::endl;
 		auto timeBeginRendering = getTime();
 
-		if (renderImageOption)
+		if (doPerformanceTest)
 		{
-			if (doPerformanceTest)
+			//for (int i = 0; i < 10; i++)
 			{
-				for (int i = 0; i < 10; i++)
-				{
-					FastNodeManager manager(bvh);
-					CameraFast c(path, name, problem, cameraPos, cameraTarget);
-					c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-				}
+				FastNodeManager manager(bvh);
+				CameraFast c(path, name, problem, cameraPos, cameraTarget);
+				c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 			}
-			else
-			{
+		}
 
-				if (compactNodeOrder == 0 || compactNodeOrder == 1)
+		if (renderAnalysisImage)
+		{
+			if (compactNodeOrder == 0 || compactNodeOrder == 1)
+			{
+				if (sortEachSplit)
 				{
-					if (sortEachSplit)
-					{
-						CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
-						//create camera and render image
-						CameraData c(path, name, problem, cameraPos, cameraTarget);
-						c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
-					}
-					else
-					{
-						CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
-						//create camera and render image
-						CameraData c(path, name, problem, cameraPos, cameraTarget);
-						c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
-					}
+					CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
+					//create camera and render image
+					CameraData c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 				}
 				else
 				{
-					if (sortEachSplit)
-					{
-						std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
-						throw(20);
-					}
-					CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
+					CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 					//create camera and render image
 					CameraData c(path, name, problem, cameraPos, cameraTarget);
 					c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
 				}
 			}
-
-			std::cout << "All to do with rendering took " << getTimeSpan(timeBeginRendering) << " seconds." << std::endl;
+			else
+			{
+				if (sortEachSplit)
+				{
+					std::cerr << "this nodeorder doesnt support sorting each split" << std::endl;
+					throw(20);
+				}
+				CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
+				//create camera and render image
+				CameraData c(path, name, problem, cameraPos, cameraTarget);
+				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+			}
 		}
+		std::cout << "All to do with rendering took " << getTimeSpan(timeBeginRendering) << " seconds." << std::endl;
 	}
 
 	void preparePrimitives(primPointVector& primitives, GameObject& root)
@@ -603,16 +604,16 @@ public:
 							std::cerr << "sortEachSplit value written wrong -> default = false" << std::endl;
 						}
 					}
-					res = line.find("renderImage", 0);
+					res = line.find("renderAnalysisImage", 0);
 					if (res != std::string::npos)
 					{
 						res = line.find("true", 0);
 						res2 = line.find("false", 0);
-						if (res != std::string::npos)renderImageOption = true;
-						else if (res2 != std::string::npos)renderImageOption = false;
+						if (res != std::string::npos)renderAnalysisImage = true;
+						else if (res2 != std::string::npos)renderAnalysisImage = false;
 						else
 						{
-							std::cerr << "renderImage value written wrong -> default = false" << std::endl;
+							std::cerr << "renderAnalysisImage value written wrong -> default = false" << std::endl;
 						}
 					}
 					res = line.find("castShadows", 0);
@@ -625,6 +626,18 @@ public:
 						else
 						{
 							std::cerr << "castShadows value written wrong -> default = false" << std::endl;
+						}
+					}
+					res = line.find("doPerformanceTest", 0);
+					if (res != std::string::npos)
+					{
+						res = line.find("true", 0);
+						res2 = line.find("false", 0);
+						if (res != std::string::npos)doPerformanceTest = true;
+						else if (res2 != std::string::npos)doPerformanceTest = false;
+						else
+						{
+							std::cerr << "doPerformanceTest value written wrong -> default = false" << std::endl;
 						}
 					}
 				}

@@ -182,7 +182,6 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 				(ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
 			{
 				//find  the elements in surfacenormals and surfacepositions because ... yeay
-				bool hit = false;
 				for (int i = 0; i < surfaceNormals.size(); i++)
 				{
 					//since i currently need to find the right element, surfaceNormal x = 2 is wrong.
@@ -190,24 +189,10 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 
 					if (surfaceNormals[i].x != 2)
 					{
-						if (hit)
-						{
-							//std::cerr << "multihit" << std::endl;
-						}
 						ray.surfaceNormal = surfaceNormals[i];
 						surfaceNormals[i].x = 2;
 						ray.surfacePosition = surfacePositions[i];
-						hit = true;
-
 					}
-				}
-				if (!hit)
-				{
-					std::cerr << "no result despite hit";
-				}
-				if (ray.tMax == 1000000)
-				{
-					std::cerr << "wat";
 				}
 				if (ray.shadowRay)
 				{

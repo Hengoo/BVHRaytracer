@@ -102,9 +102,9 @@ class FastNodeManager
 	//same soa order but for aabb
 	std::vector<float> boundsSoA;
 
+public:
 	int branchingFactor;
 	int leafSize;
-public:
 	bool intersect(FastRay& ray, double& timeTriangleTest);
 	//copies a bvh and rearanges it into a single vector of compact nodes
 	FastNodeManager(Bvh& bvh);

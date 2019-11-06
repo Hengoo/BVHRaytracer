@@ -58,7 +58,7 @@ public:
 
 		double triangleTestTime = 0;
 
-		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+		std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 			[&](auto& info)
 			{
 				auto timeBeforeRay = getTime();
@@ -127,17 +127,28 @@ public:
 
 		double timeSum = std::accumulate(times.begin(), times.end(), 0.0);
 		double timeSum2 = std::accumulate(times2.begin(), times2.end(), 0.0);
+		double totalTime = getTimeSpan(timeBeginRaytracer);
 		if (!mute)
 		{
-			std::cout << "Raytracing took " << getTimeSpan(timeBeginRaytracer) << " seconds." << std::endl;
+			std::cout << "Raytracing took " << totalTime << " seconds." << std::endl;
 			std::cout << "ray sum took " << timeSum<< " seconds." << std::endl;
 			std::cout << "triangleTests took " << timeSum2 << " seconds." << std::endl;
 		}
 
+		std::ofstream myfile(path + "/" + name + problem + "_Perf.txt");
+		if (myfile.is_open())
+		{
+			myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;
+			myfile << "Raytracer total time: " << totalTime << std::endl;
+			myfile << "Time for all rays (SUM): " << timeSum << std::endl;
+			myfile << "Time for triangle intersections (SUM): " << timeSum2 << std::endl;
+		}
+		myfile.close();
 		if (saveImage)
 		{
-			encodeTwoSteps(path + "/" + name + ".png", image, width, height);
+			encodeTwoSteps(path + "/" + name + "_Perf.png", image, width, height);
 		}
+
 
 
 	}
