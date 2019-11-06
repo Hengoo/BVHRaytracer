@@ -90,9 +90,9 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 	foreach(index = 0 ... count)
 	{
 		//fast read:
-		float3 p0 = { tri[triId * 9 + index            ], tri[triId * 9 + index + count    ], tri[triId * 9 + index + count * 2] };
-		float3 p1 = { tri[triId * 9 + index + count * 3], tri[triId * 9 + index + count * 4], tri[triId * 9 + index + count * 5] };
-		float3 p2 = { tri[triId * 9 + index + count * 6], tri[triId * 9 + index + count * 7], tri[triId * 9 + index + count * 8] };
+		float3 p0 = { tri[triId + index            ], tri[triId + index + count    ], tri[triId + index + count * 2] };
+		float3 p1 = { tri[triId + index + count * 3], tri[triId + index + count * 4], tri[triId + index + count * 5] };
+		float3 p2 = { tri[triId + index + count * 6], tri[triId + index + count * 7], tri[triId + index + count * 8] };
 		//those p might be uniform?
 
 		/*

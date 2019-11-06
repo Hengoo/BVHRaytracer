@@ -8,7 +8,7 @@ from os import path
 class everything:
 	def __init__(self):
 		#the folder all the scene folders are in: (leave empty if no folder)
-		self.folder = ""
+		self.folder = "SavesPerf/"
 		#names of the sceneFolders
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
 		self.names = ["sponza"]
@@ -155,6 +155,9 @@ class everything:
 					res = self.getLine(i, branch, leaf)
 					fResult.write(res)
 					fResult2.write(res)
+
+		if (len(self.names) == 1):
+			return
 
 		#now loop over b and l again and write average file:
 		fResult = open("AverageTableWithSpace" + self.outputPrefix + ".txt", "w+")

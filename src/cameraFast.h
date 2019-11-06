@@ -142,6 +142,9 @@ public:
 			myfile << "Raytracer total time: " << totalTime << std::endl;
 			myfile << "Time for all rays (SUM): " << timeSum << std::endl;
 			myfile << "Time for triangle intersections (SUM): " << timeSum2 << std::endl;
+
+			//TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			//save only aab time ?
 		}
 		myfile.close();
 		if (saveImage)

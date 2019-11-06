@@ -350,6 +350,8 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	//counts: childCount[i] = number of nodes that have i children
 	std::vector<uint32_t> childCount;
 	std::vector<uint32_t> primCount;
+	//pointer to the leafnodes. I use it save primitive points in a different order.
+	std::vector<NodeAnalysis*> leafNodes;
 	//depth of the leaf nodes
 	std::vector<uint32_t> treeDepth;
 	float allNodesSah = 0;

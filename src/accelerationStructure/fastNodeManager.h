@@ -51,7 +51,7 @@ struct FastNode
 		else if (primIdBegin != primIdEnd)
 		{
 			this->primIdBegin = primIdBegin;
-			primIdEndOffset = primIdEnd - primIdBegin;
+			primIdEndOffset = (primIdEnd - primIdBegin) / 9;
 			hasChildren = false;
 		}
 		else

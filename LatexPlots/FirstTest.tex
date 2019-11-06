@@ -313,7 +313,7 @@
 
 \begin{document}
 
-
+\iffalse
 
 Cost factor for nodes: 1, leafs: 1
 
@@ -321,6 +321,7 @@ This is used for Cost Function, Sah and Epo
 
 Currently all scenes are rendered with Sorted and with efficient rendering (saving distance of aabb and not intersecting when the ray already found a closer triangle)
 
+\fi
 Nomenclature:
 
 Nx = Node size of x (also called branching factor)
@@ -328,6 +329,10 @@ Nx = Node size of x (also called branching factor)
 Lx = Leaf size of x
 
 \iftrue
+\include{FirstPerfAnalysis}
+\fi
+
+\iffalse
 \include{FirstAnalysis}
 \fi
 

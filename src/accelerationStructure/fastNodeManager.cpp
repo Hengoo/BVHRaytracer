@@ -27,6 +27,9 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 		nodeVector[i]->id = i;
 	}
 
+	//SoA order triangle list
+	trianglePoints.reserve(bvh.primitives->size() * 3 * 3);
+
 	for (auto& n : nodeVector)
 	{
 		//begin and end the same -> empty
@@ -43,6 +46,49 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 		{
 			pBegin = std::distance(bvh.primitives->begin(), n->node->primitiveBegin);
 			pEnd = std::distance(bvh.primitives->begin(), n->node->primitiveEnd);
+
+			pBegin = trianglePoints.size();
+			//idea is to restucture the floats inside the primitives
+			//i want to have all x of p0, then all y of p0, then all z of p0 -> all x of p1 ...
+			for (int i = 0; i < 3; i++)
+			{
+				std::for_each(std::execution::seq, n->node->primitiveBegin, n->node->primitiveEnd,
+					[&](auto& p)
+					{
+						Triangle* tri = static_cast<Triangle*>(p.get());
+						glm::vec3 p0, p1, p2;
+						tri->getVertexPositions(p0, p1, p2);
+						trianglePoints.push_back(p0[i]);
+					});
+			}
+			for (int i = 0; i < 3; i++)
+			{
+				std::for_each(std::execution::seq, n->node->primitiveBegin, n->node->primitiveEnd,
+					[&](auto& p)
+					{
+						Triangle* tri = static_cast<Triangle*>(p.get());
+						glm::vec3 p0, p1, p2;
+						tri->getVertexPositions(p0, p1, p2);
+						trianglePoints.push_back(p1[i]);
+					});
+			}
+			for (int i = 0; i < 3; i++)
+			{
+				std::for_each(std::execution::seq, n->node->primitiveBegin, n->node->primitiveEnd,
+					[&](auto& p)
+					{
+						Triangle* tri = static_cast<Triangle*>(p.get());
+						glm::vec3 p0, p1, p2;
+						tri->getVertexPositions(p0, p1, p2);
+						trianglePoints.push_back(p2[i]);
+					});
+			}
+			while (trianglePoints.size() % 16 != 0)
+			{
+				trianglePoints.push_back(0);
+			}
+			pEnd = trianglePoints.size();
+
 		}
 		Aabb* aabb = static_cast<Aabb*>(n->node);
 
@@ -75,6 +121,11 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 			}
 		}
 
+		while (boundsSoA.size() % 16 != 0)
+		{
+			boundsSoA.push_back(0);
+		}
+
 		compactNodes.push_back(FastNode(cBegin, cEnd, pBegin, pEnd, aabbId, n->node->traverseOrderEachAxis));
 	}
 
@@ -89,8 +140,10 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 		triangles.push_back(FastTriangle(p0, p1, p2));
 	}*/
 
-	//SoA order triangle list
-	trianglePoints.reserve(bvh.primitives->size() * 3 * 3);
+
+
+
+	/*
 	for (auto& l : bvh.leafNodes)
 	{
 		//idea is to restucture the floats inside the primitives
@@ -129,7 +182,8 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 				});
 		}
 
-	}
+	}*/
+	auto deb = 0;
 }
 
 bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
@@ -221,11 +275,11 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 		{
 			//child tests: 
 			//ispc version:
-			
+
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
-			if (aabbIntersect((float*)boundsSoA.data(), (float*)aabbDistances.data(), (ispc::Ray*) & ray, node->boundsId, node->childIdEndOffset +1))
+			if (aabbIntersect((float*)boundsSoA.data(), (float*)aabbDistances.data(), (ispc::Ray*) & ray, node->boundsId, node->childIdEndOffset + 1))
 			{
 				if (node->boundsId != 0)
 				{
