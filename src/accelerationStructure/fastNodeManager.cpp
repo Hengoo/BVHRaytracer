@@ -59,13 +59,57 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 	}
 
 	//fill triangle array:
-	triangles.reserve(bvh.primitives->size());
+	//triangles.reserve(bvh.primitives->size());
+	trianglePoints.reserve(bvh.primitives->size() * 3 * 3);
+
+	/*
 	for (auto& p : *bvh.primitives)
 	{
 		Triangle* tri = static_cast<Triangle*>(p.get());
 		glm::vec3 p0, p1, p2;
 		tri->getVertexPositions(p0, p1, p2);
 		triangles.push_back(FastTriangle(p0, p1, p2));
+	}*/
+
+	//SoA order (i think)
+	for (auto& l : bvh.leafNodes)
+	{
+		//idea is to restucture the floats inside the primitives
+		//i want to have all x of p0, then all y of p0, then all z of p0 -> all x of p1 ...
+		for (int i = 0; i < 3; i++)
+		{
+			std::for_each(std::execution::seq, l->node->primitiveBegin, l->node->primitiveEnd,
+				[&](auto& p)
+				{
+					Triangle* tri = static_cast<Triangle*>(p.get());
+					glm::vec3 p0, p1, p2;
+					tri->getVertexPositions(p0, p1, p2);
+					trianglePoints.push_back(p0[i]);
+				});
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			std::for_each(std::execution::seq, l->node->primitiveBegin, l->node->primitiveEnd,
+				[&](auto& p)
+				{
+					Triangle* tri = static_cast<Triangle*>(p.get());
+					glm::vec3 p0, p1, p2;
+					tri->getVertexPositions(p0, p1, p2);
+					trianglePoints.push_back(p1[i]);
+				});
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			std::for_each(std::execution::seq, l->node->primitiveBegin, l->node->primitiveEnd,
+				[&](auto& p)
+				{
+					Triangle* tri = static_cast<Triangle*>(p.get());
+					glm::vec3 p0, p1, p2;
+					tri->getVertexPositions(p0, p1, p2);
+					trianglePoints.push_back(p2[i]);
+				});
+		}
+
 	}
 }
 
@@ -109,7 +153,10 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 			auto timeBeforeTriangleTest = getTime();
 
 			//primitive test: ispc instruction
-			if (triIntersect((ispc::Triangle*)triangles.data(), node->primIdBegin,
+			//if (triIntersect((ispc::Triangle*)triangles.data(), node->primIdBegin,
+			//	(ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
+
+			if (triIntersect(trianglePoints.data(), node->primIdBegin,
 				(ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
 			{
 				//find  the elements in surfacenormals and surfacepositions because ... yeay

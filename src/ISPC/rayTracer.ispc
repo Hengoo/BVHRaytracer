@@ -77,7 +77,7 @@ static inline float3 computeNormal(const float3& p0,const float3& p1,const float
 
 //input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tmax -> is our output
 //storage is needed for varing leafsize -> seems like i have to copy paste it once for 4, 8, and 12 to not have it
-export uniform bool triIntersect(const uniform Triangle tri[], uniform unsigned int triId, uniform Ray* uniform ray,
+export uniform bool triIntersect(const uniform float tri[], uniform unsigned int triId, uniform Ray* uniform ray,
 uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsigned int8 count)
 {
 	//need to make result vector and later gather the smallest hit and itsurface normal
@@ -89,11 +89,25 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 	varying float3 surfacePosition;
 	foreach(index = 0 ... count)
 	{
+		//fast read:
+		float3 p0 = { tri[triId * 9 + index            ], tri[triId * 9 + index + count    ], tri[triId * 9 + index + count * 2] };
+		float3 p1 = { tri[triId * 9 + index + count * 3], tri[triId * 9 + index + count * 4], tri[triId * 9 + index + count * 5] };
+		float3 p2 = { tri[triId * 9 + index + count * 6], tri[triId * 9 + index + count * 7], tri[triId * 9 + index + count * 8] };
 		//those p might be uniform?
-		Triangle triangle = tri[triId + index];
-		float3 p0 = { triangle.p[0][0], triangle.p[0][1], triangle.p[0][2] };
-		float3 p1 = { triangle.p[1][0], triangle.p[1][1], triangle.p[1][2] };
-		float3 p2 = { triangle.p[2][0], triangle.p[2][1], triangle.p[2][2] };
+
+		/*
+		//print positions:
+		print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
+		print("p1 = %, %, % \n", p1.x, p1.y, p1.z);
+		print("p2 = %, %, % \n", p2.x, p2.y, p2.z);
+		*/
+
+		/*
+		
+		float3 p0 = { tri[triId + index].p[0][0], tri[triId + index].p[0][1], tri[triId + index].p[0][2] };
+		float3 p1 = { tri[triId + index].p[1][0], tri[triId + index].p[1][1], tri[triId + index].p[1][2] };
+		float3 p2 = { tri[triId + index].p[2][0], tri[triId + index].p[2][1], tri[triId + index].p[2][2] };
+		*/
 
 		uniform float3 origin = { ray->origin[0], ray->origin[1], ray->origin[2] };
 		uniform float3 dir = { ray->direction[0], ray->direction[1], ray->direction[2] };

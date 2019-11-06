@@ -90,7 +90,7 @@ class FastNodeManager
 {
 	std::vector<FastNode> compactNodes;
 	std::vector<FastTriangle> triangles;
-	//std::vector<ispc::Triangle> triangles;
+	std::vector<float> trianglePoints;
 
 	int branchingFactor;
 	int leafSize;

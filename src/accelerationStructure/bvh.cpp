@@ -352,7 +352,6 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	std::vector<uint32_t> primCount;
 	//depth of the leaf nodes
 	std::vector<uint32_t> treeDepth;
-	std::vector<NodeAnalysis*> leafNodes;
 	float allNodesSah = 0;
 
 	analysisRoot = std::make_shared<NodeAnalysis>(root.get(), branchingFactor, leafSize,

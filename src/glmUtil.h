@@ -1,12 +1,18 @@
 #pragma once
 
 #include "glmInclude.h"
+#include <string>
 
 //returns the index of the largest dimension http://www.pbr-book.org/3ed-2018/Geometry_and_Transformations/Vectors.html#Vector3::MaxDimension
 static inline int maxDimension(const glm::vec3& v)
 {
 	return (v.x > v.y) ? ((v.x > v.z) ? 0 : 2) :
 		((v.y > v.z) ? 1 : 2);
+}
+
+static inline std::string vec3Print(glm::vec3 v)
+{
+	return "x = " + std::to_string(v.x) + ", y = " + std::to_string(v.y) + ", z = " + std::to_string(v.z);
 }
 
 static inline int maxAbsDimension(const glm::vec3& vector)

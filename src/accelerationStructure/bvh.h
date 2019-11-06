@@ -20,6 +20,8 @@ public:
 	bool sortEachSplit;
 	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
+	//pointer to the leafnodes. I use it save primitive points in a different order.
+	std::vector<NodeAnalysis*> leafNodes;
 
 	Bvh()
 	{
