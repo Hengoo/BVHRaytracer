@@ -24,6 +24,8 @@ struct FastNode
 		uint8_t primIdEndOffset;
 	};
 
+	uint32_t boundsId;
+
 	//TODO could put this bool inside something
 	bool hasChildren;
 
@@ -32,10 +34,13 @@ struct FastNode
 	std::array<std::array<int8_t, 16>, 4> traverseOrderEachAxis;
 
 	//array of bounds of children.
-	std::vector<glm::vec3> bounds;
+	//std::vector<glm::vec3> bounds;
 
-	FastNode(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, std::vector<glm::vec3> bounds, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
-		: bounds(bounds)
+
+
+	FastNode(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd
+		, uint32_t boundsId, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
+		:  boundsId(boundsId)
 	{
 		if (childIdBegin != childIdEnd)
 		{
@@ -90,7 +95,12 @@ class FastNodeManager
 {
 	std::vector<FastNode> compactNodes;
 	std::vector<FastTriangle> triangles;
+
+	//(SoA order) -> first p0.x p0.y p0.z -> p1.x ....   (this for each triangle so its lieafsize * p0.x)
 	std::vector<float> trianglePoints;
+
+	//same soa order but for aabb
+	std::vector<float> boundsSoA;
 
 	int branchingFactor;
 	int leafSize;

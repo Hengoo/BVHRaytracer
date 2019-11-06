@@ -21,7 +21,7 @@ struct Ray
 	float invDirection[3];
 	float surfaceNormal[3];
 	float surfacePosition[3];
-	float tmax;
+	float tMax;
 	bool shadowRay;
 };
 
@@ -75,7 +75,7 @@ static inline float3 computeNormal(const float3& p0,const float3& p1,const float
 	return cross(p1 - p0, p2 - p0);
 }
 
-//input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tmax -> is our output
+//input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tMax -> is our output
 //storage is needed for varing leafsize -> seems like i have to copy paste it once for 4, 8, and 12 to not have it
 export uniform bool triIntersect(const uniform float tri[], uniform unsigned int triId, uniform Ray* uniform ray,
 uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsigned int8 count)
@@ -103,7 +103,6 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 		*/
 
 		/*
-		
 		float3 p0 = { tri[triId + index].p[0][0], tri[triId + index].p[0][1], tri[triId + index].p[0][2] };
 		float3 p1 = { tri[triId + index].p[1][0], tri[triId + index].p[1][1], tri[triId + index].p[1][2] };
 		float3 p2 = { tri[triId + index].p[2][0], tri[triId + index].p[2][1], tri[triId + index].p[2][2] };
@@ -137,7 +136,7 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 
 		// Compute _t_ to intersection point
 		float t = dot(e2, s2) * invDivisor;
-		if (t < 0 || t > ray->tmax)
+		if (t < 0 || t > ray->tMax)
 			hit = false;
 
 		if (hit)
@@ -156,8 +155,8 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 	}
 	if(result)
 	{	
-		uniform float tmax = reduce_min(tStore);
-		ray->tmax = tmax;
+		uniform float tMax = reduce_min(tStore);
+		ray->tMax = tMax;
 
 		//looping over gang size
 		//foreach(index = 0 ... programCount)
@@ -165,7 +164,7 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 		//Since most of the entries should be 100000 we can use foreach unique to save some time
 		foreach_unique(val in tStore)
 		{
-			if(tmax == val)
+			if(tMax == val)
 			{
 				normalize(surfaceNormal);
 				surfaceNormals[programIndex*3 ] = surfaceNormal.x;
@@ -176,6 +175,61 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 				surfacePositions[programIndex *3 +1] = surfacePosition.y;
 				surfacePositions[programIndex *3 +2] = surfacePosition.z;
 			}
+		}
+	}
+	return result;
+}
+
+
+export uniform bool aabbIntersect(const uniform float bounds[], uniform float distances[], uniform Ray* uniform ray, uniform int boundId, uniform unsigned int8 count)
+{
+	//its faster to return if we hat one positive hit
+	uniform bool result = false;
+	foreach(index = 0 ... count)
+	{
+		//load bounds:
+		float3 boundMin = { bounds[boundId + index            ], bounds[boundId + index + count    ], bounds[boundId + index + count * 2] };
+		float3 boundMax = { bounds[boundId + index + count * 3], bounds[boundId + index + count * 4], bounds[boundId + index + count * 5] };
+
+		//get ray data:
+		uniform float3 origin = { ray->origin[0], ray->origin[1], ray->origin[2] };
+		uniform float3 invDir = { ray->invDirection[0], ray->invDirection[1], ray->invDirection[2] };
+		float t0 = 0, t1 = ray->tMax;
+
+		float3 tNear = (boundMin - origin) * invDir;
+		float3 tFar = (boundMax - origin) * invDir;
+
+		if (tNear.x > tFar.x) {
+			float tmp = tNear.x;
+			tNear.x = tFar.x;
+			tFar.x = tmp;
+		}
+		t0 = max(tNear.x, t0);
+		t1 = min(tFar.x, t1);
+
+		if (tNear.y > tFar.y) {
+			float tmp = tNear.y;
+			tNear.y = tFar.y;
+			tFar.y = tmp;
+		}
+		t0 = max(tNear.y, t0);
+		t1 = min(tFar.y, t1);
+
+		if (tNear.z > tFar.z) {
+			float tmp = tNear.z;
+			tNear.z = tFar.z;
+			tFar.z = tmp;
+		}
+		t0 = max(tNear.z, t0);
+		t1 = min(tFar.z, t1);
+
+		//print("% \n", t0);
+		if(t0 <= t1)
+		{
+			//print("deb");
+			//print("% \n", t0);
+			result = true;
+			distances[index] = t0;
 		}
 	}
 	return result;

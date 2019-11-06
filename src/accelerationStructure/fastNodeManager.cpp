@@ -46,22 +46,40 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 		}
 		Aabb* aabb = static_cast<Aabb*>(n->node);
 
+
 		//aabbs of children:
+		/*
 		std::vector<glm::vec3> bounds;
 		bounds.reserve(n->node->getChildCount() * 2);
+
 		for (auto& c : n->children)
 		{
 			bounds.push_back(c->boundMin);
 			bounds.push_back(c->boundMax);
+		}*/
+
+		//soa order aabb
+		uint32_t aabbId = boundsSoA.size();
+		for (int i = 0; i < 3; i++)
+		{
+			for (auto& c : n->children)
+			{
+				boundsSoA.push_back(c->boundMin[i]);
+			}
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			for (auto& c : n->children)
+			{
+				boundsSoA.push_back(c->boundMax[i]);
+			}
 		}
 
-		compactNodes.push_back(FastNode(cBegin, cEnd, pBegin, pEnd, bounds, n->node->traverseOrderEachAxis));
+		compactNodes.push_back(FastNode(cBegin, cEnd, pBegin, pEnd, aabbId, n->node->traverseOrderEachAxis));
 	}
 
 	//fill triangle array:
 	//triangles.reserve(bvh.primitives->size());
-	trianglePoints.reserve(bvh.primitives->size() * 3 * 3);
-
 	/*
 	for (auto& p : *bvh.primitives)
 	{
@@ -71,7 +89,8 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 		triangles.push_back(FastTriangle(p0, p1, p2));
 	}*/
 
-	//SoA order (i think)
+	//SoA order triangle list
+	trianglePoints.reserve(bvh.primitives->size() * 3 * 3);
 	for (auto& l : bvh.leafNodes)
 	{
 		//idea is to restucture the floats inside the primitives
@@ -126,13 +145,16 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 	bool result = false;
 
 
-
+	//prepare some memory for ispc triangle method output: 
 	std::vector<glm::vec3> surfaceNormals(leafSize);
 	for (auto& i : surfaceNormals)
 	{
 		i.x = 2;
 	}
 	std::vector<glm::vec3> surfacePositions(leafSize);
+
+	//prepare some data for ispc aabb method output:
+	std::vector<float> aabbDistances(branchingFactor);
 
 	while (queue.size() != 0)
 	{
@@ -213,7 +235,53 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 		else
 		{
 			//child tests: 
+			//ispc version:
+			
+			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
+			if (aabbIntersect((float*)boundsSoA.data(), (float*)aabbDistances.data(), (ispc::Ray*) & ray, node->boundsId, node->childIdEndOffset +1))
+			{
+				if (node->boundsId != 0)
+				{
+					auto deb = 0;
+				}
+				int8_t code = 0;
+				code = code | (ray.direction[0] <= 0);
+				code = code | ((ray.direction[1] <= 0) << 1);
+				bool reverse = ray.direction[2] <= 0;
+				if (reverse)
+				{
+					code = code ^ 3;
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].begin() + node->childIdEndOffset + 1,
+						[&](auto& cId)
+						{
+							if (aabbDistances[cId] != -100000)
+							{
+								queue.push_back(node->childIdBegin + cId);
+								distances.push_back(aabbDistances[cId]);
+								aabbDistances[cId] = -100000;
+							}
+						});
+				}
+				else
+				{
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin() + (15 - node->childIdEndOffset), node->traverseOrderEachAxis[code].rend(),
+						[&](auto& cId)
+						{
+							if (aabbDistances[cId] != -100000)
+							{
+								queue.push_back(node->childIdBegin + cId);
+								distances.push_back(aabbDistances[cId]);
+								aabbDistances[cId] = -100000;
+							}
+						});
+				}
+			}
+
+
+			//serial version here:
+			/*
 			int8_t code = 0;
 			code = code | (ray.direction[0] <= 0);
 			code = code | ((ray.direction[1] <= 0) << 1);
@@ -244,6 +312,7 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 						}
 					});
 			}
+			*/
 		}
 	}
 	return result;
