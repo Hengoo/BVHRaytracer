@@ -21,6 +21,9 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 	branchingFactor = bvh.branchingFactor;
 	leafSize = bvh.leafSize;
 
+	int padTo = 8;
+	bool padInside = false;
+	bool padAfter = true;
 	//set ids:
 	for (size_t i = 0; i < nodeVector.size(); i++)
 	{
@@ -34,19 +37,18 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 	{
 		//begin and end the same -> empty
 		uint32_t cBegin = 0;
-		uint32_t cEnd = 0;
+		uint32_t cCount = 0;
 		uint32_t pBegin = 0;
-		uint32_t pEnd = 0;
+		uint32_t pCount = 0;
 		if (n->node->getChildCount() > 0)
 		{
 			cBegin = (*n->children.begin())->id;
-			cEnd = (*(n->children.end() - 1))->id;
+			cCount = n->node->getChildCount();
 		}
 		if (n->node->getPrimCount() > 0)
 		{
 			pBegin = std::distance(bvh.primitives->begin(), n->node->primitiveBegin);
-			pEnd = std::distance(bvh.primitives->begin(), n->node->primitiveEnd);
-
+			pCount = n->node->getPrimCount();
 			pBegin = trianglePoints.size();
 			//idea is to restucture the floats inside the primitives
 			//i want to have all x of p0, then all y of p0, then all z of p0 -> all x of p1 ...
@@ -60,6 +62,8 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 						tri->getVertexPositions(p0, p1, p2);
 						trianglePoints.push_back(p0[i]);
 					});
+				if (padInside)
+					pad(padTo, trianglePoints);
 			}
 			for (int i = 0; i < 3; i++)
 			{
@@ -71,6 +75,8 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 						tri->getVertexPositions(p0, p1, p2);
 						trianglePoints.push_back(p1[i]);
 					});
+				if (padInside)
+					pad(padTo, trianglePoints);
 			}
 			for (int i = 0; i < 3; i++)
 			{
@@ -82,13 +88,11 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 						tri->getVertexPositions(p0, p1, p2);
 						trianglePoints.push_back(p2[i]);
 					});
+				if (padInside)
+					pad(padTo, trianglePoints);
 			}
-			while (trianglePoints.size() % 16 != 0)
-			{
-				trianglePoints.push_back(0);
-			}
-			pEnd = trianglePoints.size();
-
+			if (padAfter)
+				pad(padTo, trianglePoints);
 		}
 		Aabb* aabb = static_cast<Aabb*>(n->node);
 
@@ -112,6 +116,8 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 			{
 				boundsSoA.push_back(c->boundMin[i]);
 			}
+			if (padInside)
+				pad(padTo, boundsSoA);
 		}
 		for (int i = 0; i < 3; i++)
 		{
@@ -119,14 +125,13 @@ FastNodeManager::FastNodeManager(Bvh& bvh)
 			{
 				boundsSoA.push_back(c->boundMax[i]);
 			}
+			if (padInside)
+				pad(padTo, boundsSoA);
 		}
+		if (padAfter)
+			pad(padTo, boundsSoA);
 
-		while (boundsSoA.size() % 16 != 0)
-		{
-			boundsSoA.push_back(0);
-		}
-
-		compactNodes.push_back(FastNode(cBegin, cEnd, pBegin, pEnd, aabbId, n->node->traverseOrderEachAxis));
+		compactNodes.push_back(FastNode(cBegin, cCount, pBegin, pCount, aabbId, n->node->traverseOrderEachAxis));
 	}
 
 	//fill triangle array:
@@ -188,7 +193,7 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 			//	(ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
 
 			if (triIntersect(trianglePoints.data(), node->primIdBegin,
-				(ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primIdEndOffset))
+				(ispc::Ray*) & ray, (float*)surfaceNormals.data(), (float*)surfacePositions.data(), node->primCount))
 			{
 				//find  the elements in surfacenormals and surfacepositions because ... yeay
 				for (int i = 0; i < surfaceNormals.size(); i++)
@@ -234,7 +239,7 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
-			if (aabbIntersect((float*)boundsSoA.data(), (float*)aabbDistances.data(), (ispc::Ray*) & ray, node->boundsId, node->childIdEndOffset + 1))
+			if (aabbIntersect((float*)boundsSoA.data(), (float*)aabbDistances.data(), (ispc::Ray*) & ray, node->boundsId, node->childCount))
 			{
 				if (node->boundsId != 0)
 				{
@@ -247,7 +252,7 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 				if (reverse)
 				{
 					code = code ^ 3;
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].begin() + node->childIdEndOffset + 1,
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].begin() + node->childCount,
 						[&](auto& cId)
 						{
 							if (aabbDistances[cId] != -100000)
@@ -260,7 +265,7 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 				}
 				else
 				{
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin() + (15 - node->childIdEndOffset), node->traverseOrderEachAxis[code].rend(),
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin() + (16 - node->childCount), node->traverseOrderEachAxis[code].rend(),
 						[&](auto& cId)
 						{
 							if (aabbDistances[cId] != -100000)

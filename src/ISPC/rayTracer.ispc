@@ -89,12 +89,17 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 	varying float3 surfacePosition;
 	foreach(index = 0 ... count)
 	{
+
 		//fast read:
 		float3 p0 = { tri[triId + index            ], tri[triId + index + count    ], tri[triId + index + count * 2] };
 		float3 p1 = { tri[triId + index + count * 3], tri[triId + index + count * 4], tri[triId + index + count * 5] };
 		float3 p2 = { tri[triId + index + count * 6], tri[triId + index + count * 7], tri[triId + index + count * 8] };
-		//those p might be uniform?
-
+		
+		//const uniform pad = 8;
+		//float3 p0 = { tri[triId + index            ], tri[triId + index + pad    ], tri[triId + index + pad * 2] };
+		//float3 p1 = { tri[triId + index + pad * 3], tri[triId + index + pad * 4], tri[triId + index + pad * 5] };
+		//float3 p2 = { tri[triId + index + pad * 6], tri[triId + index + pad * 7], tri[triId + index + pad * 8] };
+		
 		/*
 		//print positions:
 		print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
@@ -188,8 +193,12 @@ export uniform bool aabbIntersect(const uniform float bounds[], uniform float di
 	foreach(index = 0 ... count)
 	{
 		//load bounds:
+		
 		float3 boundMin = { bounds[boundId + index            ], bounds[boundId + index + count    ], bounds[boundId + index + count * 2] };
 		float3 boundMax = { bounds[boundId + index + count * 3], bounds[boundId + index + count * 4], bounds[boundId + index + count * 5] };
+		//const uniform int pad = 8;
+		//float3 boundMin = { bounds[boundId + index            ], bounds[boundId + index + pad    ], bounds[boundId + index + pad * 2] };
+		//float3 boundMax = { bounds[boundId + index + pad * 3], bounds[boundId + index + pad * 4], bounds[boundId + index + pad * 5] };
 
 		//get ray data:
 		uniform float3 origin = { ray->origin[0], ray->origin[1], ray->origin[2] };

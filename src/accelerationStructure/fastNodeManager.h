@@ -20,8 +20,8 @@ struct FastNode
 	};
 	union
 	{
-		uint8_t childIdEndOffset;
-		uint8_t primIdEndOffset;
+		uint8_t childCount;
+		uint8_t primCount;
 	};
 
 	uint32_t boundsId;
@@ -38,20 +38,20 @@ struct FastNode
 
 
 
-	FastNode(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd
+	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount
 		, uint32_t boundsId, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
 		:  boundsId(boundsId)
 	{
-		if (childIdBegin != childIdEnd)
+		if (childCount != 0)
 		{
 			this->childIdBegin = childIdBegin;
-			childIdEndOffset = childIdEnd - childIdBegin;
+			this->childCount = childCount;
 			hasChildren = true;
 		}
-		else if (primIdBegin != primIdEnd)
+		else if (primCount != 0)
 		{
 			this->primIdBegin = primIdBegin;
-			primIdEndOffset = (primIdEnd - primIdBegin) / 9;
+			this->primCount = primCount;
 			hasChildren = false;
 		}
 		else
@@ -66,11 +66,6 @@ struct FastNode
 				this->traverseOrderEachAxis[j][i] = traverseOrderEachAxis[j][i];
 			}
 		}
-	}
-
-	inline uint16_t getChildCount()
-	{
-		return childIdEndOffset + 1;
 	}
 };
 
@@ -101,6 +96,16 @@ class FastNodeManager
 
 	//same soa order but for aabb
 	std::vector<float> boundsSoA;
+
+	//padto is the number of elements to pad to
+	inline void pad(int padTo, std::vector<float>& vector)
+	{
+		//lazy, could be faster but doesnt matter
+		while (vector.size() % padTo != 0)
+		{
+			vector.push_back(0);
+		}
+	}
 
 public:
 	int branchingFactor;
