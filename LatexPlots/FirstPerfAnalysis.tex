@@ -137,13 +137,13 @@ First set of plots is with avx (8 lanes) and the second set is with sse(4 lanes)
 \iftrue
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth} 
-		\plot{Time triangle intersections}{triangleIntersectionSum}{Data/sponzaSeeTableWithSpace.txt}
+		\plot{Time triangle intersections}{triangleIntersectionSum}{Data/sponzaSSETableWithSpace.txt}
 	\end{minipage}\hfil \hfil
 	\begin{minipage}[t]{0.4\textwidth}
-		\plotr{Time rest}{rayTimeWithoutTri}{Data/sponzaSeeTableWithSpace.txt}
+		\plotr{Time rest}{rayTimeWithoutTri}{Data/sponzaSSETableWithSpace.txt}
 	\end{minipage}
 	
-	\caption{Overview over the sponza ispc performance tests. (see4)}
+	\caption{Overview over the sponza ispc performance tests. (sse4)}
 \end{figure}
 \newpage
 \fi
@@ -167,10 +167,10 @@ First set of plots is with avx (8 lanes) and the second set is with sse(4 lanes)
 		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
 		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
 		]
-		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict y to domain={16: 16}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
+		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict y to domain={16: 16}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
 		
 		\legend{N2, N4, N8, N16}
 		\end{axis}
@@ -191,17 +191,17 @@ First set of plots is with avx (8 lanes) and the second set is with sse(4 lanes)
 		xtick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
 		xticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
 		]
-		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict y to domain={16: 16}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
+		\addplot3+[thick, restrict y to domain={2: 2}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict y to domain={4: 4}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict y to domain={16: 16}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
 		
 		\legend{N2, N4, N8, N16}
 		\end{axis}
 		\end{tikzpicture}
 	\end{minipage}
 	
-	\caption{Comparison of N2, N4, N8, N16 for sponza performance tests. (see4)}
+	\caption{Comparison of N2, N4, N8, N16 for sponza performance tests. (sse4)}
 \end{figure}
 
 \begin{figure}[!htb]
@@ -219,10 +219,10 @@ First set of plots is with avx (8 lanes) and the second set is with sse(4 lanes)
 		ytick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
 		yticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
 		]
-		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict x to domain={12:12}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict x to domain={16:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSeeTable.txt};
+		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict x to domain={12:12}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict x to domain={16:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/sponzaSSETable.txt};
 		
 		\legend{L4,L8,L12,L16}
 		\end{axis}
@@ -242,14 +242,14 @@ First set of plots is with avx (8 lanes) and the second set is with sse(4 lanes)
 		ytick={2,3,4,5,6,7,8,9,10,11,12,13,14,15,16},
 		yticklabels={,,,$5$,,,,,$10$,,,,,$15$,},
 		]
-		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict x to domain={12:12}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
-		\addplot3+[thick, restrict x to domain={16:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSeeTable.txt};
+		\addplot3+[thick, restrict x to domain={4:4}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict x to domain={12:12}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
+		\addplot3+[thick, restrict x to domain={16:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeWithoutTri, col sep=comma]{Data/sponzaSSETable.txt};
 		
 		\legend{L4,L8,L12,L16}
 		\end{axis}
 		\end{tikzpicture}
 	\end{minipage}
-	\caption{Comparison of L4, L8, L12, L16 for sponza performance tests. (see4)}
+	\caption{Comparison of L4, L8, L12, L16 for sponza performance tests. (sse4)}
 \end{figure}

@@ -13,7 +13,7 @@ class everything:
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
 		self.names = ["sponza"]
 		#prefixTo the folderNames
-		self.prefix = "See"
+		self.prefix = "SSE"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = ""
 
