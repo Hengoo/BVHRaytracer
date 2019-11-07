@@ -206,6 +206,7 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 						ray.surfaceNormal = surfaceNormals[i];
 						surfaceNormals[i].x = 2;
 						ray.surfacePosition = surfacePositions[i];
+						break;
 					}
 				}
 				if (ray.shadowRay)
@@ -241,10 +242,6 @@ bool FastNodeManager::intersect(FastRay& ray, double& timeTriangleTest)
 
 			if (aabbIntersect((float*)boundsSoA.data(), (float*)aabbDistances.data(), (ispc::Ray*) & ray, node->boundsId, node->childCount))
 			{
-				if (node->boundsId != 0)
-				{
-					auto deb = 0;
-				}
 				int8_t code = 0;
 				code = code | (ray.direction[0] <= 0);
 				code = code | ((ray.direction[1] <= 0) << 1);

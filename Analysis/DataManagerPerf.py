@@ -13,9 +13,9 @@ class everything:
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
 		self.names = ["sponza"]
 		#prefixTo the folderNames
-		self.prefix = ""
+		self.prefix = "See"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
-		self.outputPrefix = "Perf"
+		self.outputPrefix = ""
 
 		# -1 for all, id otherwise (starting with 0)
 		self.singeIdOverride = -1
@@ -48,11 +48,13 @@ class everything:
 		#names of normalized variables like wasteFactor
 		self.normalizedVariableNames = [
 			"Time for all rays (SUM):",
-			"Time for triangle intersections (SUM):"
+			"Time for triangle intersections (SUM):",
+			"Time all rays(sum) - triangle(sum):",
 		]
 		self.normalizedVariableOutputNames = [
 			"rayTimeSum",
-			"triangleIntersectionSum"
+			"triangleIntersectionSum",
+			"rayTimeWithoutTri",
 		]
 
 		#Variables that are multiplied by branching factor:

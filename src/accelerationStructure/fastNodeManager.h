@@ -23,15 +23,16 @@ struct FastNode
 		uint8_t childCount;
 		uint8_t primCount;
 	};
-
-	uint32_t boundsId;
-
 	//TODO could put this bool inside something
 	bool hasChildren;
+
+	uint32_t boundsId;
 
 	//sorting:
 	//std::array<std::vector<int8_t>, 4> traverseOrderEachAxis;
 	std::array<std::array<int8_t, 16>, 4> traverseOrderEachAxis;
+
+	uint32_t pad;
 
 	//array of bounds of children.
 	//std::vector<glm::vec3> bounds;

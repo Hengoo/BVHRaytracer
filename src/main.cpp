@@ -73,6 +73,8 @@ class RayTracer
 	float triangleCostFactor = 1;
 	float nodeCostFactor = 1;
 
+	int perfLoopCount = 10;
+
 public:
 
 	RayTracer()
@@ -406,7 +408,7 @@ public:
 
 		if (doPerformanceTest)
 		{
-			//for (int i = 0; i < 10; i++)
+			for (int i = 0; i < perfLoopCount; i++)
 			{
 				FastNodeManager manager(bvh);
 				CameraFast c(path, name, problem, cameraPos, cameraTarget);
@@ -669,8 +671,6 @@ int main()
 	testIspc();
 	return EXIT_SUCCESS;
 	*/
-
-	std::cout << sizeof(FastTriangle) << std::endl;
 
 	RayTracer rayTracer;
 	try

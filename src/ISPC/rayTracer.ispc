@@ -150,9 +150,8 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 			if(tStore > t)
 			{
 				tStore = t;
-				float3 normal = computeNormal(p0,p1,p2);
 				//its faster to normalize it later.
-				surfaceNormal = normal;
+				surfaceNormal = computeNormal(p0,p1,p2);
 				surfacePosition = p0 + e1 * b1 + e2 * b2;
 				result = true;
 			}

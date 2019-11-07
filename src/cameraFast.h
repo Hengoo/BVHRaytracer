@@ -133,6 +133,7 @@ public:
 			std::cout << "Raytracing took " << totalTime << " seconds." << std::endl;
 			std::cout << "ray sum took " << timeSum<< " seconds." << std::endl;
 			std::cout << "triangleTests took " << timeSum2 << " seconds." << std::endl;
+			std::cout << "all rays minus triangle took " << timeSum - timeSum2 << " seconds." << std::endl;
 		}
 
 		std::ofstream myfile(path + "/" + name + problem + "_Perf.txt");
@@ -142,9 +143,7 @@ public:
 			myfile << "Raytracer total time: " << totalTime << std::endl;
 			myfile << "Time for all rays (SUM): " << timeSum << std::endl;
 			myfile << "Time for triangle intersections (SUM): " << timeSum2 << std::endl;
-
-			//TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			//save only aab time ?
+			myfile << "Time all rays(sum) - triangle(sum): " << timeSum - timeSum2 << std::endl;
 		}
 		myfile.close();
 		if (saveImage)
