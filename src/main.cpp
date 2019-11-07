@@ -21,10 +21,9 @@
 
 #include "timing.h"
 
-//test ispc:
 // Include the header file that the ispc compiler generates
-#include "ISPC/ISPCBuild/test_ISPC.h"
-using namespace ispc;
+#include "ISPC/ISPCBuild/rayTracer_ISPC.h"
+using namespace::ispc;
 
 //#include "primitives/triangle.h"
 
@@ -119,6 +118,9 @@ public:
 		std::cout << "compact Node order: " << compactNodeOrder << std::endl;
 		//std::cout << "Sah Node cost factor: " << nodeCostFactor << std::endl;
 		//std::cout << "Sah Triangle cost factor: " << triangleCostFactor << std::endl;
+
+		unsigned gangSize = getGangSize();
+		std::cout << "Gang size of " << gangSize << std::endl;
 		std::cout << std::endl;
 
 		mute = scenarios.size() > 1 || maxBranch != minBranch || maxLeafSize != minLeafSize;
@@ -300,7 +302,7 @@ public:
 					{
 						for (size_t b = minBranch; b < maxBranch + 1; b++)
 						{
-							renderImage(b, l, primitives, cameraPos, cameraTarget, lights, name, path);
+							renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
 						}
 					}
 				}
@@ -327,7 +329,7 @@ public:
 									{
 										for (size_t b = minBranch; b < maxBranch + 1; b++)
 										{
-											renderImage(b, l, primitives, cameraPos, cameraTarget, lights, name, path);
+											renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
 										}
 									}
 								});
@@ -348,7 +350,7 @@ public:
 									{
 										for (size_t l = minLeafSize; l < maxLeafSize + 1; l++)
 										{
-											renderImage(b, l, primitives, cameraPos, cameraTarget, lights, name, path);
+											renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
 										}
 									}
 								});
@@ -367,8 +369,9 @@ public:
 
 
 	//is called in the loop that iterates trough branchingfactor and leafsize
-	void renderImage(unsigned branchingFactor, unsigned leafSize, primPointVector& primitives,
-		glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights, std::string& name, std::string& path)
+	void renderImage(unsigned branchingFactor, unsigned leafSize, unsigned gangSize, primPointVector& primitives,
+		glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights,
+		std::string& name, std::string& path)
 	{
 
 		std::string problem;
@@ -410,9 +413,24 @@ public:
 		{
 			for (int i = 0; i < perfLoopCount; i++)
 			{
-				FastNodeManager manager(bvh);
-				CameraFast c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+				if (gangSize == 8)
+				{
+					//TODO:  !!!! do this stuff here. Gangsize always needs to be correct!
+					//node memory >= branching factor and leafMemory >= leafsize !must be correct
+
+					//its <gangsize, nodeMemory> manager(bvh, leafMemory)
+					FastNodeManager<8, 8> manager(bvh, 8);
+					CameraFast c(path, name, problem, cameraPos, cameraTarget);
+					c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+				}
+				else
+				{
+					//FastNodeManager<4, 5> manager(bvh);
+					//CameraFast<4, 5> c(path, name, problem, cameraPos, cameraTarget);
+					//c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+				}
+
+
 			}
 		}
 
@@ -648,6 +666,7 @@ public:
 	}
 };
 
+/*
 static void testIspc()
 {
 	std::cout << "starting Ispc test" << std::endl;
@@ -663,7 +682,7 @@ static void testIspc()
 	//for (int i = 0; i < 16; ++i)
 	//	printf("%d, %f\n", i, input[i]);
 
-}
+}*/
 
 int main()
 {
@@ -671,6 +690,13 @@ int main()
 	testIspc();
 	return EXIT_SUCCESS;
 	*/
+
+	std::cout << "sizes of the nodes: FIX if its not 128 256 ..." << std::endl;
+
+	std::cout << sizeof(FastNode<4>) << std::endl;
+	std::cout << sizeof(FastNode<8>) << std::endl;
+	std::cout << sizeof(FastNode<12>) << std::endl;
+	std::cout << sizeof(FastNode<16>) << std::endl;
 
 	RayTracer rayTracer;
 	try

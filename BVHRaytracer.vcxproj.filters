@@ -54,6 +54,9 @@
     <ClCompile Include="src\accelerationStructure\fastNodeManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\cameraFast.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\primitives\primitive.h">

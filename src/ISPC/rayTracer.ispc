@@ -2,6 +2,12 @@
 
 //#define bool int
 
+
+export uniform int getGangSize()
+{
+	return programCount;
+}
+
 //my glm::vec3 are just 3 floats after each other so this fits:
 typedef float<3> float3;
 
@@ -77,41 +83,33 @@ static inline float3 computeNormal(const float3& p0,const float3& p1,const float
 
 //input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tMax -> is our output
 //storage is needed for varing leafsize -> seems like i have to copy paste it once for 4, 8, and 12 to not have it
-export uniform bool triIntersect(const uniform float tri[], uniform unsigned int triId, uniform Ray* uniform ray,
-uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsigned int8 count)
+export uniform int triIntersect(const uniform float tri[], uniform unsigned int triId, uniform Ray* uniform ray,
+ uniform float surfaceNormals[], uniform float surfacePositions[], uniform int leafMemory, uniform int leafSize)
 {
-	//need to make result vector and later gather the smallest hit and itsurface normal
-	uniform bool result = false;
-
 	//large value so reduce_min never gets masked variables
 	varying float tStore = 1000000;
 	varying float3 surfaceNormal;
 	varying float3 surfacePosition;
-	foreach(index = 0 ... count)
+	uniform bool result = false;
+	foreach(index = 0 ... leafSize)
 	{
 
 		//fast read:
-		float3 p0 = { tri[triId + index            ], tri[triId + index + count    ], tri[triId + index + count * 2] };
-		float3 p1 = { tri[triId + index + count * 3], tri[triId + index + count * 4], tri[triId + index + count * 5] };
-		float3 p2 = { tri[triId + index + count * 6], tri[triId + index + count * 7], tri[triId + index + count * 8] };
+		float3 p0 = { tri[triId + index                 ], tri[triId + index + leafMemory    ], tri[triId + index + leafMemory * 2] };
+		float3 p1 = { tri[triId + index + leafMemory * 3], tri[triId + index + leafMemory * 4], tri[triId + index + leafMemory * 5] };
+		float3 p2 = { tri[triId + index + leafMemory * 6], tri[triId + index + leafMemory * 7], tri[triId + index + leafMemory * 8] };
 		
 		//const uniform pad = 8;
 		//float3 p0 = { tri[triId + index            ], tri[triId + index + pad    ], tri[triId + index + pad * 2] };
 		//float3 p1 = { tri[triId + index + pad * 3], tri[triId + index + pad * 4], tri[triId + index + pad * 5] };
 		//float3 p2 = { tri[triId + index + pad * 6], tri[triId + index + pad * 7], tri[triId + index + pad * 8] };
 		
-		/*
+		
 		//print positions:
-		print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
-		print("p1 = %, %, % \n", p1.x, p1.y, p1.z);
-		print("p2 = %, %, % \n", p2.x, p2.y, p2.z);
-		*/
-
-		/*
-		float3 p0 = { tri[triId + index].p[0][0], tri[triId + index].p[0][1], tri[triId + index].p[0][2] };
-		float3 p1 = { tri[triId + index].p[1][0], tri[triId + index].p[1][1], tri[triId + index].p[1][2] };
-		float3 p2 = { tri[triId + index].p[2][0], tri[triId + index].p[2][1], tri[triId + index].p[2][2] };
-		*/
+		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
+		//print("p1 = %, %, % \n", p1.x, p1.y, p1.z);
+		//print("p2 = %, %, % \n", p2.x, p2.y, p2.z);
+		
 
 		uniform float3 origin = { ray->origin[0], ray->origin[1], ray->origin[2] };
 		uniform float3 dir = { ray->direction[0], ray->direction[1], ray->direction[2] };
@@ -149,27 +147,25 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 			//only overwrite result if we have a closer hit. (only needed if count > lane number)
 			if(tStore > t)
 			{
+				result = true;
 				tStore = t;
 				//its faster to normalize it later.
 				surfaceNormal = computeNormal(p0,p1,p2);
 				surfacePosition = p0 + e1 * b1 + e2 * b2;
-				result = true;
 			}
 		}
 	}
 	if(result)
-	{	
-		uniform float tMax = reduce_min(tStore);
-		ray->tMax = tMax;
-
-		//looping over gang size
-		//foreach(index = 0 ... programCount)
-
+	{
+		uniform float bestT = reduce_min(tStore);
+		varying int index = -1;
+		ray->tMax = bestT;
 		//Since most of the entries should be 100000 we can use foreach unique to save some time
 		foreach_unique(val in tStore)
 		{
-			if(tMax == val)
+			if(bestT == val)
 			{
+				index = programIndex;
 				normalize(surfaceNormal);
 				surfaceNormals[programIndex*3 ] = surfaceNormal.x;
 				surfaceNormals[programIndex*3 + 1] = surfaceNormal.y;
@@ -180,24 +176,36 @@ uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsign
 				surfacePositions[programIndex *3 +2] = surfacePosition.z;
 			}
 		}
+		return reduce_max(index);
 	}
-	return result;
+	else
+	{
+		return -1;
+	}
+	
+
 }
 
-
-export uniform bool aabbIntersect(const uniform float bounds[], uniform float distances[], uniform Ray* uniform ray, uniform int boundId, uniform unsigned int8 count)
+export uniform bool aabbIntersect(const uniform float bounds[], uniform float distances[], uniform Ray* uniform ray, uniform int nodeMemory, uniform int branchingFactor)
 {
 	//its faster to return if we hat one positive hit
 	uniform bool result = false;
-	foreach(index = 0 ... count)
+	foreach(index = 0 ... branchingFactor)
 	{
 		//load bounds:
 		
-		float3 boundMin = { bounds[boundId + index            ], bounds[boundId + index + count    ], bounds[boundId + index + count * 2] };
-		float3 boundMax = { bounds[boundId + index + count * 3], bounds[boundId + index + count * 4], bounds[boundId + index + count * 5] };
+		float3 boundMin = { bounds[index                 ], bounds[index + nodeMemory    ], bounds[index + nodeMemory * 2] };
+		float3 boundMax = { bounds[index + nodeMemory * 3], bounds[index + nodeMemory * 4], bounds[index + nodeMemory * 5] };
 		//const uniform int pad = 8;
 		//float3 boundMin = { bounds[boundId + index            ], bounds[boundId + index + pad    ], bounds[boundId + index + pad * 2] };
 		//float3 boundMax = { bounds[boundId + index + pad * 3], bounds[boundId + index + pad * 4], bounds[boundId + index + pad * 5] };
+		
+		//print positions:
+		//print("p0 = %, %, % \n", boundMin.x, boundMin.y, boundMin.z);
+		//print("p1 = %, %, % \n", boundMax.x, boundMax.y, boundMax.z);
+		
+
+		
 
 		//get ray data:
 		uniform float3 origin = { ray->origin[0], ray->origin[1], ray->origin[2] };
@@ -238,7 +246,7 @@ export uniform bool aabbIntersect(const uniform float bounds[], uniform float di
 			//print("% \n", t0);
 			result = true;
 			distances[index] = t0;
-		}
+		}		
 	}
 	return result;
 }

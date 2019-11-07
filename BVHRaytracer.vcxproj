@@ -25,6 +25,7 @@
     <ClCompile Include="src\accelerationStructure\fastNodeManager.cpp" />
     <ClCompile Include="src\accelerationStructure\node.cpp" />
     <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\cameraFast.cpp" />
     <ClCompile Include="src\fastRay.cpp" />
     <ClCompile Include="src\lodepng\lodepng.cpp" />
     <ClCompile Include="src\main.cpp" />

@@ -5,12 +5,11 @@
 #include <numeric>
 
 #include "bvh.h"
-#include "../fastRay.h"
 
-// Include the header file that the ispc compiler generates
-#include "..\ISPC/ISPCBuild/rayTracer_ISPC.h"
+class FastRay;
 
-struct FastNode
+template  <size_t nodeMemory>
+struct alignas(32) FastNode
 {
 	//TODO padding and size improvements
 	union
@@ -18,41 +17,30 @@ struct FastNode
 		uint32_t childIdBegin;
 		uint32_t primIdBegin;
 	};
-	union
-	{
-		uint8_t childCount;
-		uint8_t primCount;
-	};
-	//TODO could put this bool inside something
+
+	//aabbs
+	std::array<float, nodeMemory * 6> bounds;
+
+	//sorting
+	std::array<std::array<int8_t, nodeMemory>, 4> traverseOrderEachAxis;
+
+	//could put this bool inside something ?
 	bool hasChildren;
 
-	uint32_t boundsId;
-
-	//sorting:
-	//std::array<std::vector<int8_t>, 4> traverseOrderEachAxis;
-	std::array<std::array<int8_t, 16>, 4> traverseOrderEachAxis;
-
-	uint32_t pad;
-
-	//array of bounds of children.
-	//std::vector<glm::vec3> bounds;
 
 
-
-	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount
-		, uint32_t boundsId, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
-		:  boundsId(boundsId)
+	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount , std::array<float, nodeMemory * 6> bounds
+		, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
+		: bounds(bounds)
 	{
 		if (childCount != 0)
 		{
 			this->childIdBegin = childIdBegin;
-			this->childCount = childCount;
 			hasChildren = true;
 		}
 		else if (primCount != 0)
 		{
 			this->primIdBegin = primIdBegin;
-			this->primCount = primCount;
 			hasChildren = false;
 		}
 		else
@@ -62,9 +50,18 @@ struct FastNode
 
 		for (int j = 0; j < 4; j++)
 		{
-			for (int i = 0; i < traverseOrderEachAxis[0].size(); i++)
+			for (int i = 0; i < this->traverseOrderEachAxis[0].size(); i++)
 			{
-				this->traverseOrderEachAxis[j][i] = traverseOrderEachAxis[j][i];
+				if (traverseOrderEachAxis[0].size() > i)
+				{
+					this->traverseOrderEachAxis[j][i] = traverseOrderEachAxis[j][i];
+				}
+				else
+				{
+					//no childs anymore so fill with 0
+					this->traverseOrderEachAxis[j][i] = 0;
+				}
+				
 			}
 		}
 	}
@@ -86,17 +83,13 @@ struct FastTriangle
 	}
 };
 
-
+template <size_t gangSize, size_t nodeMemory>
 class FastNodeManager
 {
-	std::vector<FastNode> compactNodes;
-	std::vector<FastTriangle> triangles;
+	std::vector<FastNode<nodeMemory>>compactNodes;
 
 	//(SoA order) -> first p0.x p0.y p0.z -> p1.x ....   (this for each triangle so its lieafsize * p0.x)
 	std::vector<float> trianglePoints;
-
-	//same soa order but for aabb
-	std::vector<float> boundsSoA;
 
 	//padto is the number of elements to pad to
 	inline void pad(int padTo, std::vector<float>& vector)
@@ -109,17 +102,13 @@ class FastNodeManager
 	}
 
 public:
-	int branchingFactor;
 	int leafSize;
+	int leafMemory;
+	int branchingFactor;
 	bool intersect(FastRay& ray, double& timeTriangleTest);
 	//copies a bvh and rearanges it into a single vector of compact nodes
-	FastNodeManager(Bvh& bvh);
+	FastNodeManager(Bvh& bvh, int leafMemory);
 
 	//first add all children of node, then recusion for each child
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
-
-	inline bool aabbCheck(FastRay& ray, glm::vec3& boundMin, glm::vec3& boundMax, float& distance);
-
-	inline bool triangleCheck(FastRay& ray, uint32_t& id);
-
 };
