@@ -55,7 +55,7 @@ void CameraFast::renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemor
 	auto timeBeginRaytracer = getTime();
 
 	double triangleTestTime = 0;
-	std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
+	std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 		[&](auto& info)
 		{
 			auto timeBeforeRay = getTime();
