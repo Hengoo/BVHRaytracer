@@ -1,10 +1,12 @@
 #Config file for raytracer.
 
 #Leafsize and Branching Factor to test:
-minLeafSize = 1
+minLeafSize = 4
 maxLeafSize = 16
-minBranch = 2
+leafStep = 3
+minBranch = 4
 maxBranch = 16
+branchStep = 3
 
 #What analysis to do:
 renderAnalysisImage = false
@@ -44,7 +46,7 @@ renderType = 3
 #Multiple scenes are seperated by comma like "scenario = 6, 4, 1, 2" 
 #When rendering multiple scenarios they are all started parallel
 #When rendering a single scene with more than one leaf/branch combination they are started in parallel batches of 4
-scenario = 4
+scenario = 0
 
 #Bucket count of bvh builder (0 = no buckets)
 bucketCount = 0
