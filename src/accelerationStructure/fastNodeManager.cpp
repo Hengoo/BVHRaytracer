@@ -184,6 +184,24 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 	bool result = false;
 
 	std::array<float, nodeMemory> aabbDistances;
+	int leafFactor = leafMemory / leafSize;
+	int nodeFactor = nodeMemory / branchingFactor;
+
+	std::array<float, 10> rayInfo = {};
+	rayInfo[0] = ray.tMax;
+	for (int i = 0; i < 3; i++)
+	{
+		rayInfo[i + 1] = ray.pos[i];
+	}
+	for (int i = 0; i < 3; i++)
+	{
+		rayInfo[i + 4] = ray.invDirection[i];
+	}
+	for (int i = 0; i < 3; i++)
+	{
+		rayInfo[i + 7] = ray.direction[i];
+	}
+
 
 	while (queue.size() != 0)
 	{
@@ -207,7 +225,10 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 			std::array <glm::vec3, gangSize	> surfaceNormals;
 			std::array <glm::vec3, gangSize> surfacePositions;
 
-			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, (ispc::Ray*) & ray, (float*)surfaceNormals.data(),
+
+			//std::cout << test << std::endl;
+
+			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, (float*)rayInfo.data(), (float*)surfaceNormals.data(),
 				(float*)surfacePositions.data(), leafMemory, leafSize);
 			//it returns the hit id -> -1 = no hit
 			if (resultIndex != -1)
@@ -232,8 +253,8 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
-			
-			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), (ispc::Ray*) & ray, nodeMemory, branchingFactor))
+			int factor = nodeMemory / branchingFactor;
+			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), (float*)rayInfo.data(), nodeMemory, branchingFactor))
 			{
 				int8_t code = 0;
 				code = code | (ray.direction[0] <= 0);
@@ -269,6 +290,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 			}
 		}
 	}
+	ray.tMax = rayInfo[0];
 	return result;
 }
 

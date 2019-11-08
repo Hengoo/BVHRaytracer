@@ -419,7 +419,7 @@ public:
 					//node memory >= branching factor and leafMemory >= leafsize !must be correct
 
 					//its <gangsize, nodeMemory> manager(bvh, leafMemory)
-					FastNodeManager<8, 8> manager(bvh, 8);
+					FastNodeManager<8, 16> manager(bvh, 16);
 					CameraFast c(path, name, problem, cameraPos, cameraTarget);
 					c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 				}
