@@ -103,13 +103,11 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 		//cif since leafmemory and leafsize should be a multiple of the gangsize.
 		cif(index > leafSize)
 		{
-			//WHY IS IT faster to add this to surface normal than to NOT add it????
-			//its even faster to not do this early exit and just to the 0 calculations than to not add
 			surfaceNormal += p0;
 			surfaceNormal += p1;
 			surfaceNormal += p2;
 			continue;
-		}		
+		}
 		
 		//print positions:
 		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
