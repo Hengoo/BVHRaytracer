@@ -314,7 +314,7 @@ public:
 		distance = t0;
 
 		bool result = t0 <= t1;
-		ray.successfulAabbIntersectionCount += !result;
+		ray.successfulAabbIntersectionCount += result;
 		return result;
 	}
 };
