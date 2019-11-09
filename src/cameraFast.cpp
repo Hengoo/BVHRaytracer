@@ -23,23 +23,28 @@ template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 8> node
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 12> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 
-template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 4> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 12> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 24> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 32> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 40> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 48> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 56> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 64> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter
+
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::vec3 position, glm::vec3 lookCenter
 	, glm::vec3 upward, float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, position, lookCenter, upward, focalLength, height, width)
+	:Camera(path, name, problem, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix)
 {
 	image.resize(height * width * 4);
 	times.resize(height * width);
 	times2.resize(height * width);
 }
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, glm::mat4 transform,
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::mat4 transform,
 	float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, transform, focalLength, height, width)
+	:Camera(path, name, problem, transform, focalLength, height, width), problemPrefix(problemPrefix)
 {
 	image.resize(height * width * 4);
 	times.resize(height * width);
@@ -55,7 +60,7 @@ void CameraFast::renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemor
 	auto timeBeginRaytracer = getTime();
 
 	double triangleTestTime = 0;
-	std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+	std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 		[&](auto& info)
 		{
 			auto timeBeforeRay = getTime();
@@ -130,16 +135,18 @@ void CameraFast::renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemor
 		std::cout << "all rays minus triangle took " << timeSum - timeSum2 << " seconds." << std::endl;
 	}
 
-	std::ofstream myfile(path + "/" + name + problem + "_Perf.txt");
+	std::ofstream myfile(path + "/" + name + problem + problemPrefix + "_Perf.txt");
 	if (myfile.is_open())
 	{
-		myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;
+		myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize <<std::endl;
+		myfile << "with a gang size of " << gangSize << ", a node meory of " << nodeMemory << ", and a leaf memory of " << nodeManager.leafMemory << std::endl;
 		myfile << "Raytracer total time: " << totalTime << std::endl;
 		myfile << "Time for all rays (SUM): " << timeSum << std::endl;
 		myfile << "Time for triangle intersections (SUM): " << timeSum2 << std::endl;
 		myfile << "Time all rays(sum) - triangle(sum): " << timeSum - timeSum2 << std::endl;
 	}
 	myfile.close();
+
 	if (saveImage)
 	{
 		encodeTwoSteps(path + "/" + name + "_Perf.png", image, width, height);

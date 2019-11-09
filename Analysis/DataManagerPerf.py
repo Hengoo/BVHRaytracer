@@ -13,7 +13,7 @@ class everything:
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
 		self.names = ["sponza"]
 		#prefixTo the folderNames
-		self.prefix = "SSE"
+		self.prefix = "AVXSeq"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = ""
 
@@ -22,9 +22,9 @@ class everything:
 
 		#maximum branchingfactor and max leafsite
 		self.minBranchingFactor = 2
-		self.maxBranchingFactor = 16
+		self.maxBranchingFactor = 64
 		self.minLeafSize = 1
-		self.maxLeafSize = 16
+		self.maxLeafSize = 64
 
 		#temprary cost function. needs replacement
 		self.nodeCostFactor = 1
@@ -47,14 +47,16 @@ class everything:
 
 		#names of normalized variables like wasteFactor
 		self.normalizedVariableNames = [
+			"Raytracer total time:",
 			"Time for all rays (SUM):",
 			"Time for triangle intersections (SUM):",
 			"Time all rays(sum) - triangle(sum):",
 		]
 		self.normalizedVariableOutputNames = [
+			"raytracerTotalTime",
 			"rayTimeSum",
 			"triangleIntersectionSum",
-			"rayTimeWithoutTri",
+			"rayTimeSumWithoutTri",
 		]
 
 		#Variables that are multiplied by branching factor:
@@ -78,7 +80,9 @@ class everything:
 		# -> could do variables divided by leafsize and ones divided by branchFactor
 		# -> and ones multiplied by it?
 
+		self.possibleMemorySizes = [4,8,12,16]
 
+	def resetArrays(self):
 		#now for each type of variable: array[sceneId][nameId] -> maxValue
 		self.variablesMax = [[0 for i in self.variableNames]for i in self.names]
 		self.variablesMin = [[2000000 for i in self.variableNames]for i in self.names]
@@ -103,7 +107,7 @@ class everything:
 		self.variableMultLeaf = [[0 for i in self.variableMultLeafNames] for i in self.names]
 		self.variableNodeCacheline = [[0 for i in self.variableMultBranchNames] for i in self.names]
 
-
+	#This run only goes over "optimal" ml and mb combinations
 	def run(self):
 		# now loop over all scenes to do the single scene file (and collect min max)
 		# then loop over all and get averages
@@ -121,10 +125,16 @@ class everything:
 			firstLine += ", " + name
 		for name in self.variableNodeCachelinesOutputNames:
 			firstLine += ", " + name
-
+		
+		#first loop over different possible memory sizes for l and b
+		self.resetArrays()
+		anyFound = False
+		#now do what normal data manger does, loop over b and l and write files
 		for i in range(len(self.names)):
-			fResult = open(self.names[i] + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
-			fResult2 = open(self.names[i] + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+			fileName1 = self.names[i] + self.prefix + "optimal" + "TableWithSpace" + self.outputPrefix + ".txt"
+			fileName2 = self.names[i] + self.prefix + "optimal" + "Table" + self.outputPrefix + ".txt"
+			fResult = open(fileName1, "w+")
+			fResult2 = open(fileName2, "w+")
 				# write the first line in the table (the one with the variable names)
 			fResult.write(firstLine + "\n")
 			fResult2.write(firstLine + "\n")
@@ -137,36 +147,45 @@ class everything:
 					leaf = l + self.minLeafSize
 
 					#i just test both files for all varialbe names
-					fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_Perf.txt"
+					fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf)+ "_Perf.txt"
 					if (path.exists(fileName)):
+						anyFound = True
 						#open file and read important values
 						f = open(fileName, "r")
 						if f.mode == 'r':
 							for x in f:
 								#now loop over the different variables and call somefunctions to hande the rest
 								self.gatherAll(i, x, branch, leaf)
-					else:
-						print("Was not able to open file: " + fileName)
-					
-					#TODO: need to gather min and max of cost functions
-					for v in range(len(self.costMetricNames)):
-						self.costMetricsMin[i][v] = min(self.costMetrics[i][v], self.costMetricsMin[i][v])
-						self.costMetricsMax[i][v] = max(self.costMetrics[i][v], self.costMetricsMax[i][v])
+						for v in range(len(self.costMetricNames)):
+							self.costMetricsMin[i][v] = min(self.costMetrics[i][v], self.costMetricsMin[i][v])
+							self.costMetricsMax[i][v] = max(self.costMetrics[i][v], self.costMetricsMax[i][v])
 
-					#write file:
-					res = self.getLine(i, branch, leaf)
-					fResult.write(res)
-					fResult2.write(res)
+						#write file:
+						res = self.getLine(i, branch, leaf)
+						fResult.write(res)
+						fResult2.write(res)
+					#else:
+					#	print("Was not able to open file: " + fileName)
+			fResult.close()
+			fResult2.close()
+			if(not anyFound):
+				os.remove(fileName1)
+				os.remove(fileName2)
 
 		if (len(self.names) == 1):
 			return
 
+		fileName1 = "AverageTable" + self.prefix + "optimal" + "TableWithSpace" + self.outputPrefix + ".txt"
+		fileName2 = "AverageTable" + self.prefix + "optimal" + "Table" + self.outputPrefix + ".txt"
 		#now loop over b and l again and write average file:
-		fResult = open("AverageTableWithSpace" + self.outputPrefix + ".txt", "w+")
-		fResult2 = open("AverageTable" + self.outputPrefix + ".txt", "w+")
+		fResult = open(fileName1, "w+")
+		fResult2 = open(fileName2, "w+")
 		# write the first line in the table (the one with the variable names)
 		fResult.write(firstLine + "\n")
 		fResult2.write(firstLine + "\n")
+
+
+		anyFound = False
 		for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
 			#one empty line after each branching factor
 			fResult.write("\n")
@@ -174,26 +193,143 @@ class everything:
 				branch = b + self.minBranchingFactor
 				leaf = l + self.minLeafSize
 				#loop over scenes
+				
 				for i in range(len(self.names)):
 					#i just test both files for all varialbe names
-					fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
-					fileName2 = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
+					fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml)+ "_Perf.txt"
 					if (path.exists(fileName)):
+						anyFound = True
 						#open file and read important values
 						f = open(fileName, "r")
 						if f.mode == 'r':
 							for x in f:
 								#now loop over the different variables and call somefunctions to hande the rest
 								self.gatherAll(i, x, branch, leaf)
-					else:
-						print("Was not able to open file: " + fileName)
+					#else:
+					#	print("Was not able to open file: " + fileName)
 
 				#write file:
 				res = self.getAverageLine(branch, leaf)
 				fResult.write(res)
 				fResult2.write(res)
-
 		
+		if (not anyFound):
+			os.remove(fileName1)
+			os.remove(fileName2)
+
+	#run 2 runs over all possible mB and mL combinations
+	def run2(self):
+		# now loop over all scenes to do the single scene file (and collect min max)
+		# then loop over all and get averages
+
+		firstLine = "branchFactor, leafSize"
+		for name in self.variableOutputNames:
+			firstLine += ", " + name
+		for name in self.costMetricOutputNames:
+			firstLine += ", " + name
+		for name in self.normalizedVariableOutputNames:
+			firstLine += ", " + name
+		for name in self.variableMultBranchOutputNames:
+			firstLine += ", " + name
+		for name in self.variableMultLeafOutputNames:
+			firstLine += ", " + name
+		for name in self.variableNodeCachelinesOutputNames:
+			firstLine += ", " + name
+		
+		#first loop over different possible memory sizes for l and b (and ml and mb)
+		for mb in self.possibleMemorySizes:
+			for ml in self.possibleMemorySizes:
+				self.resetArrays()
+				memoryText = "mb" + str(mb) + "ml" + str(ml)
+				anyFound = False
+				#now do what normal data manger does, loop over b and l and write files
+				for i in range(len(self.names)):
+					fileName1 = self.names[i] + self.prefix + memoryText + "TableWithSpace" + self.outputPrefix + ".txt"
+					fileName2 = self.names[i] + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
+					fResult = open(fileName1, "w+")
+					fResult2 = open(fileName2, "w+")
+						# write the first line in the table (the one with the variable names)
+					fResult.write(firstLine + "\n")
+					fResult2.write(firstLine + "\n")
+
+					for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
+						#one empty line after each branching factor
+						fResult.write("\n")
+						for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
+							branch = b + self.minBranchingFactor
+							leaf = l + self.minLeafSize
+
+							#i just test both files for all varialbe names
+							fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml)+ "_Perf.txt"
+							if (path.exists(fileName)):
+								anyFound = True
+								#open file and read important values
+								f = open(fileName, "r")
+								if f.mode == 'r':
+									for x in f:
+										#now loop over the different variables and call somefunctions to hande the rest
+										self.gatherAll(i, x, branch, leaf)
+								for v in range(len(self.costMetricNames)):
+									self.costMetricsMin[i][v] = min(self.costMetrics[i][v], self.costMetricsMin[i][v])
+									self.costMetricsMax[i][v] = max(self.costMetrics[i][v], self.costMetricsMax[i][v])
+
+								#write file:
+								res = self.getLine(i, branch, leaf)
+								fResult.write(res)
+								fResult2.write(res)
+							#else:
+							#	print("Was not able to open file: " + fileName)
+					fResult.close()
+					fResult2.close()
+					if(not anyFound):
+						os.remove(fileName1)
+						os.remove(fileName2)
+
+				if (len(self.names) == 1):
+					continue
+
+				fileName1 = "AverageTable" + self.prefix + memoryText + "TableWithSpace" + self.outputPrefix + ".txt"
+				fileName2 = "AverageTable" + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
+				#now loop over b and l again and write average file:
+				fResult = open(fileName1, "w+")
+				fResult2 = open(fileName2, "w+")
+				# write the first line in the table (the one with the variable names)
+				fResult.write(firstLine + "\n")
+				fResult2.write(firstLine + "\n")
+
+
+				anyFound = False
+				for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
+					#one empty line after each branching factor
+					fResult.write("\n")
+					for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
+						branch = b + self.minBranchingFactor
+						leaf = l + self.minLeafSize
+						#loop over scenes
+						
+						for i in range(len(self.names)):
+							#i just test both files for all varialbe names
+							fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml)+ "_Perf.txt"
+							if (path.exists(fileName)):
+								anyFound = True
+								#open file and read important values
+								f = open(fileName, "r")
+								if f.mode == 'r':
+									for x in f:
+										#now loop over the different variables and call somefunctions to hande the rest
+										self.gatherAll(i, x, branch, leaf)
+							#else:
+							#	print("Was not able to open file: " + fileName)
+
+						#write file:
+						res = self.getAverageLine(branch, leaf)
+						fResult.write(res)
+						fResult2.write(res)
+				
+				if (not anyFound):
+					os.remove(fileName1)
+					os.remove(fileName2)
+
 	#returns the line that is written in the averagetable.txt
 	def getAverageLine(self, branch, leaf):
 		sceneNumber = len(self.names)
@@ -370,5 +506,7 @@ class everything:
 					break
 				except ValueError:
 					pass
+
 e = everything()
 e.run()
+e.run2()

@@ -12,10 +12,14 @@ template class FastNodeManager<4, 8>;
 template class FastNodeManager<4, 12>;
 template class FastNodeManager<4, 16>;
 
-template class FastNodeManager<8, 4>;
 template class FastNodeManager<8, 8>;
-template class FastNodeManager<8, 12>;
 template class FastNodeManager<8, 16>;
+template class FastNodeManager<8, 24>;
+template class FastNodeManager<8, 32>;
+template class FastNodeManager<8, 40>;
+template class FastNodeManager<8, 48>;
+template class FastNodeManager<8, 56>;
+template class FastNodeManager<8, 64>;
 
 /*
 //for 16 gang size.
