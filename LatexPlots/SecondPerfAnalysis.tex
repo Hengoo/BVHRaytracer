@@ -86,7 +86,7 @@ First part is an overview of the general performance with avx. The tests go from
 		zlabel = Total Time,
 		cycle list name=exotic,
 		legend style={at={(0.03,0.97)}, anchor = north west},
-		xtick = {8, 16, ..., 128},
+		ytick = {8, 16, ..., 128},
 		%		xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
 		]
 		\addplot3+[thick, restrict x to domain={8: 8},unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = raytracerTotalTime, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
@@ -107,7 +107,7 @@ First part is an overview of the general performance with avx. The tests go from
 		zlabel = Total Time,
 		cycle list name=exotic,
 		legend style={at={(0.03,1.5)}, anchor = north west},
-		xtick = {8, 16, ..., 64},
+		ytick = {8, 16, ..., 64},
 		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
 		]
 		\addplot3+[thick, restrict x to domain={8: 8},unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = raytracerTotalTime, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
@@ -139,7 +139,7 @@ First part is an overview of the general performance with avx. The tests go from
 		zlabel = Time triangle intersections,
 		cycle list name=exotic,
 		legend style={at={(0.99,1.5)}, anchor = north east},
-		ytick = {8, 16, ..., 128},
+		xtick = {8, 16, ..., 128},
 		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
 		]
 		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
@@ -161,7 +161,7 @@ First part is an overview of the general performance with avx. The tests go from
 		zlabel = Time Nodes,
 		cycle list name=exotic,
 		legend style={at={(0.99,1.5)}, anchor = north east},
-		ytick = {8, 16, ..., 128},
+		xtick = {8, 16, ..., 128},
 %		xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
 		]
 		\addplot3+[thick, restrict y to domain={8: 8}, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
@@ -191,7 +191,7 @@ First part is an overview of the general performance with avx. The tests go from
 		zlabel = Time triangle intersections,
 		legend style={at={(0.99,1.5)}, anchor = north east},
 		cycle list name=exotic,
-		xtick = {8, 16, ..., 128},
+		ytick = {8, 16, ..., 128},
 		]
 		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
 		\addplot3+[thick, restrict x to domain={16:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = triangleIntersectionSum, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
@@ -214,7 +214,7 @@ First part is an overview of the general performance with avx. The tests go from
 		zlabel = Time node,
 		legend style={at={(0.99,1.5)}, anchor = north east},
 		cycle list name=exotic,
-		xtick = {8, 16, ..., 128},
+		ytick = {8, 16, ..., 128},
 		]
 		\addplot3+[thick, restrict x to domain={8:8}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
 		\addplot3+[thick, restrict x to domain={8:16}, unbounded coords=discard, mark=none]table[x = leafSize, y = branchFactor, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/sponzaAVXSeqoptimalTable.txt};
