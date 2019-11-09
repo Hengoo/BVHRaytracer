@@ -1,19 +1,29 @@
 
 \section{Second Ispc performance test}
 
-First part is an overview of the general performance with avx. The tests go from L8 to L64 and B8 to B64. The sumamry would be that 
+First part is an overview of the general performance with avx. The tests go from L8 to L64 and B8 to B64. It should be noted that i only the triangle time is specific, while the node time is calculated by total raytime - triangle time
 
 \iftrue
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth} 
+		\plot{Total Time}{raytracerTotalTime}{Data/AVX/sponzaAVXSeqoptimalTableWithSpace.txt}
+	\end{minipage}\hfil \hfil
+	
+	\caption{Overview over the sponza ispc performance tests. (avx2)}
+\end{figure}
+
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth} 
 		\plot{Time triangle intersections}{triangleIntersectionSum}{Data/AVX/sponzaAVXSeqoptimalTableWithSpace.txt}
 	\end{minipage}\hfil \hfil
 	\begin{minipage}[t]{0.4\textwidth}
-		\plotr{Time rest}{rayTimeSumWithoutTri}{Data/AVX/sponzaAVXSeqoptimalTableWithSpace.txt}
+		\plotr{Time nodes}{rayTimeSumWithoutTri}{Data/AVX/sponzaAVXSeqoptimalTableWithSpace.txt}
 	\end{minipage}
 	
-	\caption{Overview over the sponza ispc performance tests. (avx2)}
+	\caption{Overview over the sponza ispc performance tests, separated into Node and Leaf Time. (avx2)}
 \end{figure}
+
+
 \newpage
 \fi
 
