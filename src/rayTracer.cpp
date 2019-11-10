@@ -363,7 +363,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				{
 					maxMem = ceil(maxLeafSize / 8.0f) * 8;
 				}
-				if (!doMemoryTests)
+				if (!doLeafMemoryTest)
 				{
 					maxMem = minLeafMemory;
 				}
@@ -377,7 +377,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 16) && (doMemoryTests || branchingFactor > 8))
+					if ((branchingFactor <= 16) && (doNodeMemoryTest || branchingFactor > 8))
 					{
 						std::string problemPrefix = "_mb16_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 16> manager(bvh, leafMemory);
@@ -385,42 +385,42 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					//sometimes i hate templates
-					if ((branchingFactor <= 24) && (doMemoryTests || branchingFactor > 16))
+					if ((branchingFactor <= 24) && (doNodeMemoryTest || branchingFactor > 16))
 					{
 						std::string problemPrefix = "_mb24_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 24> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 32) && (doMemoryTests || branchingFactor > 24))
+					if ((branchingFactor <= 32) && (doNodeMemoryTest || branchingFactor > 24))
 					{
 						std::string problemPrefix = "_mb32_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 32> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 40) && (doMemoryTests || branchingFactor > 32))
+					if ((branchingFactor <= 40) && (doNodeMemoryTest || branchingFactor > 32))
 					{
 						std::string problemPrefix = "_mb40_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 40> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 48) && (doMemoryTests || branchingFactor > 40))
+					if ((branchingFactor <= 48) && (doNodeMemoryTest || branchingFactor > 40))
 					{
 						std::string problemPrefix = "_mb48_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 48> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 56) && (doMemoryTests || branchingFactor > 48))
+					if ((branchingFactor <= 56) && (doNodeMemoryTest || branchingFactor > 48))
 					{
 						std::string problemPrefix = "_mb56_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 56> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 64) && (doMemoryTests || branchingFactor > 56))
+					if ((branchingFactor <= 64) && (doNodeMemoryTest || branchingFactor > 56))
 					{
 						std::string problemPrefix = "_mb64_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 64> manager(bvh, leafMemory);
@@ -439,7 +439,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				{
 					maxMem = ceil(maxLeafSize / 4.0f) * 4;
 				}
-				if (!doMemoryTests)
+				if (!doNodeMemoryTest)
 				{
 					maxMem = minLeafMemory;
 				}
@@ -452,21 +452,21 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 8) && (doMemoryTests || branchingFactor > 4))
+					if ((branchingFactor <= 8) && (doNodeMemoryTest || branchingFactor > 4))
 					{
 						std::string problemPrefix = "_mb8_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 8> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 12) && (doMemoryTests || branchingFactor > 8))
+					if ((branchingFactor <= 12) && (doNodeMemoryTest || branchingFactor > 8))
 					{
 						std::string problemPrefix = "_mb12_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 12> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if ((branchingFactor <= 16) && (doMemoryTests || branchingFactor > 12))
+					if ((branchingFactor <= 16) && (doNodeMemoryTest || branchingFactor > 12))
 					{
 						std::string problemPrefix = "_mb16_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 16> manager(bvh, leafMemory);
@@ -714,16 +714,28 @@ void RayTracer::readConfig()
 						std::cerr << "doPerformanceTest value written wrong -> default = false" << std::endl;
 					}
 				}
-				res = line.find("doMemoryTests", 0);
+				res = line.find("doNodeMemoryTest", 0);
 				if (res != std::string::npos)
 				{
 					res = line.find("true", 0);
 					res2 = line.find("false", 0);
-					if (res != std::string::npos)doMemoryTests = true;
-					else if (res2 != std::string::npos)doMemoryTests = false;
+					if (res != std::string::npos)doNodeMemoryTest = true;
+					else if (res2 != std::string::npos)doNodeMemoryTest = false;
 					else
 					{
-						std::cerr << "doMemoryTests value written wrong -> default = false" << std::endl;
+						std::cerr << "doNodeMemoryTest value written wrong -> default = false" << std::endl;
+					}
+				}
+				res = line.find("doLeafMemoryTest", 0);
+				if (res != std::string::npos)
+				{
+					res = line.find("true", 0);
+					res2 = line.find("false", 0);
+					if (res != std::string::npos)doLeafMemoryTest = true;
+					else if (res2 != std::string::npos)doLeafMemoryTest = false;
+					else
+					{
+						std::cerr << "doLeafMemoryTest value written wrong -> default = false" << std::endl;
 					}
 				}
 			}

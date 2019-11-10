@@ -13,7 +13,7 @@ class everything:
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
 		self.names = ["sponza"]
 		#prefixTo the folderNames
-		self.prefix = "AVXSeq"
+		self.prefix = "AVXSeqMemoryNode"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = ""
 
@@ -80,7 +80,7 @@ class everything:
 		# -> could do variables divided by leafsize and ones divided by branchFactor
 		# -> and ones multiplied by it?
 
-		self.possibleMemorySizes = [4,8,12,16]
+		self.possibleMemorySizes = [4,8,12,16,24,32,40,48,56,64]
 
 	def resetArrays(self):
 		#now for each type of variable: array[sceneId][nameId] -> maxValue

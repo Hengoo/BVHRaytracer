@@ -47,6 +47,12 @@ int main()
 	std::cout << sizeof(FastNode<8>) << std::endl;
 	std::cout << sizeof(FastNode<12>) << std::endl;
 	std::cout << sizeof(FastNode<16>) << std::endl;
+	std::cout << sizeof(FastNode<24>) << std::endl;
+	std::cout << sizeof(FastNode<32>) << std::endl;
+	std::cout << sizeof(FastNode<40>) << std::endl;
+	std::cout << sizeof(FastNode<48>) << std::endl;
+	std::cout << sizeof(FastNode<56>) << std::endl;
+	std::cout << sizeof(FastNode<64>) << std::endl;
 
 	RayTracer rayTracer;
 

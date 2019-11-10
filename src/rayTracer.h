@@ -26,7 +26,8 @@ class RayTracer
 	bool mute;
 
 	bool doPerformanceTest;
-	bool doMemoryTests;
+	bool doNodeMemoryTest;
+	bool doLeafMemoryTest;
 
 	//true -> take new axis and sort for each split. False -> only do it once in the beginning
 	bool sortEachSplit;
