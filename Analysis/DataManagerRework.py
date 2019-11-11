@@ -10,9 +10,10 @@ class everything:
 		#the folder all the scene folders are in: (leave empty if no folder)
 		self.folder = "SavesSortedEarlyStop/"
 		#names of the sceneFolders
-		self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
+		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
+		self.names = ["sponza"]
 		#prefixTo the folderNames
-		self.prefix = ""
+		self.prefix = "Long"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = "Sorted"
 
@@ -20,10 +21,10 @@ class everything:
 		self.singeIdOverride = -1
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 2
-		self.maxBranchingFactor = 16
-		self.minLeafSize = 1
-		self.maxLeafSize = 16
+		self.minBranchingFactor = 4
+		self.maxBranchingFactor = 64
+		self.minLeafSize = 4
+		self.maxLeafSize = 64
 
 		#temprary cost function. needs replacement
 		self.nodeCostFactor = 1
@@ -46,6 +47,7 @@ class everything:
 			"end point overlap of leaf:",
 			"volume of leafs:",
 			"surface area of leafs:",
+			"average child fullness:"
 			]
 		self.variableOutputNames = [
 			"primaryNodeIntersections",
@@ -61,6 +63,7 @@ class everything:
 			"leafEpo",
 			"leafVolume",
 			"leafSurfaceArea",
+			"nodeFullness",
 			]
 
 		#cost metrics that are split into node and leaf version. -> leaf * leaffactor and node * nodefactor to get total thing
@@ -182,10 +185,12 @@ class everything:
 					#i just test both files for all varialbe names
 					fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 					fileName2 = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
+					anyFound = False
 					if (path.exists(fileName)):
 						#open file and read important values
 						f = open(fileName, "r")
 						if f.mode == 'r':
+							anyFound = True
 							for x in f:
 								#now loop over the different variables and call somefunctions to hande the rest
 								self.gatherAll(i, x, branch, leaf)
@@ -195,6 +200,7 @@ class everything:
 						#open file and read important values
 						f = open(fileName2, "r")
 						if f.mode == 'r':
+							anyFound = True
 							for x in f:
 								#now loop over the different variables and call somefunctions to hande the rest
 								self.gatherAll(i, x, branch, leaf)
@@ -205,11 +211,14 @@ class everything:
 					for v in range(len(self.costMetricNames)):
 						self.costMetricsMin[i][v] = min(self.costMetrics[i][v], self.costMetricsMin[i][v])
 						self.costMetricsMax[i][v] = max(self.costMetrics[i][v], self.costMetricsMax[i][v])
+					if anyFound:
+						#write file:
+						res = self.getLine(i, branch, leaf)
+						fResult.write(res)
+						fResult2.write(res)
 
-					#write file:
-					res = self.getLine(i, branch, leaf)
-					fResult.write(res)
-					fResult2.write(res)
+		if len(self.names) == 1:
+			return
 
 		#now loop over b and l again and write average file:
 		fResult = open("AverageTableWithSpace" + self.outputPrefix + ".txt", "w+")

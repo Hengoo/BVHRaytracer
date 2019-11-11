@@ -13,7 +13,8 @@ class everything:
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
 		self.names = ["sponza"]
 		#prefixTo the folderNames
-		self.prefix = "AVXSeqMemoryNode"
+		self.prefix = "SSESeq"
+		#self.prefix = "SSESeqMemoryNode"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = ""
 
@@ -21,9 +22,9 @@ class everything:
 		self.singeIdOverride = -1
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 2
+		self.minBranchingFactor = 4
 		self.maxBranchingFactor = 64
-		self.minLeafSize = 1
+		self.minLeafSize = 4
 		self.maxLeafSize = 64
 
 		#temprary cost function. needs replacement
@@ -80,7 +81,7 @@ class everything:
 		# -> could do variables divided by leafsize and ones divided by branchFactor
 		# -> and ones multiplied by it?
 
-		self.possibleMemorySizes = [4,8,12,16,24,32,40,48,56,64]
+		self.possibleMemorySizes = [4,8,12,16,20,24,28,32,40,48,56,64]
 
 	def resetArrays(self):
 		#now for each type of variable: array[sceneId][nameId] -> maxValue
@@ -112,19 +113,7 @@ class everything:
 		# now loop over all scenes to do the single scene file (and collect min max)
 		# then loop over all and get averages
 
-		firstLine = "branchFactor, leafSize"
-		for name in self.variableOutputNames:
-			firstLine += ", " + name
-		for name in self.costMetricOutputNames:
-			firstLine += ", " + name
-		for name in self.normalizedVariableOutputNames:
-			firstLine += ", " + name
-		for name in self.variableMultBranchOutputNames:
-			firstLine += ", " + name
-		for name in self.variableMultLeafOutputNames:
-			firstLine += ", " + name
-		for name in self.variableNodeCachelinesOutputNames:
-			firstLine += ", " + name
+		firstLine = self.getFirstLine()
 		
 		#first loop over different possible memory sizes for l and b
 		self.resetArrays()
@@ -214,6 +203,7 @@ class everything:
 				fResult2.write(res)
 		
 		if (not anyFound):
+			#ugly but works
 			os.remove(fileName1)
 			os.remove(fileName2)
 
@@ -222,28 +212,17 @@ class everything:
 		# now loop over all scenes to do the single scene file (and collect min max)
 		# then loop over all and get averages
 
-		firstLine = "branchFactor, leafSize"
-		for name in self.variableOutputNames:
-			firstLine += ", " + name
-		for name in self.costMetricOutputNames:
-			firstLine += ", " + name
-		for name in self.normalizedVariableOutputNames:
-			firstLine += ", " + name
-		for name in self.variableMultBranchOutputNames:
-			firstLine += ", " + name
-		for name in self.variableMultLeafOutputNames:
-			firstLine += ", " + name
-		for name in self.variableNodeCachelinesOutputNames:
-			firstLine += ", " + name
+		firstLine = self.getFirstLine()
 		
 		#first loop over different possible memory sizes for l and b (and ml and mb)
 		for mb in self.possibleMemorySizes:
 			for ml in self.possibleMemorySizes:
 				self.resetArrays()
 				memoryText = "mb" + str(mb) + "ml" + str(ml)
-				anyFound = False
+
 				#now do what normal data manger does, loop over b and l and write files
 				for i in range(len(self.names)):
+					anyFound = False
 					fileName1 = self.names[i] + self.prefix + memoryText + "TableWithSpace" + self.outputPrefix + ".txt"
 					fileName2 = self.names[i] + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
 					fResult = open(fileName1, "w+")
@@ -327,8 +306,75 @@ class everything:
 						fResult2.write(res)
 				
 				if (not anyFound):
+					#ugly but works
 					os.remove(fileName1)
 					os.remove(fileName2)
+
+	#run 3 runs over all possible mB and mL combinations but in different order (first L and N then Mb and Ml)
+	def run3(self):
+		# now loop over all scenes to do the single scene file (and collect min max)
+		# then loop over all and get averages
+
+		firstLine = self.getFirstLine2()
+		tmpNames = self.names.copy()
+		if(len(tmpNames) != 1):
+			tmpNames.append("Average")
+		
+		#loop over b and l
+		for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
+			for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
+				self.resetArrays()
+				branch = b + self.minBranchingFactor
+				leaf = l + self.minLeafSize
+				configText = "b" + str(branch) + "l" + str(leaf)
+
+				#now do what normal data manger does, loop over b and l and write files
+				for i in range(len(tmpNames)):
+					anyFound = False
+					fileName1 = tmpNames[i] + self.prefix + configText + "TableWithSpace" + self.outputPrefix + ".txt"
+					fileName2 = tmpNames[i] + self.prefix + configText + "Table" + self.outputPrefix + ".txt"
+					fResult = open(fileName1, "w+")
+					fResult2 = open(fileName2, "w+")
+
+					# write the first line in the table (the one with the variable names)
+					fResult.write(firstLine + "\n")
+					fResult2.write(firstLine + "\n")
+
+					#second loop over mb and ml
+					for mb in self.possibleMemorySizes:
+						#one empty line after each branching factor
+						fResult.write("\n")
+						for ml in self.possibleMemorySizes:
+							memoryText = "mb" + str(mb) + "ml" + str(ml)
+
+							#check the files we have written in run2
+							fileName = self.names[i] + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
+							if (path.exists(fileName)):
+								anyLineFound = False
+								#open file and read important values
+								f = open(fileName, "r")
+								if f.mode == 'r':
+									for x in f:
+										#search for line with the correct branching and leafsize (first 2 values)
+										#remove those first numbers and then give them our mb and ml values
+										tmp = x.split(str(branch) + ", " + str(leaf)+", ", 1)
+										if len(tmp) == 2:
+											if len(tmp[0]) == 0:
+												anyFound = True
+												anyLineFound = True
+												lineResult = tmp[1]
+
+								#write file:
+								if anyLineFound:
+									res = str(mb) +", "+ str(ml)+ ", "+ lineResult
+									fResult.write(res)
+									fResult2.write(res)
+					fResult.close()
+					fResult2.close()
+					if (not anyFound):
+						#ugly but works
+						os.remove(fileName1)
+						os.remove(fileName2)
 
 	#returns the line that is written in the averagetable.txt
 	def getAverageLine(self, branch, leaf):
@@ -506,7 +552,41 @@ class everything:
 					break
 				except ValueError:
 					pass
+	
+	#first line for files that loop over branchFactor 
+	def getFirstLine(self):
+		firstLine = "branchFactor, leafSize"
+		for name in self.variableOutputNames:
+			firstLine += ", " + name
+		for name in self.costMetricOutputNames:
+			firstLine += ", " + name
+		for name in self.normalizedVariableOutputNames:
+			firstLine += ", " + name
+		for name in self.variableMultBranchOutputNames:
+			firstLine += ", " + name
+		for name in self.variableMultLeafOutputNames:
+			firstLine += ", " + name
+		for name in self.variableNodeCachelinesOutputNames:
+			firstLine += ", " + name
+		return firstLine
+
+	def getFirstLine2(self):
+		firstLine = "branchMemory, leafMemory"
+		for name in self.variableOutputNames:
+			firstLine += ", " + name
+		for name in self.costMetricOutputNames:
+			firstLine += ", " + name
+		for name in self.normalizedVariableOutputNames:
+			firstLine += ", " + name
+		for name in self.variableMultBranchOutputNames:
+			firstLine += ", " + name
+		for name in self.variableMultLeafOutputNames:
+			firstLine += ", " + name
+		for name in self.variableNodeCachelinesOutputNames:
+			firstLine += ", " + name
+		return firstLine
 
 e = everything()
 e.run()
 e.run2()
+e.run3()

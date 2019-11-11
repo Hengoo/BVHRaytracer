@@ -22,6 +22,10 @@ template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 4> node
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 12> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 20> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 24> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 28> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImage(bool saveImage, FastNodeManager<4, 32> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 template void CameraFast::renderImage(bool saveImage, FastNodeManager<8, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);

@@ -11,6 +11,10 @@ template class FastNodeManager<4, 4>;
 template class FastNodeManager<4, 8>;
 template class FastNodeManager<4, 12>;
 template class FastNodeManager<4, 16>;
+template class FastNodeManager<4, 20>;
+template class FastNodeManager<4, 24>;
+template class FastNodeManager<4, 28>;
+template class FastNodeManager<4, 32>;
 
 template class FastNodeManager<8, 8>;
 template class FastNodeManager<8, 16>;
