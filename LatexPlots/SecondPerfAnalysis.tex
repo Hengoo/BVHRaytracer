@@ -382,11 +382,11 @@ Best performing configuration is N8L8
 		xtick = {8, 16, ..., 128},
 		%		xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
 		]
-		\addplot3+[thick, restrict x to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l8Table.txt};
-		\addplot3+[thick, restrict x to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l16Table.txt};
-		\addplot3+[thick, restrict x to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l24Table.txt};
-		\addplot3+[thick, restrict x to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l32Table.txt};
-		\addplot3+[thick, restrict x to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l40Table.txt};
+		\addplot3+[thick, restrict x to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l8Table.txt};
+		\addplot3+[thick, restrict x to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l16Table.txt};
+		\addplot3+[thick, restrict x to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l24Table.txt};
+		\addplot3+[thick, restrict x to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l32Table.txt};
+		\addplot3+[thick, restrict x to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryLeafb8l40Table.txt};
 		
 		\legend{L8, L16, L24, L32, L40, L48, L56, L64}
 		\end{axis}
@@ -407,19 +407,20 @@ Best performing configuration is N8L8
 		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
 		]
 %		restrict x to domain={8:48}
-		\addplot3+[thick, restrict y to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb8l8Table.txt};
-		\addplot3+[thick, restrict y to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb16l8Table.txt};
-		\addplot3+[thick, restrict y to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb24l8Table.txt};
-		\addplot3+[thick, restrict y to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb32l8Table.txt};
-		\addplot3+[thick, restrict y to domain={8:48}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb40l8Table.txt};
+		\addplot3+[thick, restrict y to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb8l8Table.txt};
+		\addplot3+[thick, restrict y to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb16l8Table.txt};
+		\addplot3+[thick, restrict y to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb24l8Table.txt};
+		\addplot3+[thick, restrict y to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb32l8Table.txt};
+		\addplot3+[thick, restrict y to domain={8:32}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/AVX/memory/sponzaAVXSeqMemoryNodeb40l8Table.txt};
 		\legend{N8, N16, N24, N32, N40, N48, N56, N64}
 		\end{axis}
 		\end{tikzpicture}
 	\end{minipage}
 	
-	\caption{Same as above, cropped to be better readable }
+	\caption{Same as above, cropped to be better readable. For small L the memory (and therefore the larger waste factor) seems to be the mayor slowdown of larger leaf nodes. For N there seem to be benefits to increase the Nodesize to 16. }
 \end{figure}
 
+\newpage
 
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth}
@@ -490,7 +491,7 @@ Best performing configuration is N8L8
 		\end{tikzpicture}
 	\end{minipage}\hfil \hfil
 	
-	\caption{Most likely the reason why a branching factor over 40 / 48 has bad performance}
+	\caption{Average number of child Nodes is the measured number during ray tracing. These 3 graphs show the most likely reasons why a branching factor over 40 / 48 has bad performance. The average leaf depths resembles the minimum number of steps needed to get tot he first triangles. The waste factor is #tested aabb vs #successful aabb tests.}
 \end{figure}
 
 \newpage
@@ -531,6 +532,8 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 \pgfplotsset{
 	every axis/.append style={colorbar = false},
 }
+
+\newpage
 
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth}
@@ -641,6 +644,9 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 	\caption{Effect of different node sizes on the total ray tracer time for sponza. (SSE2) }
 \end{figure}
 
+
+\newpage
+
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth}
 		\begin{tikzpicture}
@@ -742,6 +748,9 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 	\caption{Effect of different Node sizes on the triangle time and node time.(SSE2) Node size has basically no influence in the triangle intersections.}
 \end{figure}
 
+
+\newpage
+
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth}
 		%TODO move label to the right side
@@ -801,6 +810,9 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 	\caption{Comparison of different paddings. ML means memory leaf. ML32 means that all leafs use a memory as if they where to contain 32 triangles. Same for MN (Memory Node). Fitting means that there is no extra padding. }
 \end{figure}
 
+
+\newpage
+
 \begin{figure}[!htb]
 	\begin{minipage}[t]{0.4\textwidth}
 		%TODO move label to the right side
@@ -858,4 +870,57 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 	\end{minipage}
 	
 	\caption{Comparison of different paddings. Left graph has a Node size of 4, right graph a Leaf size of 4. ML means memory leaf. This shows how much slower a configuration gets when padding is added to it. }
+\end{figure}
+
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.4\textwidth}
+		%TODO move label to the right side
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = LeafMemory,
+		ylabel = \branchf,
+		zlabel = Leaf Time,
+		cycle list name=exotic,
+		legend style={at={(0.03,1.5)}, anchor = north west},
+		xtick = {4, 8, ..., 32},
+		%		xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot3+[thick, restrict x to domain={4:16}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/SSE/memory/sponzaSSESeqMemoryLeafb4l4Table.txt};
+		\addplot3+[thick, restrict x to domain={4:16}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/SSE/memory/sponzaSSESeqMemoryLeafb4l8Table.txt};
+		\addplot3+[thick, restrict x to domain={4:16}, mark=none]table[x = leafMemory, y = branchMemory, z = triangleIntersectionSum, col sep=comma]{Data/SSE/memory/sponzaSSESeqMemoryLeafb4l12Table.txt};
+
+		
+		\legend{L4, L8, L12, L16, L20, L24, L28, L32}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}\hfil \hfil
+	\begin{minipage}[t]{0.4\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={90}{0},
+		xlabel = \leafs,
+		ylabel = Node Memory,
+		zlabel = Node Time,
+		cycle list name=exotic,
+		legend style={at={(0.03,1.5)}, anchor = north west},
+		ytick = {4, 8, ..., 32},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot3+[thick, restrict y to domain={4:20}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/SSE/memory/sponzaSSESeqMemoryNodeb4l4Table.txt};
+		\addplot3+[thick, restrict y to domain={4:20}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/SSE/memory/sponzaSSESeqMemoryNodeb8l4Table.txt};
+		\addplot3+[thick, restrict y to domain={4:20}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/SSE/memory/sponzaSSESeqMemoryNodeb12l4Table.txt};
+		\addplot3+[thick, restrict y to domain={4:20}, mark=none]table[x = leafMemory, y = branchMemory, z = rayTimeSumWithoutTri, col sep=comma]{Data/SSE/memory/sponzaSSESeqMemoryNodeb16l4Table.txt};
+
+		\legend{N4, N8, N12, N16, N20, N24, N28, N32}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	
+	\caption{Same as the above graphs. Like with AVX, the leaf time seems to be dominated by memory. For the Nodes we also have similar behavior than with AVX.}
 \end{figure}
