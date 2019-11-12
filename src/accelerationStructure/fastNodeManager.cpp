@@ -261,7 +261,6 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
-			int factor = nodeMemory / branchingFactor;
 			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), (float*)rayInfo.data(), nodeMemory, branchingFactor))
 			{
 				int8_t code = 0;
@@ -294,6 +293,85 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 								aabbDistances[cId] = -100000;
 							}
 						});
+				}
+			}
+		}
+	}
+	ray.tMax = rayInfo[0];
+	return result;
+}
+
+template <size_t gangSize, size_t nodeMemory>
+bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, double& timeTriangleTest)
+{
+	//bvh intersection for secondary hits. -> anyhit
+	//differences: no normal / positon return for triangles. No aabb distance stop (saving distance of aabb intersections since we stop after first hit)
+
+	//ids of ndodes that we still need to test:
+	//TODO: test perfroamnce if pair is faster !!
+	std::vector<uint32_t> queue;
+	queue.reserve(40);
+	queue.push_back(0);
+	bool result = false;
+
+	std::array<float, nodeMemory> aabbDistances;
+	int leafFactor = leafMemory / leafSize;
+	int nodeFactor = nodeMemory / branchingFactor;
+
+	std::array<float, 10> rayInfo = {};
+	rayInfo[0] = ray.tMax;
+	for (int i = 0; i < 3; i++)
+	{
+		rayInfo[i + 1] = ray.pos[i];
+	}
+	for (int i = 0; i < 3; i++)
+	{
+		rayInfo[i + 4] = ray.invDirection[i];
+	}
+	for (int i = 0; i < 3; i++)
+	{
+		rayInfo[i + 7] = ray.direction[i];
+	}
+
+
+	while (queue.size() != 0)
+	{
+		//get current id (most recently added because we do depth first)
+		uint32_t id = queue.back();
+		queue.pop_back();
+
+		FastNode<nodeMemory>* node = &compactNodes[id];
+
+		if (!node->hasChildren)
+		{
+			auto timeBeforeTriangleTest = getTime();
+
+			//it returns the hit id -> -1 = no hit
+			if (triAnyHit(trianglePoints.data(), node->primIdBegin, (float*)rayInfo.data(), leafMemory, leafSize))
+			{
+				//we dont care about exact result for shadowrays (could do other ispc intersection for it
+				timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+				return true;
+			}
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+		}
+		else
+		{
+			//child tests: 
+			//ispc version:
+
+			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
+
+			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), (float*)rayInfo.data(), nodeMemory, branchingFactor))
+			{
+				for (int i = 0; i < branchingFactor; i++)
+				{
+					if (aabbDistances[i] != -100000)
+					{
+						queue.push_back(node->childIdBegin + i);
+						aabbDistances[i] = -100000;
+					}
 				}
 			}
 		}

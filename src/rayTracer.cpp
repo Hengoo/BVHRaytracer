@@ -375,14 +375,14 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						std::string problemPrefix = "_mb8_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 8> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 16) && (doNodeMemoryTest || branchingFactor > 8))
 					{
 						std::string problemPrefix = "_mb16_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 16> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					//sometimes i hate templates
 					if ((branchingFactor <= 24) && (doNodeMemoryTest || branchingFactor > 16))
@@ -390,42 +390,42 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						std::string problemPrefix = "_mb24_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 24> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 32) && (doNodeMemoryTest || branchingFactor > 24))
 					{
 						std::string problemPrefix = "_mb32_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 32> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 40) && (doNodeMemoryTest || branchingFactor > 32))
 					{
 						std::string problemPrefix = "_mb40_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 40> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 48) && (doNodeMemoryTest || branchingFactor > 40))
 					{
 						std::string problemPrefix = "_mb48_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 48> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 56) && (doNodeMemoryTest || branchingFactor > 48))
 					{
 						std::string problemPrefix = "_mb56_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 56> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 64) && (doNodeMemoryTest || branchingFactor > 56))
 					{
 						std::string problemPrefix = "_mb64_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 64> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 				}
 			}
@@ -451,56 +451,56 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						std::string problemPrefix = "_mb4_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 4> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 8) && (doNodeMemoryTest || branchingFactor > 4))
 					{
 						std::string problemPrefix = "_mb8_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 8> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 12) && (doNodeMemoryTest || branchingFactor > 8))
 					{
 						std::string problemPrefix = "_mb12_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 12> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 16) && (doNodeMemoryTest || branchingFactor > 12))
 					{
 						std::string problemPrefix = "_mb16_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 16> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 20) && (doNodeMemoryTest || branchingFactor > 16))
 					{
 						std::string problemPrefix = "_mb20_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 20> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 24) && (doNodeMemoryTest || branchingFactor > 20))
 					{
 						std::string problemPrefix = "_mb24_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 24> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 28) && (doNodeMemoryTest || branchingFactor > 24))
 					{
 						std::string problemPrefix = "_mb28_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 28> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if ((branchingFactor <= 32) && (doNodeMemoryTest || branchingFactor > 28))
 					{
 						std::string problemPrefix = "_mb32_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 32> manager(bvh, leafMemory);
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
-						c.renderImage(saveImage, manager, ambientSampleCount, ambientDistance, mute);
+						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 				}
 			}

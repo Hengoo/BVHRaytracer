@@ -185,8 +185,74 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 	{
 		return -1;
 	}
-	
+}
 
+//Same as triIntersect but for shadow rays. (no output besides bool)
+export uniform bool triAnyHit(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo, uniform unsigned int leafMemory, uniform unsigned int leafSize)
+{
+	//large value so reduce_min never gets masked variables
+	uniform bool result = false;
+
+	foreach(index = 0 ... leafMemory)
+	{
+		//fast read:
+		float3 p0 = { tri[triId + index                 ], tri[triId + index + leafMemory    ], tri[triId + index + leafMemory * 2] };
+		float3 p1 = { tri[triId + index + leafMemory * 3], tri[triId + index + leafMemory * 4], tri[triId + index + leafMemory * 5] };
+		float3 p2 = { tri[triId + index + leafMemory * 6], tri[triId + index + leafMemory * 7], tri[triId + index + leafMemory * 8] };
+			
+		//now we have loaded it: if index > leafMemory: or it with something to make sure its loaded and then stop
+		//cif since leafmemory and leafsize should be a multiple of the gangsize.
+		cif(index > leafSize)
+		{
+			//surfaceNormal += p0;
+			//surfaceNormal += p1;
+			//surfaceNormal += p2;
+			continue;
+		}
+		
+		//print positions:
+		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
+		//print("p1 = %, %, % \n", p1.x, p1.y, p1.z);
+		//print("p2 = %, %, % \n", p2.x, p2.y, p2.z);
+
+		uniform float3 origin = {rayInfo[1],rayInfo[2],rayInfo[3] };
+		uniform float3 dir = {rayInfo[7],rayInfo[8],rayInfo[9] };
+
+		float3 e1 = p1 - p0;
+		float3 e2 = p2 - p0;
+
+		float3 s1 = cross(dir, e2);
+		float divisor = dot(s1, e1);
+
+		float hit = true;
+		if (divisor == 0.)
+			hit = false;
+		float invDivisor = 1.f / divisor;
+
+		// Compute first barycentric coordinate
+		float3 d = origin - p0;
+		float b1 = dot(d, s1) * invDivisor;
+		if (b1 < 0. || b1 > 1.)
+			hit = false;
+
+		// Compute second barycentric coordinate
+		float3 s2 = cross(d, e1);
+		float b2 = dot(dir, s2) * invDivisor;
+		if (b2 < 0. || b1 + b2 > 1.)
+			hit = false;
+
+		// Compute _t_ to intersection point
+		float t = dot(e2, s2) * invDivisor;
+		if (t < 0 || t > rayInfo[0])
+			hit = false;
+
+		if (hit)
+		{
+			//only overwrite result if we have a closer hit. (only needed if count > lane number)
+			result = true;
+		}
+	}
+	return result;
 }
 
 export uniform bool aabbIntersect(const uniform float bounds[], uniform float distances[], uniform float* uniform rayInfo, uniform int nodeMemory, uniform int nodeSize)
