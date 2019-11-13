@@ -498,7 +498,7 @@ Best performing configuration is N8L8
 
 \section{SSE}
 
-Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to N32 and L4 to L32. Best performing configuration is N4L4. 
+Following plots use SSE4. On my CPU its slower than avx. The tests go from N4 to N32 and L4 to L32. Best performing configuration is N4L4. 
 
 \pgfplotsset{
 	every axis/.append style={colorbar = true},
@@ -585,7 +585,7 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 		\end{tikzpicture}
 	\end{minipage}
 	
-	\caption{Effect of different leaf sizes on the total ray tracer time for sponza. (SSE2). }
+	\caption{Effect of different leaf sizes on the total ray tracer time for sponza. (SSE). }
 \end{figure}
 
 \begin{figure}[!htb]
@@ -641,7 +641,7 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 		\end{tikzpicture}
 	\end{minipage}
 	
-	\caption{Effect of different node sizes on the total ray tracer time for sponza. (SSE2) }
+	\caption{Effect of different node sizes on the total ray tracer time for sponza. (SSE) }
 \end{figure}
 
 
@@ -694,7 +694,7 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 		\end{tikzpicture}
 	\end{minipage}
 	
-	\caption{Effect of different leaf sizes on the triangle time and node time. (SSE2) The leaf size influences the node time by reducing the size of the bvh. }
+	\caption{Effect of different leaf sizes on the triangle time and node time. (SSE) The leaf size influences the node time by reducing the size of the bvh. }
 \end{figure}
 
 
@@ -745,7 +745,7 @@ Following plots use SSE. On my CPU its slower than avx. The tests go from N4 to 
 		\end{axis}
 		\end{tikzpicture}
 	\end{minipage}
-	\caption{Effect of different Node sizes on the triangle time and node time.(SSE2) Node size has basically no influence in the triangle intersections.}
+	\caption{Effect of different Node sizes on the triangle time and node time.(SSE) Node size has basically no influence in the triangle intersections.}
 \end{figure}
 
 

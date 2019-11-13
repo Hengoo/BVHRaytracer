@@ -20,23 +20,23 @@
 
 
 //I just want to use template in the cpp ...
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 4> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 12> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 20> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 24> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 28> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 32> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 4> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 12> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 20> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 24> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 28> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 32> nodeManager, unsigned ambientSampleCount, float ambientDistance);
 
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 24> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 32> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 40> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 48> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 56> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 64> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 16> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 24> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 32> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 40> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 48> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 56> nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 64> nodeManager, unsigned ambientSampleCount, float ambientDistance);
 
 template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 4> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
 template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 8> nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
@@ -78,35 +78,48 @@ template <size_t gangSize, size_t nodeMemory>
 void CameraFast::renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemory> nodeManager,
 	unsigned ambientSampleCount, float ambientDistance, bool mute)
 {
-	renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance, mute);
+	renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance);
 
 	//has to be an odd number for correct median
 	int sampleCount = 5;
+	//total raytracer time, time sum each ray, time sum triangle cost
 	std::vector<std::tuple<float, float, float>> results;
 	results.reserve(sampleCount);
 	//median. (median of overall time or of each individual time?
 	for (int i = 0; i < sampleCount; i++)
 	{
-		results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance, false));
+		results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance));
 	}
 	//calculate median
+	//this sorts by the first value of the tupel (the total raytracer time)
 	sort(results.begin(), results.end());
-	std::cout << sampleCount / 2 + 1;
-	auto median = results[sampleCount / 2 + 1];
-	auto deb = 0;
+	auto median = results[sampleCount / 2 ];
 
-	//TODO::: test if everyhing works !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	if (!mute)
+	{
+		std::cout << "Raytracing took " << std::get<0>(median) << " seconds." << std::endl;
+		std::cout << "ray sum took " << std::get<1>(median) << " seconds." << std::endl;
+		std::cout << "triangleTests took " << std::get<2>(median) << " seconds." << std::endl;
+		std::cout << "all rays minus triangle took " << std::get<1>(median) - std::get<2>(median) << " seconds." << std::endl;
+	}
 
-	std::cout << "Raytracing took " << std::get<0>(median) << " seconds." << std::endl;
-	std::cout << "ray sum took " << std::get<1>(median) << " seconds." << std::endl;
-	std::cout << "triangleTests took " << std::get<2>(median) << " seconds." << std::endl;
-	std::cout << "all rays minus triangle took " << std::get<1>(median) - std::get<2>(median) << " seconds." << std::endl;
+	std::ofstream myfile(path + "/" + name + problem + problemPrefix + "_Perf.txt");
+	if (myfile.is_open())
+	{
+		myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;
+		myfile << "with a gang size of " << gangSize << ", a node meory of " << nodeMemory << ", and a leaf memory of " << nodeManager.leafMemory << std::endl;
+		myfile << "Raytracer total time: " << std::get<0>(median) << std::endl;
+		myfile << "Time for all rays (SUM): " << std::get<1>(median) << std::endl;
+		myfile << "Time for triangle intersections (SUM): " << std::get<2>(median) << std::endl;
+		myfile << "Time all rays(sum) - triangle(sum): " << std::get<1>(median) - std::get<2>(median) << std::endl;
+	}
+	myfile.close();
 
 }
 
 template <size_t gangSize, size_t nodeMemory>
 std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemory> nodeManager,
-	unsigned ambientSampleCount, float ambientDistance, bool mute)
+	unsigned ambientSampleCount, float ambientDistance)
 {
 	fillRenderInfo();
 
@@ -125,8 +138,6 @@ std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNode
 
 			//shoot primary ray.
 			bool result = nodeManager.intersect(ray, timeTriangleTest);
-
-			//glm::vec3 ambientSum = glm::vec3(0);
 
 			if (result)
 			{
@@ -178,28 +189,11 @@ std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNode
 			//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
 		});
 
+	double totalTime = getTimeSpan(timeBeginRaytracer);
 	double timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), 0.0);
 	double timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), 0.0);
-	double totalTime = getTimeSpan(timeBeginRaytracer);
-	if (!mute)
-	{
-		std::cout << "Raytracing took " << totalTime << " seconds." << std::endl;
-		std::cout << "ray sum took " << timeRaySum << " seconds." << std::endl;
-		std::cout << "triangleTests took " << timeTrianglesSum << " seconds." << std::endl;
-		std::cout << "all rays minus triangle took " << timeRaySum - timeTrianglesSum << " seconds." << std::endl;
-	}
 
-	std::ofstream myfile(path + "/" + name + problem + problemPrefix + "_Perf.txt");
-	if (myfile.is_open())
-	{
-		myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;
-		myfile << "with a gang size of " << gangSize << ", a node meory of " << nodeMemory << ", and a leaf memory of " << nodeManager.leafMemory << std::endl;
-		myfile << "Raytracer total time: " << totalTime << std::endl;
-		myfile << "Time for all rays (SUM): " << timeRaySum << std::endl;
-		myfile << "Time for triangle intersections (SUM): " << timeTrianglesSum << std::endl;
-		myfile << "Time all rays(sum) - triangle(sum): " << timeRaySum - timeTrianglesSum << std::endl;
-	}
-	myfile.close();
+
 
 	if (saveImage)
 	{
