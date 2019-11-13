@@ -11,15 +11,16 @@ class FastRay;
 template  <size_t nodeMemory>
 struct alignas(32) FastNode
 {
+
+	//aabbs
+	std::array<float, nodeMemory * 6> bounds;
+
 	//TODO padding and size improvements
 	union
 	{
 		uint32_t childIdBegin;
 		uint32_t primIdBegin;
 	};
-
-	//aabbs
-	std::array<float, nodeMemory * 6> bounds;
 
 	//sorting
 	std::array<std::array<int8_t, nodeMemory>, 4> traverseOrderEachAxis;
