@@ -42,6 +42,8 @@ static inline uint8_t chooseAxisAndSort(primPointVector::iterator primitiveBegin
 	//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
 	glm::vec3 min = glm::vec3(222222.0f);
 	glm::vec3 max = glm::vec3(-222222.0f);
+	
+
 	glm::vec3 centerDistance;
 	std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
 		[&](auto& p)
@@ -58,10 +60,10 @@ static inline uint8_t chooseAxisAndSort(primPointVector::iterator primitiveBegin
 
 	//sort primitive array along axis:
 	//its faster to first check if its sorted
-	if (!std::is_sorted(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
+	if (!std::is_sorted(std::execution::par_unseq, primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis)))
 	{
 		//TODO test what parallel stuff like std::execution::seq or unseqpar does here
-		std::sort(primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
+		std::sort(std::execution::par_unseq, primitiveBegin, primitiveEnd, std::bind(sortPrimitive, std::placeholders::_1, std::placeholders::_2, sortAxis));
 	}
 	return sortAxis;
 }

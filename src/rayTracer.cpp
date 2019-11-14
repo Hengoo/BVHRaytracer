@@ -159,6 +159,69 @@ void RayTracer::run()
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
+				//reminder : blender coordiantes of this (0, 360, 50) are -> glm::vec3(0, 50, -360);
+			case 7:
+				//http://casual-effects.com/data/index.html
+				//Brackfast room scene converted to glb with blender
+				name = "breakfast";
+				loadGltfModel("models/breakfast_room/breakfast_room.glb", gameObjects, meshBins);
+
+				cameraPos = glm::vec3(4, 7.8, 9.5);
+				cameraTarget = glm::vec3(2.4, 5.2, 5.1);
+
+				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
+				break;
+			case 8:
+				//http://casual-effects.com/data/index.html
+				//San miguel "low poly" scene converted to glb with this tool https://blackthread.io/gltf-converter/
+				name = "sanMiguel";
+				loadGltfModel("models/san-miguel-low-poly/san-miguel-low-poly.glb", gameObjects, meshBins);
+				cameraPos = glm::vec3(22, 2.2, 12.6);
+				cameraTarget = glm::vec3(14, 2.0, 5.8);
+
+				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
+				break;
+			case 9:
+				//http://casual-effects.com/data/index.html
+				//amazon lumberyard inside scene converted to glb with this tool https://blackthread.io/gltf-converter/
+				name = "amazonLumberyardInterior";
+				loadGltfModel("models/AmazonLumberyard/interior.glb", gameObjects, meshBins);
+				cameraPos = glm::vec3(-109, 284, -147);
+				cameraTarget = glm::vec3(20, 257, -151);
+
+				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
+				break;
+			case 10:
+				//http://casual-effects.com/data/index.html
+				//amazon lumberyard exterior scene converted to glb with this tool https://blackthread.io/gltf-converter/
+				name = "amazonLumberyardExterior";
+				loadGltfModel("models/AmazonLumberyard/exterior.glb", gameObjects, meshBins);
+				cameraPos = glm::vec3(-1059, 384, -200);
+				cameraTarget = glm::vec3(300, 257, 330);
+
+				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
+				break; 
+			case 11:
+				//http://casual-effects.com/data/index.html
+				//amazon lumberyard combined scene converted to glb with this tool https://blackthread.io/gltf-converter/
+				name = "amazonLumberyardCombinedExterior";
+				loadGltfModel("models/AmazonLumberyard/exterior.glb", gameObjects, meshBins);
+				loadGltfModel("models/AmazonLumberyard/interior.glb", gameObjects, meshBins);
+				cameraPos = glm::vec3(-1059, 384, -200);
+				cameraTarget = glm::vec3(300, 257, 330);
+
+				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
+				break;
+			case 12:
+				//http://casual-effects.com/data/index.html
+				//gallery converted to glb with this tool https://blackthread.io/gltf-converter/
+				name = "gallery";
+				loadGltfModel("models/gallery/gallery.glb", gameObjects, meshBins);
+				cameraPos = glm::vec3(-2.7, 2.88, 8);
+				cameraTarget = glm::vec3(-1.2, 2.2, 1);
+
+				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
+				break;
 			default:
 				std::cerr << "unknown scene id" << std::endl;
 				return;

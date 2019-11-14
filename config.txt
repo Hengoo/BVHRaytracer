@@ -6,7 +6,7 @@ maxLeafSize = 8
 leafStep = 8
 
 minBranch = 8
-maxBranch = 64
+maxBranch = 8
 branchStep = 8
 
 #What analysis to do:
@@ -14,15 +14,15 @@ renderAnalysisImage = false
 saveDepthDetailedImage = false
 bvhAnalysis = false
 saveBvhImage = false
-saveImage = false
+saveImage = true
 
 #Do performance Analysis: (this disables parallel execution)
 doPerformanceTest = true
 doLeafMemoryTests = false
-doNodeMemoryTests = true
+doNodeMemoryTests = false
 
 #Number of samples for ambient occlusion
-ambientSampleCount = 1
+ambientSampleCount = 5
 
 castShadows = false
 
@@ -46,10 +46,17 @@ renderType = 3
 #	4 = sponza
 #	5 = daviaRock
 #	6 = rungholt
+#	7 = breakfast
+#	8 = sanMiguel
+#	9 = amazon lumberyard interior
+#	10 = amazon lumberyard exterior
+#	11 = amazon lumberyard combined with interior perspective
+#	12 = gallery
 #Multiple scenes are seperated by comma like "scenario = 6, 4, 1, 2" 
 #When rendering multiple scenarios they are all started parallel
 #When rendering a single scene with more than one leaf/branch combination they are started in parallel batches of 4
-scenario = 4
+#scenario = 7,8,9,10,11,12
+scenario = 8
 
 #Bucket count of bvh builder (0 = no buckets)
 bucketCount = 0
