@@ -11,15 +11,12 @@ class everything:
 		self.folder = "SavesPerf/"
 		#names of the sceneFolders
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		self.names = ["sponza"]
+		self.names = ["sanMiguel"]
 		#prefixTo the folderNames
-		self.prefix = "SSESeq"
-		#self.prefix = "SSESeqMemoryNode"
+		#self.prefix = "SSESeqMemoryLeaf"
+		self.prefix = "SSESeqMemoryNode"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = ""
-
-		# -1 for all, id otherwise (starting with 0)
-		self.singeIdOverride = -1
 
 		#maximum branchingfactor and max leafsite
 		self.minBranchingFactor = 4
@@ -223,17 +220,9 @@ class everything:
 				#now do what normal data manger does, loop over b and l and write files
 				for i in range(len(self.names)):
 					anyFound = False
-					fileName1 = self.names[i] + self.prefix + memoryText + "TableWithSpace" + self.outputPrefix + ".txt"
-					fileName2 = self.names[i] + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
-					fResult = open(fileName1, "w+")
-					fResult2 = open(fileName2, "w+")
-						# write the first line in the table (the one with the variable names)
-					fResult.write(firstLine + "\n")
-					fResult2.write(firstLine + "\n")
+
 
 					for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
-						#one empty line after each branching factor
-						fResult.write("\n")
 						for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
 							branch = b + self.minBranchingFactor
 							leaf = l + self.minLeafSize
@@ -241,6 +230,11 @@ class everything:
 							#i just test both files for all varialbe names
 							fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml)+ "_Perf.txt"
 							if (path.exists(fileName)):
+								if not (anyFound):
+									fileName1 = self.names[i] + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
+									fResult = open(fileName1, "w+")
+									# write the first line in the table (the one with the variable names)
+									fResult.write(firstLine + "\n")
 								anyFound = True
 								#open file and read important values
 								f = open(fileName, "r")
@@ -255,60 +249,10 @@ class everything:
 								#write file:
 								res = self.getLine(i, branch, leaf)
 								fResult.write(res)
-								fResult2.write(res)
 							#else:
 							#	print("Was not able to open file: " + fileName)
-					fResult.close()
-					fResult2.close()
-					if(not anyFound):
-						os.remove(fileName1)
-						os.remove(fileName2)
-
-				if (len(self.names) == 1):
-					continue
-
-				fileName1 = "AverageTable" + self.prefix + memoryText + "TableWithSpace" + self.outputPrefix + ".txt"
-				fileName2 = "AverageTable" + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
-				#now loop over b and l again and write average file:
-				fResult = open(fileName1, "w+")
-				fResult2 = open(fileName2, "w+")
-				# write the first line in the table (the one with the variable names)
-				fResult.write(firstLine + "\n")
-				fResult2.write(firstLine + "\n")
-
-
-				anyFound = False
-				for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
-					#one empty line after each branching factor
-					fResult.write("\n")
-					for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
-						branch = b + self.minBranchingFactor
-						leaf = l + self.minLeafSize
-						#loop over scenes
-						
-						for i in range(len(self.names)):
-							#i just test both files for all varialbe names
-							fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml)+ "_Perf.txt"
-							if (path.exists(fileName)):
-								anyFound = True
-								#open file and read important values
-								f = open(fileName, "r")
-								if f.mode == 'r':
-									for x in f:
-										#now loop over the different variables and call somefunctions to hande the rest
-										self.gatherAll(i, x, branch, leaf)
-							#else:
-							#	print("Was not able to open file: " + fileName)
-
-						#write file:
-						res = self.getAverageLine(branch, leaf)
-						fResult.write(res)
-						fResult2.write(res)
-				
-				if (not anyFound):
-					#ugly but works
-					os.remove(fileName1)
-					os.remove(fileName2)
+					if anyFound:
+						fResult.close()
 
 	#run 3 runs over all possible mB and mL combinations but in different order (first L and N then Mb and Ml)
 	def run3(self):
@@ -331,19 +275,10 @@ class everything:
 				#now do what normal data manger does, loop over b and l and write files
 				for i in range(len(tmpNames)):
 					anyFound = False
-					fileName1 = tmpNames[i] + self.prefix + configText + "TableWithSpace" + self.outputPrefix + ".txt"
-					fileName2 = tmpNames[i] + self.prefix + configText + "Table" + self.outputPrefix + ".txt"
-					fResult = open(fileName1, "w+")
-					fResult2 = open(fileName2, "w+")
-
-					# write the first line in the table (the one with the variable names)
-					fResult.write(firstLine + "\n")
-					fResult2.write(firstLine + "\n")
 
 					#second loop over mb and ml
 					for mb in self.possibleMemorySizes:
-						#one empty line after each branching factor
-						fResult.write("\n")
+
 						for ml in self.possibleMemorySizes:
 							memoryText = "mb" + str(mb) + "ml" + str(ml)
 
@@ -360,21 +295,27 @@ class everything:
 										tmp = x.split(str(branch) + ", " + str(leaf)+", ", 1)
 										if len(tmp) == 2:
 											if len(tmp[0]) == 0:
+												if not (anyFound):
+													fileName1 = tmpNames[i] + self.prefix + configText + "Table" + self.outputPrefix + ".txt"
+													fResult = open(fileName1, "w+")
+
+													# write the first line in the table (the one with the variable names)
+													fResult.write(firstLine + "\n")
 												anyFound = True
 												anyLineFound = True
 												lineResult = tmp[1]
 
 								#write file:
 								if anyLineFound:
+									#one empty line after each branching factor
 									res = str(mb) +", "+ str(ml)+ ", "+ lineResult
 									fResult.write(res)
-									fResult2.write(res)
-					fResult.close()
-					fResult2.close()
-					if (not anyFound):
+					if anyLineFound:
+						fResult.close()
+					#if (not anyFound):
 						#ugly but works
-						os.remove(fileName1)
-						os.remove(fileName2)
+						#os.remove(fileName1)
+						#os.remove(fileName2)
 
 	#returns the line that is written in the averagetable.txt
 	def getAverageLine(self, branch, leaf):

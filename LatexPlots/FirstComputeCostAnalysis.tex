@@ -1,0 +1,43 @@
+
+\section{First compute cost tests}
+
+For now plots are with SSE and the San Miguel scene (16,852,353 Vertices and 5,600,315 Triangles)
+
+\pgfplotsset{
+	every axis/.append style={colorbar = false},
+}
+\begin{minipage}[t]{0.8\textwidth}
+\begin{tikzpicture}
+\pgfplotsset{ymin=0, ymax=1}
+\begin{axis}[
+ybar stacked,
+legend style={at={(0.99,0.2)}, anchor = north east},
+xlabel = \leafs,
+ylabel = cost factor,
+]
+
+
+\addplot+[ybar]table[y = leafComputeCostNorm, x = leafSize, col sep=comma]{Data/sanMiguelSSESeqMemoryLeafComputeCostTable.txt};
+\addplot+[ybar]table[y = memoryCostNorm, x = leafSize, col sep=comma]{Data/sanMiguelSSESeqMemoryLeafComputeCostTable.txt};
+\legend{\strut leaf compute cost, \strut leaf memory cost}
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
+
+\begin{minipage}[t]{0.8\textwidth}
+\begin{tikzpicture}
+\pgfplotsset{ymin=0, ymax=1}
+\begin{axis}[
+ybar stacked,
+legend style={at={(0.99,0.2)}, anchor = north east},
+xlabel = \nodes,
+ylabel = cost factor,
+]
+
+
+\addplot+[ybar]table[y = nodeComputeCostNorm, x = branchFactor, col sep=comma]{Data/sanMiguelSSESeqMemoryNodeComputeCostTable.txt};
+\addplot+[ybar]table[y = memoryCostNorm, x = branchFactor, col sep=comma]{Data/sanMiguelSSESeqMemoryNodeComputeCostTable.txt};
+\legend{\strut node compute cost, \strut node memory cost}
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
