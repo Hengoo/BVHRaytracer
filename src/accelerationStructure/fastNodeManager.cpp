@@ -228,13 +228,10 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 		if (!node->hasChildren)
 		{
 			auto timeBeforeTriangleTest = getTime();
-
-			//TODO check if vec3 is slower than normal floats? -> and performance difference to c-stack array
-			std::array <glm::vec3, gangSize	> surfaceNormals;
+			std::array <glm::vec3, gangSize> surfaceNormals;
 			std::array <glm::vec3, gangSize> surfacePositions;
-
-
-			//std::cout << test << std::endl;
+			//std::array <float, gangSize * 3> surfaceNormals;
+			//std::array <float, gangSize * 3> surfacePositions;
 
 			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, (float*)rayInfo.data(), (float*)surfaceNormals.data(),
 				(float*)surfacePositions.data(), leafMemory, leafSize);
@@ -249,6 +246,8 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 				}
 				ray.surfaceNormal = surfaceNormals[resultIndex];
 				ray.surfacePosition = surfacePositions[resultIndex];
+				//ray.surfaceNormal = glm::vec3(surfaceNormals[resultIndex], surfaceNormals[resultIndex + gangSize], surfaceNormals[resultIndex + gangSize * 2]);
+				//ray.surfacePosition = glm::vec3(surfacePositions[resultIndex], surfacePositions[resultIndex + gangSize], surfacePositions[resultIndex + gangSize * 2]);
 				result = true;
 			}
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);

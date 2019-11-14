@@ -17,6 +17,8 @@ public:
 
 	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::vec3 position, glm::vec3 lookCenter
 		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 360, size_t width = 640);
+	//CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::vec3 position, glm::vec3 lookCenter
+	//	, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920);
 
 
 	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::mat4 transform,

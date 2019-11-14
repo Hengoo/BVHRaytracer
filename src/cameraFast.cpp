@@ -122,10 +122,7 @@ std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNode
 	unsigned ambientSampleCount, float ambientDistance)
 {
 	fillRenderInfo();
-
 	auto timeBeginRaytracer = getTime();
-
-	double triangleTestTime = 0;
 	std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
 		[&](auto& info)
 		{

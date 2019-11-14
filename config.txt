@@ -1,13 +1,13 @@
 #Config file for raytracer.
 
 #Leafsize and Branching Factor to test:
-minLeafSize = 8
-maxLeafSize = 8
-leafStep = 8
+minLeafSize = 4
+maxLeafSize = 4
+leafStep = 4
 
-minBranch = 8
-maxBranch = 8
-branchStep = 8
+minBranch = 4
+maxBranch = 4
+branchStep = 4
 
 #What analysis to do:
 renderAnalysisImage = false
@@ -22,7 +22,7 @@ doLeafMemoryTests = false
 doNodeMemoryTests = false
 
 #Number of samples for ambient occlusion
-ambientSampleCount = 5
+ambientSampleCount = 1
 
 castShadows = false
 

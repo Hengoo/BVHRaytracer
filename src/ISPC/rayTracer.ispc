@@ -170,6 +170,15 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 			{
 				index = programIndex;
 				normalize(surfaceNormal);
+				/*
+				surfaceNormals[programIndex ] = surfaceNormal.x;
+				surfaceNormals[programIndex + programCount ] = surfaceNormal.y;
+				surfaceNormals[programIndex + programCount * 2 ] = surfaceNormal.z;
+
+				surfacePositions[programIndex ] = surfacePosition.x;
+				surfacePositions[programIndex + programCount ] = surfacePosition.y;
+				surfacePositions[programIndex + programCount * 2 ] = surfacePosition.z;
+				*/
 				surfaceNormals[programIndex*3 ] = surfaceNormal.x;
 				surfaceNormals[programIndex*3 + 1] = surfaceNormal.y;
 				surfaceNormals[programIndex*3 + 2] = surfaceNormal.z;
