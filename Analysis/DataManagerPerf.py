@@ -19,9 +19,9 @@ class everything:
 		self.outputPrefix = ""
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 4
+		self.minBranchingFactor = 2
 		self.maxBranchingFactor = 64
-		self.minLeafSize = 4
+		self.minLeafSize = 1
 		self.maxLeafSize = 64
 
 		#temprary cost function. needs replacement

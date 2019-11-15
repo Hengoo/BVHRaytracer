@@ -3,6 +3,8 @@ import math
 from os import path
 
 import numpy as np
+import scipy
+import scipy.optimize
 
 #loop over all possible tables we are intrested in:
 #( nameSSEseq4l4bTable.txt ) are the tables we can use.
@@ -22,9 +24,9 @@ class everything:
 		self.memoryStepSize = 4
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 4
+		self.minBranchingFactor = 2
 		self.maxBranchingFactor = 64
-		self.minLeafSize = 4
+		self.minLeafSize = 1
 		self.maxLeafSize = 64
 
 		#number of "," in the line before the number we want
@@ -54,7 +56,7 @@ class everything:
 						if not (anyFound):
 							fileName = name + self.prefix[self.workType] + "ComputeCostTable.txt"
 							fResult = open(fileName, "w+")
-							firstLine = "branchFactor, leafSize, " + self.dataOutName[self.workType] +", memoryCost, " + self.dataOutName[self.workType] + "Norm, memoryCostNorm"
+							firstLine = "branchFactor, leafSize, memorySize, " + self.dataOutName[self.workType] +", memoryCost, " + self.dataOutName[self.workType] + "Norm, memoryCostNorm, " + self.dataOutName[self.workType] + "2 , memoryCost2"
 							fResult.write(firstLine + "\n")
 						anyFound = True
 						#open file and read important values
@@ -82,8 +84,6 @@ class everything:
 						else:
 							memoryPart = np.array(dataBranch)
 							computePart = np.array([float(branch) for i in range(4)])
-						memoryPart /= self.memoryStepSize
-						computePart /= self.memoryStepSize
 						
 						A = np.vstack([memoryPart, computePart]).T
 
@@ -94,10 +94,28 @@ class everything:
 						factor = 1 / (computeCost + memoryCost)
 						computeNorm = factor * computeCost
 						memoryNorm = factor * memoryCost
+
+						#new version:
+						#scipy.optimize.leastsq for non linear least squares.
+						#good explanation: https://stackoverflow.com/questions/19791581/how-to-use-leastsq-function-from-scipy-optimize-in-python-to-fit-both-a-straight
+						#n = nodes, pm = padMemory
+						n = computePart[0]
+						func = lambda tpl, pm: tpl[0] * (tpl[1] * pm + n)
 						
-						fResult.write(str(branch)+", " + str(leaf)+ ", "+ str(computeCost)+", "+ str(memoryCost)+ ", "+ str(computeNorm)+", "+ str(memoryNorm)+ "\n")
+						errorFunc = lambda tpl, pm, y: func(tpl, pm) - y
+						
+						#initial tupel values
+						tplInitial = (1.0, 1.0)
+						
+						#tplFinal,success= scipy.optimize.leastsq(errorFunc,tplInitial[:],args=(memoryPart,y))
+						#above is the soon depricated version
+						
+						result= scipy.optimize.least_squares(errorFunc,tplInitial[:],args=(memoryPart,y))
+						
+						fResult.write(str(branch)+", " + str(leaf)+ ", "+ str(memoryPart[0]) + ", "+ str(computeCost)+", "+ str(memoryCost)+ ", "+ str(computeNorm)+", "+ str(memoryNorm)+", "+ str(result.x[0])+", "+ str(result.x[1])+ "\n") 
 			if anyFound:
 				fResult.close()
+
 
 
 program = everything()

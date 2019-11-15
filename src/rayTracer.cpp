@@ -537,6 +537,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				//sse
 				//witph sse i currently do steps of 4 for leafs and nodes memory
 				int minLeafMemory = ceil(leafSize / 4.0f) * 4;
+				int minBranchMemory = ceil(branchingFactor / 4.0f) * 4;
 				int maxLeafMemory = minLeafMemory + 4 * 3;
 				/*
 				int maxMem = 16;
@@ -560,7 +561,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + branchingFactor)
+					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
 						continue;
 					current += gangSize;
 
@@ -571,7 +572,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + branchingFactor)
+					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
 						continue;
 					current += gangSize;
 
@@ -582,7 +583,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + branchingFactor)
+					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
 						continue;
 					current += gangSize;
 
@@ -593,7 +594,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + branchingFactor)
+					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
 						continue;
 					current += gangSize;
 
@@ -604,7 +605,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + branchingFactor)
+					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
 						continue;
 					current += gangSize;
 
@@ -615,7 +616,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + branchingFactor)
+					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
 						continue;
 					current += gangSize;
 
@@ -626,7 +627,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 						CameraFast c(path, name, problem, problemPrefix, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + branchingFactor)
+					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
 						continue;
 					current += gangSize;
 
