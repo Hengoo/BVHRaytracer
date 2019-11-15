@@ -17,9 +17,10 @@ class everything:
 		self.prefix = ["SSESeqMemoryLeaf", "SSESeqMemoryNode"]
 		self.prefix2 = "Table.txt"
 
-		# 1 = node, 0 = leaf (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
-		self.workType = 0
-		
+		# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
+		self.workType = 1
+		self.memoryStepSize = 4
+
 		#maximum branchingfactor and max leafsite
 		self.minBranchingFactor = 4
 		self.maxBranchingFactor = 64
@@ -61,18 +62,31 @@ class everything:
 
 						if f.mode == 'r':
 							dataPoints = [[] for z in self.dataId]
+							dataLeaf = []
+							dataBranch = []
 							fiterator = iter(f)
 							next(fiterator)
 							for x in fiterator:
+								split = x.split(", ")
 								# collect data points:
 								for i in range(len(self.dataId)):
-									dataPoints[i].append(float(x.split(", ")[self.dataId[i]]))
+									dataPoints[i].append(float(split[self.dataId[i]]))
+								dataLeaf.append(float(split[1]))
+								dataBranch.append(float(split[0]))
+
 						#now convert data to np array
 						y = np.array(dataPoints[self.workType])
-						A = np.array([[ 1., 1.],
-							[ 2., 1.],
-							[ 3., 1.],
-							[4., 1.]])
+						if self.workType == 0:
+							memoryPart = np.array(dataLeaf)
+							computePart = np.array([float(leaf) for i in range(4)])
+						else:
+							memoryPart = np.array(dataBranch)
+							computePart = np.array([float(branch) for i in range(4)])
+						memoryPart /= self.memoryStepSize
+						computePart /= self.memoryStepSize
+						
+						A = np.vstack([memoryPart, computePart]).T
+
 						result, residual, rank, singular= np.linalg.lstsq(A, y,rcond=None)
 						#print("result " + str(branch) + ", " + str(leaf) + ", " + str(m))
 						computeCost = result[1]
@@ -84,5 +98,7 @@ class everything:
 						fResult.write(str(branch)+", " + str(leaf)+ ", "+ str(computeCost)+", "+ str(memoryCost)+ ", "+ str(computeNorm)+", "+ str(memoryNorm)+ "\n")
 			if anyFound:
 				fResult.close()
+
+
 program = everything()
 program.run()

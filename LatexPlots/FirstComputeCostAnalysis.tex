@@ -1,7 +1,22 @@
 
 \section{First compute cost tests}
 
-For now plots are with SSE and the San Miguel scene (16,852,353 Vertices and 5,600,315 Triangles)
+For now plots are with SSE and the San Miguel scene (16,852,353 Vertices and 5,600,315 Triangles) 
+
+The function that is optimised: 
+
+\[totalTime = memoryTime * m + computeTime * n \]
+
+while $m$ is the amount of memory batches we load (one batch is 4 in SSE or 8 in AVX) and $n$ the amount of batches we compute.
+
+An example with SSE and a N8 with the data we collected from San Miguel:
+\[0.665495 = memoryTime * 2 + computeTime * 2 \]
+\[0.749434 = memoryTime * 3 + computeTime * 2 \]
+\[0.825299 = memoryTime * 4 + computeTime * 2 \]
+\[0.943323 = memoryTime * 5 + computeTime * 2 \]
+
+After a linear least squares approximation it results in $memoryTime = 0.090934$  and $computationTime = 0.23880825$. This means, one batch takes 0.090934 seconds to load the memory and  0.23880825 seconds to do the computations on this batch (for the given configuration of a Nodesize = 8). For the graphs below the values are normalized.
+
 
 \pgfplotsset{
 	every axis/.append style={colorbar = false},
@@ -13,13 +28,12 @@ For now plots are with SSE and the San Miguel scene (16,852,353 Vertices and 5,6
 ybar stacked,
 legend style={at={(0.99,0.2)}, anchor = north east},
 xlabel = \leafs,
-ylabel = cost factor,
+ylabel = factor,
 ]
-
 
 \addplot+[ybar]table[y = leafComputeCostNorm, x = leafSize, col sep=comma]{Data/sanMiguelSSESeqMemoryLeafComputeCostTable.txt};
 \addplot+[ybar]table[y = memoryCostNorm, x = leafSize, col sep=comma]{Data/sanMiguelSSESeqMemoryLeafComputeCostTable.txt};
-\legend{\strut leaf compute cost, \strut leaf memory cost}
+\legend{\strut triangle compute time, \strut triangle memory load time}
 \end{axis}
 \end{tikzpicture}
 \end{minipage}
@@ -31,13 +45,13 @@ ylabel = cost factor,
 ybar stacked,
 legend style={at={(0.99,0.2)}, anchor = north east},
 xlabel = \nodes,
-ylabel = cost factor,
+ylabel = factor,
 ]
 
 
 \addplot+[ybar]table[y = nodeComputeCostNorm, x = branchFactor, col sep=comma]{Data/sanMiguelSSESeqMemoryNodeComputeCostTable.txt};
 \addplot+[ybar]table[y = memoryCostNorm, x = branchFactor, col sep=comma]{Data/sanMiguelSSESeqMemoryNodeComputeCostTable.txt};
-\legend{\strut node compute cost, \strut node memory cost}
+\legend{\strut node compute time, \strut node memory load time}
 \end{axis}
 \end{tikzpicture}
 \end{minipage}
