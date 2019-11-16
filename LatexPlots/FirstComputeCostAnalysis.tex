@@ -84,16 +84,7 @@ xtick = {2, 3, ..., 16},
 \end{minipage}
 
 \newpage
-UPDATE: Reworked version.
-
-Same example as above of N8 and SSE but with our new function to optimize.
-\[0.665495 = memoryFactor * computeTime * 8  + computeTime * 8 \]
-\[0.749434 = memoryFactor * computeTime * 12 + computeTime * 8 \]
-\[0.825299 = memoryFactor * computeTime * 16 + computeTime * 8 \]
-\[0.943323 = memoryFactor * computeTime * 20 + computeTime * 8 \]
-
-After a nonlinear least squares optimization it results in a computeTime of $0.0612$ (same as the previous result) and a memoryFactor of $0.369$. (our previous memory time 0.0226, and 0.369 * 0.0612 = 0.0226)
-
+Relative memory cost:
 
 \begin{minipage}[t]{0.8\textwidth}
 	\begin{tikzpicture}
@@ -108,7 +99,7 @@ After a nonlinear least squares optimization it results in a computeTime of $0.0
 	xtick = {2, 3, ..., 16},
 	%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
 	]
-	\addplot+[thick, mark=none]table[y expr = \thisrowno{8}, x = branchFactor, col sep=comma]{Data/sanMiguelSSESeqMemoryNodeComputeCostTable.txt};
+	\addplot+[thick, mark=none]table[y = memoryRelative, x = branchFactor, col sep=comma]{Data/sanMiguelSSESeqMemoryNodeComputeCostTable.txt};
 
 	\legend{ memory factor in relation to compute cost}
 	\end{axis}

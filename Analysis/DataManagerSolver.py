@@ -20,7 +20,7 @@ class everything:
 		self.prefix2 = "Table.txt"
 
 		# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
-		self.workType = 1
+		self.workType = 0
 		self.memoryStepSize = 4
 
 		#maximum branchingfactor and max leafsite
@@ -56,7 +56,7 @@ class everything:
 						if not (anyFound):
 							fileName = name + self.prefix[self.workType] + "ComputeCostTable.txt"
 							fResult = open(fileName, "w+")
-							firstLine = "branchFactor, leafSize, memorySize, " + self.dataOutName[self.workType] +", memoryCost, " + self.dataOutName[self.workType] + "Norm, memoryCostNorm, " + self.dataOutName[self.workType] + "2 , memoryCost2"
+							firstLine = "branchFactor, leafSize, memorySize, " + self.dataOutName[self.workType] +", memoryCost, " + self.dataOutName[self.workType] + "Norm, memoryCostNorm, memoryRelative"
 							fResult.write(firstLine + "\n")
 						anyFound = True
 						#open file and read important values
@@ -87,15 +87,26 @@ class everything:
 						
 						A = np.vstack([memoryPart, computePart]).T
 
-						result, residual, rank, singular= np.linalg.lstsq(A, y,rcond=None)
-						#print("result " + str(branch) + ", " + str(leaf) + ", " + str(m))
+						result, residual, rank, singular = np.linalg.lstsq(A, y, rcond=None)
+
 						computeCost = result[1]
 						memoryCost = result[0]
-						factor = 1 / (computeCost + memoryCost)
-						computeNorm = factor * computeCost
-						memoryNorm = factor * memoryCost
+						normFactor = 1 / (computeCost + memoryCost)
+						computeNorm = normFactor * computeCost
+						memoryNorm = normFactor * memoryCost
+						memoryFactor = memoryCost / computeCost
 
-						#new version:
+						"""
+						#rework version reformed as linear system
+						A2 = np.vstack([-memoryPart, y]).T
+						y2 = computePart
+						result2, residual, rank, singular = np.linalg.lstsq(A2, y2, rcond=None)
+						res2 = 1 / result2[1]
+						res = result2[0] * res2
+						"""
+						
+						"""
+						#i keep this here in case i need non linear least squares later
 						#scipy.optimize.leastsq for non linear least squares.
 						#good explanation: https://stackoverflow.com/questions/19791581/how-to-use-leastsq-function-from-scipy-optimize-in-python-to-fit-both-a-straight
 						#n = nodes, pm = padMemory
@@ -111,8 +122,8 @@ class everything:
 						#above is the soon depricated version
 						
 						result= scipy.optimize.least_squares(errorFunc,tplInitial[:],args=(memoryPart,y))
-						
-						fResult.write(str(branch)+", " + str(leaf)+ ", "+ str(memoryPart[0]) + ", "+ str(computeCost)+", "+ str(memoryCost)+ ", "+ str(computeNorm)+", "+ str(memoryNorm)+", "+ str(result.x[0])+", "+ str(result.x[1])+ "\n") 
+						"""
+						fResult.write(str(branch)+", " + str(leaf)+ ", "+ str(memoryPart[0]) + ", "+ str(computeCost)+", "+ str(memoryCost)+ ", "+ str(computeNorm)+", "+ str(memoryNorm)+ ", " + str(memoryFactor)+ "\n") 
 			if anyFound:
 				fResult.close()
 
