@@ -13,7 +13,10 @@ struct alignas(32) FastNode
 {
 
 	//aabbs
-	std::array<float, nodeMemory * 6> bounds;
+	alignas(32)	std::array<float, nodeMemory * 6> bounds;
+
+	//sorting
+	alignas(32) std::array<std::array<int8_t, nodeMemory>, 4> traverseOrderEachAxis;
 
 	//TODO padding and size improvements
 	union
@@ -22,15 +25,14 @@ struct alignas(32) FastNode
 		uint32_t primIdBegin;
 	};
 
-	//sorting
-	std::array<std::array<int8_t, nodeMemory>, 4> traverseOrderEachAxis;
+
 
 	//could put this bool inside something ?
 	bool hasChildren;
 
 
 
-	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount , std::array<float, nodeMemory * 6> bounds
+	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount, std::array<float, nodeMemory * 6> bounds
 		, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
 		: bounds(bounds)
 	{
@@ -62,7 +64,7 @@ struct alignas(32) FastNode
 					//no childs anymore so fill with 0
 					this->traverseOrderEachAxis[j][i] = 0;
 				}
-				
+
 			}
 		}
 	}
