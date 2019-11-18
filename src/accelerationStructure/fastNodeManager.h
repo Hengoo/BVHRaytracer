@@ -13,10 +13,10 @@ struct alignas(32) FastNode
 {
 
 	//aabbs
-	alignas(32)	std::array<float, nodeMemory * 6> bounds;
+	std::array<float, nodeMemory * 6> bounds;
 
 	//sorting
-	alignas(32) std::array<std::array<int8_t, nodeMemory>, 4> traverseOrderEachAxis;
+	std::array<std::array<int8_t, nodeMemory>, 4> traverseOrderEachAxis;
 
 	//TODO padding and size improvements
 	union
