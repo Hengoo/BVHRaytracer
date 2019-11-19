@@ -365,7 +365,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 
 	uint32_t nodes = std::accumulate(childCount.begin(), childCount.end(), 0);
 	uint32_t leafs = leafNodes.size();
-
+	totalLeafCount = leafs;
 	float nodeEpo = 0;
 	float leafEpo = 0;
 	if (saveAndPrintResult)

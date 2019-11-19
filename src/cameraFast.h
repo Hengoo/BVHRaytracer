@@ -25,11 +25,11 @@ public:
 		float focalLength = 0.866f, size_t height = 360, size_t width = 640);
 
 	template <size_t gangSize, size_t nodeMemory>
-	std::tuple<float, float, float> renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemory> nodeManager, unsigned ambientSampleCount,
+	std::tuple<float, float, float> renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemory>& nodeManager, unsigned ambientSampleCount,
 		float ambientDistance);
 
 	//renders 6 images, We take median of the last 5 renders
 	template <size_t gangSize, size_t nodeMemory>
-	void renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemory> nodeManager, unsigned ambientSampleCount,
+	void renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemory>& nodeManager, unsigned ambientSampleCount,
 		float ambientDistance, bool mute);
 };

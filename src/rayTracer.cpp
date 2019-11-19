@@ -289,8 +289,10 @@ void RayTracer::run()
 			preparePrimitives(primitives, *root);
 
 			//dont need those anymore
-			//gameObjects.clear();
-			//meshBins.clear();
+			gameObjects.clear();
+			meshBins.clear();
+			gameObjects.shrink_to_fit();
+			meshBins.shrink_to_fit();
 
 			std::cout << std::endl << "Model loading took " << getTimeSpan(timeModelLoadBegin) << " seconds." << std::endl;
 

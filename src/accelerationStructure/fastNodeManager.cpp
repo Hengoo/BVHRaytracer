@@ -75,8 +75,11 @@ FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
 		nodeVector[i]->id = i;
 	}
 
-	//SoA order triangle list
-	trianglePoints.reserve(bvh.primitives->size() * 3 * 3);
+	//reserve space for triangle and compact nodes:
+	trianglePoints.reserve(bvh.totalLeafCount * leafMemory * 3 * 3);
+	compactNodes.reserve(nodeVector.size());
+
+
 
 	for (auto& n : nodeVector)
 	{
@@ -172,7 +175,7 @@ FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
 			if (padAfter)
 				pad(padTo, trianglePoints);
 		}
-		Aabb* aabb = static_cast<Aabb*>(n->node);
+		//Aabb* aabb = static_cast<Aabb*>(n->node);
 
 		compactNodes.push_back(FastNode<nodeMemory>(cBegin, cCount, pBegin, pCount, bounds, n->node->traverseOrderEachAxis));
 	}

@@ -17,6 +17,7 @@ public:
 
 	int branchingFactor;
 	int leafSize;
+	uint32_t totalLeafCount;
 	bool sortEachSplit;
 	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
