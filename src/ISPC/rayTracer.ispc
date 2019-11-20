@@ -266,7 +266,7 @@ export uniform bool triAnyHit(const uniform float tri[], uniform unsigned int tr
 
 export uniform bool aabbIntersect(const uniform float bounds[], uniform float distances[], uniform float* uniform rayInfo, uniform int nodeMemory, uniform int nodeSize)
 {
-	//its faster to return if we hat one positive hit
+	//its faster to return if we had one positive hit
 	uniform bool result = false;
 
 	foreach(index = 0 ... nodeMemory)
