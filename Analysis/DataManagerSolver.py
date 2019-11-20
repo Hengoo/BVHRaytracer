@@ -12,15 +12,27 @@ import scipy.optimize
 class everything:
 	def __init__(self):
 
-		#name of the table
-		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		self.names = ["sanMiguel"]
-		#prefix to the table
-		self.prefix = ["SSESeqMemoryLeaf", "SSESeqMemoryNode"]
-		self.prefix2 = "Table.txt"
-
 		# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
 		self.workType = 0
+		self.workName = ["Leaf", "Node"]
+		# 0 = avx, sse = 1
+		self.gangType = 0
+		self.gangName = ["Avx", "Sse"]
+
+		#name of the table
+		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
+		self.names = ["breakfast","sanMiguel", "gallery", "amazonLumberyardCombinedExterior", "amazonLumberyardInterior","amazonLumberyardExterior"]
+		#prefix to the table
+		#self.prefix = ["SSESeqMemoryLeaf", "SSESeqMemoryNode"]
+		#self.prefix = ["AVXSeqMemoryLeaf", "AVXSeqMemoryNode"]
+		self.prefix = self.workName[self.workType] + "Memory" + self.gangName[self.gangType]
+		self.prefix2 = "Table.txt"
+
+		self.outputFolderName = "SavesPerf/Laptop/Summary/"
+	
+		#tri counts of our scenes: should also try with tree depth
+		self.triCount = [1.35, 5.6, 1.0, 3.85, 1.02, 2.83]
+
 		self.memoryStepSize = 4
 
 		#maximum branchingfactor and max leafsite
@@ -41,9 +53,17 @@ class everything:
 
 	def run(self):
 		#loop over names:
-		for name in self.names:
+
+		#arrays that will be used later for tree depth solver stuff
+		#b,l,scene, datList
+		#datalist is: [b,l,totaltime, memoryRelative]
+		
+		storage = []
+
+		for nameId, name in enumerate(self.names):
 			anyFound = False
 			#loop over b and l
+			storagePerName = []
 			for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
 				#one empty line after each branching factor
 				for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
@@ -51,10 +71,10 @@ class everything:
 					branch = b + self.minBranchingFactor
 					leaf = l + self.minLeafSize
 					#open table:
-					tableName = name + self.prefix[self.workType] + "b" + str(branch) + "l" + str(leaf) + self.prefix2
+					tableName = "SavesPerf/Laptop/Summary/" + name + "/" + name + self.prefix + "b" + str(branch) + "l" + str(leaf) + self.prefix2
 					if (path.exists(tableName)):
 						if not (anyFound):
-							fileName = name + self.prefix[self.workType] + "ComputeCostTable.txt"
+							fileName = "SavesPerf/Laptop/Summary/" + name + "/"+ name + self.prefix + "ComputeCostTable.txt"
 							fResult = open(fileName, "w+")
 							firstLine = "branchFactor, leafSize, memorySize, " + self.dataOutName[self.workType] +", memoryCost, " + self.dataOutName[self.workType] + "Norm, memoryCostNorm, memoryRelative"
 							fResult.write(firstLine + "\n")
@@ -96,6 +116,9 @@ class everything:
 						memoryNorm = normFactor * memoryCost
 						memoryFactor = memoryCost / computeCost
 
+						#store data for second iteration
+						storagePerName.append([branch, leaf, dataPoints[self.workType][0], memoryFactor])
+
 						"""
 						#rework version reformed as linear system
 						A2 = np.vstack([-memoryPart, y]).T
@@ -123,9 +146,51 @@ class everything:
 						
 						result= scipy.optimize.least_squares(errorFunc,tplInitial[:],args=(memoryPart,y))
 						"""
-						fResult.write(str(branch)+", " + str(leaf)+ ", "+ str(memoryPart[0]) + ", "+ str(computeCost)+", "+ str(memoryCost)+ ", "+ str(computeNorm)+", "+ str(memoryNorm)+ ", " + str(memoryFactor)+ "\n") 
-			if anyFound:
-				fResult.close()
+						fResult.write(str(branch) + ", " + str(leaf) + ", " + str(memoryPart[0]) + ", " + str(computeCost) + ", " + str(memoryCost) + ", " + str(computeNorm) + ", " + str(memoryNorm) + ", " + str(memoryFactor) + "\n")
+			if len(storagePerName) != 0:
+				storage.append(storagePerName)
+		if anyFound:
+			fResult.close()
+		#now loop over the different scenes and do analysis depending on tree depth
+	
+		for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
+			#one empty line after each branching factor
+			for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
+				branch = b + self.minBranchingFactor
+				leaf = l + self.minLeafSize
+
+				memoryRelative = []
+				totalTime = []
+				anyFound = False
+				for nameId, name in enumerate(self.names):
+					sceneStorage = storage[nameId]
+					for s in sceneStorage:
+						if s[0] == branch and s[1] == leaf:
+							anyFound = True
+							memoryRelative.append(s[3])
+							totalTime.append(s[2])
+
+				if anyFound:
+					#calculates the relative memory depending on tri count
+					#memoryRelative = x * triCount
+					
+					ones = np.ones(len(self.names))
+					A = np.vstack([self.triCount]).T
+					result, residual, rank, singular = np.linalg.lstsq(A, memoryRelative, rcond=None)
+
+					#calculates the influence of the tri count to total time. (assumes linear function, not sure if it is)
+					#totalTime = x * triCount * memoryRelative + x * triCount
+					#for calculating i use : totalTime /(triangleCount * (memoryRelative + 1)) = x
+					m = np.array(memoryRelative)
+					t = np.array(self.triCount)
+					cT = np.array(totalTime)
+					y = cT / (t * (m + 1))
+					A = np.vstack([ones]).T
+					result2, residual, rank, singular = np.linalg.lstsq(A, y, rcond=None)
+
+					#TODO: test different things to above version (non linear function or else, not sure yet)
+					#TODO: output
+					breakpointHolder = 0
 
 
 

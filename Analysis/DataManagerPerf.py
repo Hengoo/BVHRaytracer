@@ -2,33 +2,53 @@ import os.path
 import math
 from os import path
 
-
 #To use this:
 
 class everything:
 	def __init__(self):
+		# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
+		self.workType = 1
+		self.workName = ["Leaf", "Node"]
+		# 0 = avx, sse = 1
+		self.gangType = 0
+		self.gangName = ["Avx", "Sse"]
+
 		#the folder all the scene folders are in: (leave empty if no folder)
-		self.folder = "SavesPerf/"
+		#self.folder = "SavesPerf/Laptop/NodeMemoryAvx/"
+		self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "Memory" + self.gangName[self.gangType] +"/"
+
+		#real outputFolder is outputFolderName + names + outputPrefix
+		self.outputFolderName = "SavesPerf/Laptop/Summary/"
+		
 		#names of the sceneFolders
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		self.names = ["sanMiguel"]
+		self.names = ["breakfast","sanMiguel", "gallery", "amazonLumberyardCombinedExterior", "amazonLumberyardInterior","amazonLumberyardExterior"]
 		#prefixTo the folderNames
 		#self.prefix = "SSESeqMemoryLeaf"
-		self.prefix = "SSESeqMemoryNode"
+		self.prefix = ""
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
-		self.outputPrefix = ""
+
+		self.outputPrefix = self.workName[self.workType] + "Memory" + self.gangName[self.gangType]
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 2
-		self.maxBranchingFactor = 64
-		self.minLeafSize = 1
-		self.maxLeafSize = 64
+		
+		self.minBranchingFactorList = [8,2]
+		self.maxBranchingFactorList = [8,64]
+		self.minLeafSizeList = [1,8]
+		self.maxLeafSizeList = [64,8]
+		
+		self.minBranchingFactor = self.minBranchingFactorList[self.workType]
+		self.maxBranchingFactor = self.maxBranchingFactorList[self.workType]
+		self.minLeafSize = self.minLeafSizeList[self.workType]
+		self.maxLeafSize = self.maxLeafSizeList[self.workType]
 
 		#temprary cost function. needs replacement
 		self.nodeCostFactor = 1
 		self.leafCostFactor = 1
 
 		self.cachelineSize = 128
+
+		
 
 		#names of variables like node Intersection count
 		self.variableNames = [
@@ -117,8 +137,10 @@ class everything:
 		anyFound = False
 		#now do what normal data manger does, loop over b and l and write files
 		for i in range(len(self.names)):
-			fileName1 = self.names[i] + self.prefix + "optimal" + "TableWithSpace" + self.outputPrefix + ".txt"
-			fileName2 = self.names[i] + self.prefix + "optimal" + "Table" + self.outputPrefix + ".txt"
+			fileName1 = self.outputFolderName + self.names[i] + "/" + self.names[i] + self.prefix + self.outputPrefix+ "Optimal" + "TableWithSpace" + ".txt"
+			fileName2 = self.outputFolderName + self.names[i] + "/" + self.names[i] + self.prefix + self.outputPrefix+ "Optimal" + "Table" + ".txt"
+			if not os.path.exists(self.outputFolderName + self.names[i]):
+				os.makedirs(self.outputFolderName + self.names[i])
 			fResult = open(fileName1, "w+")
 			fResult2 = open(fileName2, "w+")
 				# write the first line in the table (the one with the variable names)
@@ -161,8 +183,11 @@ class everything:
 		if (len(self.names) == 1):
 			return
 
-		fileName1 = "AverageTable" + self.prefix + "optimal" + "TableWithSpace" + self.outputPrefix + ".txt"
-		fileName2 = "AverageTable" + self.prefix + "optimal" + "Table" + self.outputPrefix + ".txt"
+		fileName1 = self.outputFolderName + "Average/AverageTable" + self.prefix + self.outputPrefix+ "optimal" + "TableWithSpace"  + ".txt"
+		fileName2 = self.outputFolderName + "Average/AverageTable" + self.prefix + self.outputPrefix + "optimal" + "Table" + ".txt"
+		
+		if not os.path.exists(self.outputFolderName + "Average"):
+				os.makedirs(self.outputFolderName + "Average")
 		#now loop over b and l again and write average file:
 		fResult = open(fileName1, "w+")
 		fResult2 = open(fileName2, "w+")
@@ -182,7 +207,7 @@ class everything:
 				
 				for i in range(len(self.names)):
 					#i just test both files for all varialbe names
-					fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml)+ "_Perf.txt"
+					fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf)+ "_Perf.txt"
 					if (path.exists(fileName)):
 						anyFound = True
 						#open file and read important values
@@ -231,7 +256,7 @@ class everything:
 							fileName = self.folder + self.names[i] + self.prefix + "/" + self.names[i] + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml)+ "_Perf.txt"
 							if (path.exists(fileName)):
 								if not (anyFound):
-									fileName1 = self.names[i] + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
+									fileName1 = self.outputFolderName + self.names[i] + "/" + self.names[i] + self.prefix + self.outputPrefix+ memoryText + "Table.txt"
 									fResult = open(fileName1, "w+")
 									# write the first line in the table (the one with the variable names)
 									fResult.write(firstLine + "\n")
@@ -260,9 +285,9 @@ class everything:
 		# then loop over all and get averages
 
 		firstLine = self.getFirstLine2()
-		tmpNames = self.names.copy()
-		if(len(tmpNames) != 1):
-			tmpNames.append("Average")
+		#tmpNames = self.names.copy()
+		#if(len(tmpNames) != 1):
+		#	tmpNames.append("Average")
 		
 		#loop over b and l
 		for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
@@ -273,7 +298,7 @@ class everything:
 				configText = "b" + str(branch) + "l" + str(leaf)
 
 				#now do what normal data manger does, loop over b and l and write files
-				for i in range(len(tmpNames)):
+				for i in range(len(self.names)):
 					anyFound = False
 
 					#second loop over mb and ml
@@ -283,7 +308,7 @@ class everything:
 							memoryText = "mb" + str(mb) + "ml" + str(ml)
 
 							#check the files we have written in run2
-							fileName = self.names[i] + self.prefix + memoryText + "Table" + self.outputPrefix + ".txt"
+							fileName = self.outputFolderName + self.names[i] + "/" + self.names[i] + self.prefix + self.outputPrefix + memoryText + "Table.txt"
 							if (path.exists(fileName)):
 								anyLineFound = False
 								#open file and read important values
@@ -296,7 +321,7 @@ class everything:
 										if len(tmp) == 2:
 											if len(tmp[0]) == 0:
 												if not (anyFound):
-													fileName1 = tmpNames[i] + self.prefix + configText + "Table" + self.outputPrefix + ".txt"
+													fileName1 = self.outputFolderName + self.names[i] + "/" + self.names[i] + self.prefix + self.outputPrefix + configText + "Table.txt"
 													fResult = open(fileName1, "w+")
 
 													# write the first line in the table (the one with the variable names)
@@ -310,7 +335,7 @@ class everything:
 									#one empty line after each branching factor
 									res = str(mb) +", "+ str(ml)+ ", "+ lineResult
 									fResult.write(res)
-					if anyLineFound:
+					if anyFound:
 						fResult.close()
 					#if (not anyFound):
 						#ugly but works
