@@ -27,23 +27,16 @@ class Triangle : public Primitive
 	//its faster to save it than the recompute it
 	glm::vec3 center;
 
-	//update bounds from points:
-	void update();
-
+	//update points
+	inline void updatePoints();
+	//update bounds and center from points
+	inline void updateBounds();
 
 public:
-	/*
-	Triangle(glm::vec3 pos1, glm::vec3 pos2, glm::vec3 pos3) : points({ pos1, pos2, pos3 })
-	{
-		updateBounds();
-	}*/
 
-	Triangle(const GameObject* gameObject, const Mesh* mesh, int index)
-		:gameObject(gameObject), mesh(mesh), index(index)
-	{
-		update();
-	}
+	Triangle(const GameObject* gameObject, const Mesh* mesh, int index);
 
+	Triangle(const GameObject* gameObject, const Mesh* mesh, int index, std::array<glm::vec3, 3> points);
 
 	~Triangle()
 	{

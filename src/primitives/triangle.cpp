@@ -10,7 +10,20 @@
 #include "../mesh.h"
 #include "../accelerationStructure/aabb.h"
 
-void Triangle::update()
+Triangle::Triangle(const GameObject* gameObject, const Mesh* mesh, int index)
+	:gameObject(gameObject), mesh(mesh), index(index)
+{
+	updatePoints();
+	updateBounds();
+}
+
+Triangle::Triangle(const GameObject* gameObject, const Mesh* mesh, int index, std::array<glm::vec3, 3> points)
+	:gameObject(gameObject), mesh(mesh), index(index), points(points)
+{
+	updateBounds();
+}
+
+inline void Triangle::updatePoints()
 {
 	//why:
 	//auto t1 = mesh->vertices->operator[](index);
@@ -24,7 +37,10 @@ void Triangle::update()
 	points[0] = gameObject->globalTransform * pos0;
 	points[1] = gameObject->globalTransform * pos1;
 	points[2] = gameObject->globalTransform * pos2;
+}
 
+inline void Triangle::updateBounds()
+{
 	boundMin = glm::min(points[0], points[1]);
 	boundMax = glm::max(points[0], points[1]);
 	boundMin = glm::min(boundMin, points[2]);
@@ -142,7 +158,7 @@ bool Triangle::intersect(Ray& ray)
 	float tScaled = e0 * p0t.z + e1 * p1t.z + e2 * p2t.z;
 	if (det < 0 && (tScaled >= 0 || tScaled < ray.tMax * det))
 		return false;
-	else if (det > 0 && (tScaled <= 0 || tScaled > ray.tMax * det))
+	else if (det > 0 && (tScaled <= 0 || tScaled > ray.tMax* det))
 		return false;
 
 	// Compute barycentric coordinates and $t$ value for triangle intersection

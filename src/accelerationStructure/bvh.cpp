@@ -131,7 +131,7 @@ void Bvh::traverseAnalysisBvh(float& epoNode, float& epoLeaf, Triangle* tri, con
 			if (aabbAabbIntersection(triMin, triMax, n->boundMin, n->boundMax))
 			{
 				//no "collision" guaranteed yet...
-				
+
 				//check if all vertices are inside aabb -> trivial surface area
 				if (aabbPointIntersection(n->boundMin, n->boundMax, triMin)
 					&& aabbPointIntersection(n->boundMin, n->boundMax, triMax))
@@ -334,7 +334,7 @@ void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 	std::cout << "Epo took " << getTimeSpan(timeBeginEpo) << " seconds." << std::endl;
 }
 
-void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
+void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanceTest, bool saveBvhImage, std::string name,
 	std::string problem, float triangleCostFactor, float nodeCostFactor, bool mute)
 {
 	//analysis includes
@@ -368,6 +368,25 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 	totalLeafCount = leafs;
 	float nodeEpo = 0;
 	float leafEpo = 0;
+	totalTriCount = 0;
+
+	//some extra when doing performance test. For now its just average tree depth
+	if (performanceTest)
+	{
+		//get avera tree depth:
+		//only do when not already doing extensive bvh analysis
+		if (!saveAndPrintResult)
+		{
+			averageBvhDepth = 0;
+			for (auto& l : leafNodes)
+			{
+				averageBvhDepth += l->depth;
+				totalTriCount += l->primitiveCount;
+			}
+			averageBvhDepth /= (float)leafs;
+		}
+	}
+
 	if (saveAndPrintResult)
 	{
 		calcEndPointOverlap(nodeEpo, leafEpo);
@@ -381,15 +400,17 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 
 		std::set<uint32_t> trianglePrimitiveIds;
 		//different metrics analysis:
-		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0, averageTreeDepth = 0;
+		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0;
+		averageBvhDepth = 0;
 		for (auto& l : leafNodes)
 		{
 			leafSah += l->sah;
 			leafVolume += l->volume;
 			leafSurfaceArea += l->surfaceArea;
-			averageTreeDepth += l->depth;
+			averageBvhDepth += l->depth;
 
 			vertexCount += l->primitiveCount * 3;
+			totalTriCount += l->primitiveCount;
 
 			//Triangle* tri = static_cast<Triangle*>((*l->node->primitiveBegin).get());
 			//primitiveIds.push_back(tri->index)
@@ -421,7 +442,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		//could "normalize" those by the root node
 		//leafVolume = leafVolume / analysisRoot->volume;
 		//leafSurfaceArea = leafSurfaceArea / analysisRoot->surfaceArea;
-		averageTreeDepth /= (float)leafs;
+		averageBvhDepth /= (float)leafs;
 
 		//make checksum / hash of vector to compare leafnodes of different bvhs
 		size_t seed = leafNodes.size();
@@ -446,7 +467,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 		{
 			std::cout << "BVH Analysis:" << std::endl;
 			std::cout << "Tree depth: " << treeDepth.size() - 1 << std::endl;
-			std::cout << "average leaf depth: " << averageTreeDepth << std::endl;
+			std::cout << "average leaf depth: " << averageBvhDepth << std::endl;
 			std::cout << "number of nodes: " << nodes - leafs << std::endl;
 			std::cout << "nodes with x childen:" << std::endl;
 			float sum = 0;
@@ -506,7 +527,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhIma
 
 			myfile << "BVH Analysis:" << std::endl;
 			myfile << "tree depth: " << treeDepth.size() - 1 << std::endl;
-			myfile << "average leaf depth: " << averageTreeDepth << std::endl;
+			myfile << "average leaf depth: " << averageBvhDepth << std::endl;
 			myfile << "number of nodes: " << nodes - leafs << std::endl;
 			myfile << "nodes with x childen:" << std::endl;
 			myfile << std::endl;

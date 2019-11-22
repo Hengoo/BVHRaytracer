@@ -17,7 +17,9 @@ public:
 
 	int branchingFactor;
 	int leafSize;
+	float averageBvhDepth;
 	uint32_t totalLeafCount;
+	uint32_t totalTriCount;
 	bool sortEachSplit;
 	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
@@ -65,7 +67,7 @@ public:
 	//collapses the next collapeCount child hierarchies to this node
 	void collapseChilds(int collapeCount);
 
-	void bvhAnalysis(std::string path, bool saveAndPrintResult, bool saveBvhImage, std::string name,
+	void bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanceTest, bool saveBvhImage, std::string name,
 		std::string problem, float triangleCostFactor, float nodeCostFactor, bool mute);
 
 	void calcEndPointOverlap(float& nodeEpo, float& leafEpo);

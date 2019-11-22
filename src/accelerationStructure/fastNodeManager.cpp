@@ -78,7 +78,9 @@ FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
 	//reserve space for triangle and compact nodes:
 	trianglePoints.reserve(bvh.totalLeafCount * leafMemory * 3 * 3);
 	compactNodes.reserve(nodeVector.size());
-
+	triangleCount = bvh.totalTriCount;
+	nodeCount = nodeVector.size();
+	averageBvhDepth = bvh.averageBvhDepth;
 
 
 	for (auto& n : nodeVector)

@@ -106,7 +106,8 @@ public:
 		scale = glm::vec3(1) / (boundMin - boundMax);
 	}
 
-	void iterateGo(primPointVector& primitives)
+	//iterates all gameobjects and puts them into the primitive vector. Subdivision describes the extra number of trinagles we generate
+	void iterateGo(primPointVector& primitives, int subdivision)
 	{
 		if (meshBin)
 		{
@@ -120,14 +121,85 @@ public:
 					tri->getVertexPositions(v0, v1, v2);
 					if (calcTriangleSurfaceArea(v0, v1, v2) != 0)
 					{
-						primitives.push_back(tri);
+						//Its important to conserve the normal of the triangles!
+						if (subdivision == 0)
+						{
+							primitives.push_back(tri);
+						}
+						else
+						{
+							addSubdividedTri(primitives, v0, v1, v2, m, i, subdivision);
+						}
 					}
 				}
 			}
 		}
 		for (auto& g : children)
 		{
-			g->iterateGo(primitives);
+			g->iterateGo(primitives, subdivision);
 		}
+	}
+
+	//adds the subdivided triangle to the primitive list.
+	inline void addSubdividedTri(primPointVector& primitives, glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, std::shared_ptr<Mesh>& m, int i, int subdivision)
+	{
+		//TODO use recusion for larger combis (would be intresting to scale a small scene like sub10 or more)
+		if (subdivision == 1)
+		{
+			//add one triangle by splitting the existing one in half at the largest distance.
+			std::array<float, 3> l = { glm::length(v0 - v1), glm::length(v0 - v1), glm::length(v0 - v1) };
+			if (l[0] >= l[1] && l[0] >= l[2])
+			{
+				auto vNew = (v0 + v1) / 2.0f;
+				std::array<glm::vec3, 3> points = { v0, vNew, v2 };
+				primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+				points = { v1, v2, vNew };
+				primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+
+			}
+			else if (l[1] >= l[0] && l[1] >= l[2])
+			{
+				auto vNew = (v1 + v2) / 2.0f;
+				std::array<glm::vec3, 3> points = { v0, v1, vNew };
+				primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+				points = { v0, vNew, v2 };
+				primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+			}
+			else
+			{
+				auto vNew = (v2 + v0) / 2.0f;
+				std::array<glm::vec3, 3> points = { v0, v1, vNew };
+				primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+				points = { v1, v2, vNew };
+				primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+			}
+		}
+		else if (subdivision == 2)
+		{
+			//add two triangle by adding an extra point in the middle
+			glm::vec3 vm = (v0 + v1 + v2) / 3.0f;
+			std::array<glm::vec3, 3> points = { v0, v1, vm };
+			primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+			points = { v1, v2, vm };
+			primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+			points = { v0, vm, v2 };
+			primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+		}
+		else if (subdivision == 3)
+		{
+			//add three triangles by splitting each edge at half
+			glm::vec3 v05 = (v0 + v1) / 2.0f;
+			glm::vec3 v15 = (v1 + v2) / 2.0f;
+			glm::vec3 v25 = (v2 + v0) / 2.0f;
+			std::array<glm::vec3, 3> points = { v0, v05, v25 };
+			primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+			points = { v05, v1, v15 };
+			primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+			points = { v15, v2, v25 };
+			primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+			points = { v05, v15, v25 };
+			primitives.push_back(std::make_shared<Triangle>(this, m.get(), i, points));
+		}
+		
 	}
 };

@@ -286,80 +286,103 @@ void RayTracer::run()
 			//get primitive vector (this is what the bvh creator works on, so its copied for each image)
 
 			primPointVector primitives;
-			preparePrimitives(primitives, *root);
-
-			//dont need those anymore
-			gameObjects.clear();
-			meshBins.clear();
-			gameObjects.shrink_to_fit();
-			meshBins.shrink_to_fit();
-
-			std::cout << std::endl << "Model loading took " << getTimeSpan(timeModelLoadBegin) << " seconds." << std::endl;
-
-			//two versions:
-			//non parallel when we already have multiple scenes
-
-			//TODO: rework this. I dont think
-
-			if (maxBranch == minBranch && maxLeafSize == minLeafSize || doPerformanceTest)
+			preparePrimitives(primitives, *root, 0);
+			size_t primVectorSize = primitives.size();
+			for (int subDivCount = 0; subDivCount < subdivisionCount + 1; subDivCount++)
 			{
-				//non parallel version:
-				for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
+				if (subDivCount != 0)
 				{
-					for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
+					primitives.clear();
+					primitives.reserve(primVectorSize * (subdivisionCount + 1));
+					preparePrimitives(primitives, *root, subDivCount);
+				}
+
+				//dont need those anymore (might need it for subdivision?
+				//gameObjects.clear();
+				//meshBins.clear();
+				//gameObjects.shrink_to_fit();
+				//meshBins.shrink_to_fit();
+
+				std::cout << std::endl << "Model loading took " << getTimeSpan(timeModelLoadBegin) << " seconds." << std::endl;
+
+				if (subdivisionCount != 0)
+				{
+					path = "Analysis" "/" + name + "Sub" + ::std::to_string(subDivCount);
+					if (CreateDirectory(path.data(), NULL) ||
+						ERROR_ALREADY_EXISTS == GetLastError())
 					{
-						renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
+
+					}
+					else
+					{
+						std::cerr << "failed to create directory" << std::endl;
+						return;
 					}
 				}
-			}
-			else
-			{
-				//parallel version
 
-				//number of renders that should run in parallel:
-				unsigned parallelCount = 4;
+				//two versions:
+				//non parallel when we already have multiple scenes
 
-				if ((maxLeafSize - minLeafSize) > (maxBranch - minBranch))
+				if (maxBranch == minBranch && maxLeafSize == minLeafSize || doPerformanceTest)
 				{
-					//in case leafsize is larger than branching factor:
-					for (size_t i = minLeafSize; i <= maxLeafSize; i = i + parallelCount)
+					//non parallel version:
+					for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
 					{
-
-						std::vector<unsigned> leafWork(parallelCount);
-						std::iota(std::begin(leafWork), std::end(leafWork), i);
-
-						std::for_each(std::execution::par_unseq, leafWork.begin(), leafWork.end(),
-							[&](auto& l)
-							{
-								if ((l - minLeafSize) * leafStep + minLeafSize <= maxLeafSize)
-								{
-									for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
-									{
-										renderImage(b, (l - minLeafSize) * leafStep + minLeafSize, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
-									}
-								}
-							});
+						for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
+						{
+							renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
+						}
 					}
 				}
 				else
 				{
-					//in case branching factor is larger than leafsize:
-					for (size_t i = minBranch; i <= maxBranch; i = i + parallelCount)
-					{
-						std::vector<unsigned> branchWork(parallelCount);
-						std::iota(std::begin(branchWork), std::end(branchWork), i);
+					//parallel version
 
-						std::for_each(std::execution::par_unseq, branchWork.begin(), branchWork.end(),
-							[&](auto& b)
-							{
-								if ((b - minBranch) * branchStep + minBranch <= maxBranch)
+					//number of renders that should run in parallel:
+					unsigned parallelCount = 4;
+
+					if ((maxLeafSize - minLeafSize) > (maxBranch - minBranch))
+					{
+						//in case leafsize is larger than branching factor:
+						for (size_t i = minLeafSize; i <= maxLeafSize; i = i + parallelCount)
+						{
+
+							std::vector<unsigned> leafWork(parallelCount);
+							std::iota(std::begin(leafWork), std::end(leafWork), i);
+
+							std::for_each(std::execution::par_unseq, leafWork.begin(), leafWork.end(),
+								[&](auto& l)
 								{
-									for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
+									if ((l - minLeafSize) * leafStep + minLeafSize <= maxLeafSize)
 									{
-										renderImage((b - minBranch) * branchStep + minBranch, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
+										for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
+										{
+											renderImage(b, (l - minLeafSize) * leafStep + minLeafSize, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
+										}
 									}
-								}
-							});
+								});
+						}
+					}
+					else
+					{
+						//in case branching factor is larger than leafsize:
+						for (size_t i = minBranch; i <= maxBranch; i = i + parallelCount)
+						{
+							std::vector<unsigned> branchWork(parallelCount);
+							std::iota(std::begin(branchWork), std::end(branchWork), i);
+
+							std::for_each(std::execution::par_unseq, branchWork.begin(), branchWork.end(),
+								[&](auto& b)
+								{
+									if ((b - minBranch) * branchStep + minBranch <= maxBranch)
+									{
+										for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
+										{
+											renderImage((b - minBranch) * branchStep + minBranch, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path);
+										}
+									}
+								});
+						}
 					}
 				}
 			}
@@ -408,7 +431,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 	//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 	//This also duplicates the node system. the copy is used for the compact nodes
-	bvh.bvhAnalysis(path, bvhAnalysis, saveBvhImage, name, problem, triangleCostFactor, nodeCostFactor, mute);
+	bvh.bvhAnalysis(path, bvhAnalysis, doPerformanceTest, saveBvhImage, name, problem, triangleCostFactor, nodeCostFactor, mute);
 	std::cout << std::endl << "BVH building and bvh Analysis took " << getTimeSpan(timeBeginBvhBuild) << " seconds." << std::endl;
 	auto timeBeginRendering = getTime();
 
@@ -682,9 +705,9 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 	std::cout << "All to do with rendering took " << getTimeSpan(timeBeginRendering) << " seconds." << std::endl;
 }
 
-void RayTracer::preparePrimitives(primPointVector& primitives, GameObject& root)
+void RayTracer::preparePrimitives(primPointVector& primitives, GameObject& root, int subdivision)
 {
-	root.iterateGo(primitives);
+	root.iterateGo(primitives, subdivision);
 
 	//sort primitive vector along the largest axis (rungholt needs ~1.5 seconds) (otherwise this operation is done 15*16 times)
 	chooseAxisAndSort(primitives.begin(), primitives.end());

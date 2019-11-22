@@ -53,6 +53,8 @@ class RayTracer
 
 	int perfLoopCount = 1;
 
+	int subdivisionCount = 3;
+
 
 public:
 	void run();
@@ -62,7 +64,7 @@ public:
 		glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights,
 		std::string& name, std::string& path);
 	
-	void preparePrimitives(primPointVector& primitives, GameObject& root);
+	void preparePrimitives(primPointVector& primitives, GameObject& root, int subdivision);
 
 	void readConfig();
 };

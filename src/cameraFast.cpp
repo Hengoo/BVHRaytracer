@@ -112,6 +112,15 @@ void CameraFast::renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemo
 		myfile << "Time for all rays (SUM): " << std::get<1>(median) << std::endl;
 		myfile << "Time for triangle intersections (SUM): " << std::get<2>(median) << std::endl;
 		myfile << "Time all rays(sum) - triangle(sum): " << std::get<1>(median) - std::get<2>(median) << std::endl;
+
+		//add some extra information needed for final analysis (tri count and average tree depth)
+
+		myfile << "Average BVH depth: " <<nodeManager.averageBvhDepth << std::endl;
+		myfile << "Triangle Count: " << nodeManager.triangleCount << std::endl;
+	}
+	else
+	{
+		std::cerr << "unable to open perf output file" << std::endl;
 	}
 	myfile.close();
 

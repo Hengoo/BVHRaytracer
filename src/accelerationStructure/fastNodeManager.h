@@ -110,6 +110,11 @@ public:
 	int branchingFactor;
 	bool intersect(FastRay& ray, double& timeTriangleTest);
 	bool intersectSecondary(FastRay& ray, double& timeTriangleTest);
+
+	float averageBvhDepth;
+	uint32_t triangleCount;
+	uint32_t nodeCount;
+
 	//copies a bvh and rearanges it into a single vector of compact nodes
 	FastNodeManager(Bvh& bvh, int leafMemory);
 
