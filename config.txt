@@ -1,13 +1,13 @@
 #Config file for raytracer.
 
 #Leafsize and Branching Factor to test:
-minLeafSize = 4
-maxLeafSize = 4
-leafStep = 4
+minLeafSize = 8
+maxLeafSize = 8
+leafStep = 8
 
-minBranch = 4
-maxBranch = 4
-branchStep = 4
+minBranch = 8
+maxBranch = 8
+branchStep = 8
 
 #What analysis to do:
 renderAnalysisImage = false
@@ -22,7 +22,9 @@ doLeafMemoryTests = false
 doNodeMemoryTests = false
 
 #Number of samples for ambient occlusion
-ambientSampleCount = 1
+ambientSampleCount = 5
+#Number of extra triangles per triangle
+subdivisionCount = 5
 
 castShadows = false
 
@@ -56,7 +58,7 @@ renderType = 3
 #When rendering multiple scenarios they are all started parallel
 #When rendering a single scene with more than one leaf/branch combination they are started in parallel batches of 4
 #scenario = 7,8,9,10,11,12
-scenario = 8
+scenario = 4
 
 #Bucket count of bvh builder (0 = no buckets)
 bucketCount = 0

@@ -213,6 +213,13 @@ bool Triangle::intersect(Ray& ray)
 	{
 		return false;
 	}
+	
+	//mode to color each triangle with a random grey value
+	/*
+	auto hashFunction = std::hash<size_t>();
+	auto temporary = points[0] + points[1] + points[2];
+	color = Color(hashFunction(74159 * temporary.x * temporary.y * temporary.z) / (double)std::numeric_limits<size_t>::max());
+	*/
 
 	//finished for shadowRay:
 	if (ray.shadowRay)

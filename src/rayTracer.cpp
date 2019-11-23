@@ -296,7 +296,6 @@ void RayTracer::run()
 					primitives.reserve(primVectorSize * (subdivisionCount + 1));
 					preparePrimitives(primitives, *root, subDivCount);
 				}
-
 				//dont need those anymore (might need it for subdivision?
 				//gameObjects.clear();
 				//meshBins.clear();
@@ -785,15 +784,21 @@ void RayTracer::readConfig()
 				{
 					ambientSampleCount = std::stoi(line.substr(line.find("=") + 1));
 				}
-				res = line.find("leafStep ", 0);
+				res = line.find("leafStep", 0);
 				if (res != std::string::npos)
 				{
 					leafStep = std::stoi(line.substr(line.find("=") + 1));
 				}
-				res = line.find("branchStep ", 0);
+				res = line.find("branchStep", 0);
 				if (res != std::string::npos)
 				{
 					branchStep = std::stoi(line.substr(line.find("=") + 1));
+				}
+
+				res = line.find("subdivisionCount", 0);
+				if (res != std::string::npos)
+				{
+					subdivisionCount = std::stoi(line.substr(line.find("=") + 1));
 				}
 
 				//floats:

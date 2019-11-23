@@ -53,7 +53,7 @@ class RayTracer
 
 	int perfLoopCount = 1;
 
-	int subdivisionCount = 3;
+	int subdivisionCount;
 
 
 public:
