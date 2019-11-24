@@ -288,12 +288,12 @@ void RayTracer::run()
 			primPointVector primitives;
 			preparePrimitives(primitives, *root, 0);
 			size_t primVectorSize = primitives.size();
-			for (int subDivCount = 0; subDivCount < subdivisionCount + 1; subDivCount++)
+			for (int subDivCount = subdivisionStart; subDivCount < subdivisionEnd + 1; subDivCount += subdivisionStep)
 			{
 				if (subDivCount != 0)
 				{
 					primitives.clear();
-					primitives.reserve(primVectorSize * (subdivisionCount + 1));
+					primitives.reserve(primVectorSize * (subDivCount + 1));
 					preparePrimitives(primitives, *root, subDivCount);
 				}
 				//dont need those anymore (might need it for subdivision?
@@ -304,7 +304,7 @@ void RayTracer::run()
 
 				std::cout << std::endl << "Model loading took " << getTimeSpan(timeModelLoadBegin) << " seconds." << std::endl;
 
-				if (subdivisionCount != 0)
+				if (subdivisionEnd != 0)
 				{
 					path = "Analysis" "/" + name + "Sub" + ::std::to_string(subDivCount);
 					if (CreateDirectory(path.data(), NULL) ||
@@ -794,11 +794,20 @@ void RayTracer::readConfig()
 				{
 					branchStep = std::stoi(line.substr(line.find("=") + 1));
 				}
-
-				res = line.find("subdivisionCount", 0);
+				res = line.find("subdivisionStart", 0);
 				if (res != std::string::npos)
 				{
-					subdivisionCount = std::stoi(line.substr(line.find("=") + 1));
+					subdivisionStart = std::stoi(line.substr(line.find("=") + 1));
+				}
+				res = line.find("subdivisionEnd", 0);
+				if (res != std::string::npos)
+				{
+					subdivisionEnd = std::stoi(line.substr(line.find("=") + 1));
+				}
+				res = line.find("subdivisionStep", 0);
+				if (res != std::string::npos)
+				{
+					subdivisionStep = std::stoi(line.substr(line.find("=") + 1));
 				}
 
 				//floats:

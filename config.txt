@@ -23,8 +23,11 @@ doNodeMemoryTests = false
 
 #Number of samples for ambient occlusion
 ambientSampleCount = 5
+
 #Number of extra triangles per triangle
-subdivisionCount = 5
+subdivisionStart = 20
+subdivisionEnd = 20
+subdivisionStep = 1
 
 castShadows = false
 
