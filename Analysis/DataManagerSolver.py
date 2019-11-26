@@ -9,6 +9,19 @@ import scipy.optimize
 #loop over all possible tables we are intrested in:
 #( nameSSEseq4l4bTable.txt ) are the tables we can use.
 
+class storageType:
+	def __init__(self, name, subdivision, branch, leaf, triangleCount, averageBvhDepth,totalTime, computeTime, memoryTime, memoryRelative):
+		self.branch = branch
+		self.leaf = leaf
+		self.name = name
+		self.subdivision = subdivision
+		self.triangleCount = triangleCount
+		self.averageBvhDepth = averageBvhDepth
+		self.totalTime = totalTime
+		self.computeTime = computeTime
+		self.memoryTime = memoryTime
+		self.memoryRelative = memoryRelative
+
 class everything:
 	def __init__(self):
 
@@ -132,7 +145,10 @@ class everything:
 							memoryFactor = memoryCost / computeCost
 
 							#store data for second iteration
-							storagePerName.append([branch, leaf, dataPoints[0][0], dataPoints[1][0] , dataPoints[self.workType + 2][0], memoryFactor, name, s])
+							#storagePerName.append([branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, name, s])
+
+							storagePerName.append(storageType(name, s, branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, ))
+							
 
 							"""
 							#rework version reformed as linear system
@@ -184,14 +200,14 @@ class everything:
 					for sub in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
 						sceneStorage = storage[nameId * (self.subdivisionRange[1] - self.subdivisionRange[0] + 1) + sub]
 						for s in sceneStorage:
-							if s[0] == branch and s[1] == leaf:
+							if s.branch == branch and s.leaf == leaf:
 								if not anyFound:
 									anyFound = True
 
-								triangleCount.append(s[2])
-								averageBvhDepth.append(s[3])
-								totalTime.append(s[4])
-								memoryRelative.append(s[5])
+								triangleCount.append(s.triangleCount)
+								averageBvhDepth.append(s.averageBvhDepth)
+								totalTime.append(s.totalTime)
+								memoryRelative.append(s.memoryRelative)
 								
 
 				if anyFound:
@@ -226,7 +242,7 @@ class everything:
 					#TODO: test different things to above version (non linear function or else, not sure yet)
 					#(also) try to normalize with real intersection count of the scene? not sure what to expect with this one but i want to know how it look
 
-					#current idea: render the same scene with different subdivion settings. (so once render the scene with x triangles, x*2, x*3, x*4 ,...)
+					#current idea: render the same scene with different subdivision settings. (so once render the scene with x triangles, x*2, x*3, x*4 ,...)
 					#might be able to calculate scene/camrea complexity with this?
 					#TODO: output
 
@@ -247,22 +263,18 @@ class everything:
 					for sub in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
 						sceneStorage = storage[nameId * (self.subdivisionRange[1] - self.subdivisionRange[0] + 1) + sub]
 						for s in sceneStorage:
-							if s[0] == branch and s[1] == leaf:
+							if s.branch == branch and s.leaf == leaf:
 								if not anyFound:
 									anyFound = True
 
 									#overfiew over multiple scenes:
 									fileName = "SavesPerf/Laptop/Summary/" + self.prefix + "Perf_N" + str(branch) +"L" + str(leaf) + ".txt"
 									fResult = open(fileName, "w+")
-									firstLine = "name, sub, triangleCount, averageBvhDepth, computeTime, memoryRelative"
+									firstLine = "name, sub, triangleCount, averageBvhDepth, totalTime, computeTime, memoryTime , memoryRelative"
 									fResult.write(firstLine + "\n")
 
-								#TODO: add second storage array when its finished
-								fResult.write( str(s[6])+", "+ str(s[7])+", "+ str(s[2])+", "+ str(s[3])+", "+ str(s[4])+", "+ str(s[5]) + "\n")
-								
-
-
-
+								#TODO: aupdate when second part is done
+								fResult.write( str(s.name)+", "+ str(s.subdivision)+", "+ str(s.triangleCount)+", "+ str(s.averageBvhDepth)+", "+ str(s.totalTime)+", "+ str(s.computeTime)+", "+ str(s.memoryTime)+", "+ str(s.memoryRelative) + "\n")
 
 
 program = everything()
