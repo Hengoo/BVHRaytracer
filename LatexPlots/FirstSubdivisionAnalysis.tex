@@ -1,0 +1,321 @@
+\section{Scene and Camera complexity}
+
+\pgfplotsset{
+	every axis/.append style={colorbar = false},
+}
+
+This section is supposed to illustrate why we cannot really compare different scenes with each other in respect to bvh depth. Figure \ref{badExample1} and \ref{badExample2} shows the relative memory results together with the average bvh depth of the scene. For nodes it seems very random, and for the leafs the differences are very small so that might be constant?
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = average Bvh depth,
+		ylabel = relative memory NODE,
+		cycle list name=exotic,
+		legend style={at={(0.05,0.95)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, only marks]table[x = averageBvhDepth, y = memoryRelative, col sep=comma]{Data/LaptopResultsNoSub/NodeMemorySsePerf_N4L4.txt};		
+
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\label{badExample1}
+
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = average Bvh depth,
+		ylabel = relative memory LEAF,
+		cycle list name=exotic,
+		legend style={at={(0.05,0.95)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, only marks]table[x = averageBvhDepth, y = memoryRelative, col sep=comma]{Data/LaptopResultsNoSub/LeafMemorySsePerf_N4L4.txt};		
+
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	
+	\label{badExample2}
+\end{figure}
+
+\newpage
+\section{Subdivision test results}
+
+The idea is to use subdivision to measure the effect of different triangle numbers and bvh depths without changing the scene.
+
+
+
+Sponza (262,267 trinagles) with different subdivisions. From original to triangle count * 41 (so from 262,267 to 10,752,947 in steps of 262,267). The times below are normalize with 1.46683 seconds (the time for N4L4, no subdivision)
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.9\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = subdivision,
+		ylabel = total time normalized,
+		cycle list name=linestyles*,
+		legend style={at={(0.95,0.95)}, anchor = north east},
+		xtick = {1, 4, ..., 41},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={branch}{4}, discard if not={branchMemory}{4},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.46683, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={branch}{8}, discard if not={branchMemory}{8},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.46683, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={branch}{12}, discard if not={branchMemory}{12}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.46683, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={branch}{16}, discard if not={branchMemory}{16}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.46683, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+
+	
+		\legend{N4L4,N8L4,N12L4,N16L4}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Sponza. Time values are divided by N4L4(no subdivision). A subdivision of 16 is faster than the original scene.}
+\end{figure}
+
+Its a bit unexpected to have a scene with 16 times the amount of triangles perform better than the original scene. The reason subdivision 4 and 16 have better performance than the rest might come from the way the subdivision is performed (exact explanation in the log). I also compared it to the Node intersection counts and both results have a similar trend. (no graph for now since i still have to rework the old data manager to support subdivisions).
+
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.9\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = subdivision,
+		ylabel = total time normalized,
+		cycle list name=linestyles*,
+		legend style={at={(0.95,0.95)}, anchor = north east},
+		xtick = {1, 4, ..., 41},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={leaf}{4}, discard if not={leafMemory}{4},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.47138, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={leaf}{8}, discard if not={leafMemory}{8},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.47138, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={leaf}{12}, discard if not={leafMemory}{12}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.47138, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, discard if not={leaf}{16}, discard if not={leafMemory}{16}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.47138, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		
+		\legend{N4L4,N4L8,N4L12,N4L16}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Sponza. Time values are divided by N4L4(no subdivision). Different leaf sizes have less effect on the total time than the node sizes.}
+\end{figure}
+
+\vspace{50mm} %5mm vertical space
+
+For Amazon lumberyard (Figure \ref{AmazonLumberyardInterior}) (1,020,903 triangles) we can observe very similar trends as in sponza in regards to increasing subdivision. A subdivision of 4 faster than without subdivision, the difference is larger than with sponza. The time we normalize with is 1.81506 seconds.
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.7\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = subdivision,
+		ylabel = total time normalized,
+		cycle list name=linestyles*,
+		legend style={at={(1.35,0.95)}, anchor = north east},
+		xtick = {1, 3, ..., 21},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={branch}{4}, discard if not={branchMemory}{4},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.79101, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={branch}{8}, discard if not={branchMemory}{8},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.79101, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={branch}{12}, discard if not={branchMemory}{12}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.79101, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={branch}{16}, discard if not={branchMemory}{16}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} / 1.79101, col sep=comma]{Data/LaptopResults/totalNodeSsePerfTable.txt};
+		
+		\legend{N4L4,N8L4,N12L4,N16L4}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+
+	\begin{minipage}[t]{0.7\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = subdivision,
+		ylabel = total time normalized,
+		cycle list name=linestyles*,
+		legend style={at={(1.35,0.95)}, anchor = north east},
+		xtick = {1, 3, ..., 21},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={leaf}{4}, discard if not={leafMemory}{4},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} /  1.78588, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={leaf}{8}, discard if not={leafMemory}{8},   x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} /  1.78588, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={leaf}{12}, discard if not={leafMemory}{12}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} /  1.78588, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, discard if not={leaf}{16}, discard if not={leafMemory}{16}, x expr = \thisrow{subdivision} +1, y expr = \thisrow{rayTimeSum} /  1.78588, col sep=comma]{Data/LaptopResults/totalLeafSsePerfTable.txt};
+		
+		\legend{N4L4,N4L8,N4L12,N4L16}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+
+	\caption{Amazon Lumberyard Interior. for both plots: Time values are divided by N4L4(no subdivision).}
+	\label{AmazonLumberyardInterior}
+\end{figure}
+\newpage
+
+\section{Relative memory for different subdivisions}
+
+Now how does the relative memory behave with different subdivisions? (Reminder: relative memory = time to load memory / compute time)
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.8\textwidth}
+		\begin{tikzpicture}
+			\begin{axis}
+			[
+			%view={90}{0} for x, view={0}{0} for y restriction
+			view={0}{0},
+			xlabel = subdivision,
+			ylabel = relative memory NODE,
+			cycle list name=linestyles*,
+			legend style={at={(0.95,0.95)}, anchor = north east},
+			xtick = {0, 4, ..., 41},
+			%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+			]
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N4L4.txt};
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N8L4.txt};
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N12L4.txt};
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N16L4.txt};
+			
+			\legend{N4L4,N8L4,N12L4,N16L4}
+			\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.8\textwidth}
+		\begin{tikzpicture}
+			\begin{axis}
+			[
+			%view={90}{0} for x, view={0}{0} for y restriction
+			view={0}{0},
+			xlabel = subdivision,
+			ylabel = relative memory LEAF,
+			cycle list name=linestyles*,
+			legend style={at={(1.25,0.95)}, anchor = north east},
+			xtick = {0, 4, ..., 41},
+			%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+			]
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L4.txt};
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L8.txt};
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L12.txt};
+			\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L16.txt};
+			
+			\legend{N4L4,N4L8,N4L12,N4L16}
+			\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Those two graphs show how different subdivision affect relative memory time for leafs and nodes. Interesting is that for the Nodes the N12L4 line is below the N8L4 line.}
+	\label{LeafNodeMemoryRelativeSponza}
+\end{figure}
+\newpage
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.8\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = subdivision,
+		ylabel = relative memory NODE,
+		cycle list name=linestyles*,
+		legend style={at={(1.25,0.95)}, anchor = north east},
+		xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N4L4.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N8L4.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N12L4.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N16L4.txt};
+		
+		\legend{N4L4,N8L4,N12L4,N16L4}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.8\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = subdivision,
+		ylabel = relative memory LEAF,
+		cycle list name=linestyles*,
+		legend style={at={(1.25,0.95)}, anchor = north east},
+		xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L4.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L8.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L12.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x expr = \thisrow{subdivision} +1, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L16.txt};
+		
+		\legend{N4L4,N4L8,N4L12,N4L16}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Same graphs as Figure \ref{LeafNodeMemoryRelativeSponza} but for amazon lumberyard interior. For the Node part the N12L4 line is also below the N8L4 line}
+	\label{LeafNodeMemoryRelativeAmazon}
+\end{figure}
+\newpage
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.8\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = average Bvh depth,
+		ylabel = relative memory NODE,
+		cycle list name=linestyles*,
+		legend style={at={(0.05,0.95)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x = averageBvhDepth, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N4L4.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x = averageBvhDepth, y = memoryRelative, col sep=comma]{Data/LaptopResults/NodeMemorySsePerf_N4L4.txt};
+
+		
+		\legend{sponza N4L4, amazon N4L4}
+		\end{axis}
+ 		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.8\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = average Bvh depth,
+		ylabel = relative memory LEAF,
+		cycle list name=linestyles*,
+		legend style={at={(0.05,0.95)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[discard if not={nameId}{4}, x = averageBvhDepth, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L4.txt};
+		\addplot+[thick, mark=none]table[discard if not={nameId}{9}, x = averageBvhDepth, y = memoryRelative, col sep=comma]{Data/LaptopResults/LeafMemorySsePerf_N4L4.txt};
+
+		
+		\legend{sponza N4L4, amazon N4L4}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Now for the interesting configuration (N4L4) the relative memory time of both scenes. x axis is the avera bvh depth.}
+\end{figure}
+
+

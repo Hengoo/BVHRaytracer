@@ -6,14 +6,31 @@ import numpy as np
 import scipy
 import scipy.optimize
 
+
+allNames =[
+	"lizard",
+	"shiftHappens",
+	"erato",
+	"cubes",
+	"sponza",
+	"daviaRock",
+	"rungholt",
+	"breakfast",
+	"sanMiguel",
+	"amazonLumberyardInterior",
+	"amazonLumberyardExterior",
+	"amazonLumberyardCombinedExterior",
+	"gallery",
+]
+
 #loop over all possible tables we are intrested in:
 #( nameSSEseq4l4bTable.txt ) are the tables we can use.
 
 class storageType:
-	def __init__(self, name, subdivision, branch, leaf, triangleCount, averageBvhDepth,totalTime, computeTime, memoryTime, memoryRelative):
+	def __init__(self, nameId, subdivision, branch, leaf, triangleCount, averageBvhDepth,totalTime, computeTime, memoryTime, memoryRelative):
 		self.branch = branch
 		self.leaf = leaf
-		self.name = name
+		self.nameId = nameId
 		self.subdivision = subdivision
 		self.triangleCount = triangleCount
 		self.averageBvhDepth = averageBvhDepth
@@ -23,21 +40,21 @@ class storageType:
 		self.memoryRelative = memoryRelative
 
 class everything:
-	def __init__(self):
+	def __init__(self, workType = 0, gangType = 0):
 
 		# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
-		self.workType = 0
+		self.workType = workType
 		self.workName = ["Leaf", "Node"]
 		# 0 = avx, sse = 1
-		self.gangType = 1
+		self.gangType = gangType
 		self.gangName = ["Avx", "Sse"]
 
-		self.subdivisionRange = [0, 20]
+		self.subdivisionRange = [0, 0]
 
-		#name of the table
-		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		#self.names = ["breakfast","sanMiguel", "gallery", "amazonLumberyardCombinedExterior", "amazonLumberyardInterior","amazonLumberyardExterior"]
-		self.names = ["sponza"]
+		#nameIds of the tables:
+		#self.names = [4, 9]
+		self.names = [7,8,9,10,11,12]
+
 		#prefix to the table
 		#self.prefix = ["SSESeqMemoryLeaf", "SSESeqMemoryNode"]
 		#self.prefix = ["AVXSeqMemoryLeaf", "AVXSeqMemoryNode"]
@@ -79,9 +96,10 @@ class everything:
 		#b,l,scene, datList
 		#datalist is: [b,l,totaltime, memoryRelative]
 		
-		storage = []
+		storage = [[] for _ in range(len(self.names))]
 
-		for nameId, name in enumerate(self.names):
+		for nameId, nameIndex in enumerate(self.names):
+			name = allNames[nameIndex]
 			for s in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
 				anyFound = False
 				#loop over b and l
@@ -147,7 +165,7 @@ class everything:
 							#store data for second iteration
 							#storagePerName.append([branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, name, s])
 
-							storagePerName.append(storageType(name, s, branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, ))
+							storagePerName.append(storageType(nameIndex, s, branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, ))
 							
 
 							"""
@@ -179,7 +197,7 @@ class everything:
 							"""
 							fResult.write(str(branch) + ", " + str(leaf) + ", " + str(memoryPart[0]) + ", " + str(computeCost) + ", " + str(memoryCost) + ", " + str(computeNorm) + ", " + str(memoryNorm) + ", " + str(memoryFactor) + "\n")
 				if len(storagePerName) != 0:
-					storage.append(storagePerName)
+					storage[nameId].append(storagePerName)
 		if anyFound:
 			fResult.close()
 		#now loop over the different scenes and do analysis depending on tree depth
@@ -196,10 +214,9 @@ class everything:
 				triangleCount = []
 				averageBvhDepth = []
 				anyFound = False
-				for nameId, name in enumerate(self.names):
-					for sub in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
-						sceneStorage = storage[nameId * (self.subdivisionRange[1] - self.subdivisionRange[0] + 1) + sub]
-						for s in sceneStorage:
+				for sceneStorage in storage:
+					for subStorage in sceneStorage:
+						for s in subStorage:
 							if s.branch == branch and s.leaf == leaf:
 								if not anyFound:
 									anyFound = True
@@ -259,10 +276,9 @@ class everything:
 				leaf = l + self.minLeafSize
 
 				anyFound = False
-				for nameId, name in enumerate(self.names):
-					for sub in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
-						sceneStorage = storage[nameId * (self.subdivisionRange[1] - self.subdivisionRange[0] + 1) + sub]
-						for s in sceneStorage:
+				for sceneStorage in storage:
+					for subStorage in sceneStorage:
+						for s in subStorage:
 							if s.branch == branch and s.leaf == leaf:
 								if not anyFound:
 									anyFound = True
@@ -270,12 +286,29 @@ class everything:
 									#overfiew over multiple scenes:
 									fileName = "SavesPerf/Laptop/Summary/" + self.prefix + "Perf_N" + str(branch) +"L" + str(leaf) + ".txt"
 									fResult = open(fileName, "w+")
-									firstLine = "name, sub, triangleCount, averageBvhDepth, totalTime, computeTime, memoryTime , memoryRelative"
+									firstLine = "name, nameId, subdivision, triangleCount, averageBvhDepth, totalTime, computeTime, memoryTime , memoryRelative"
 									fResult.write(firstLine + "\n")
 
 								#TODO: aupdate when second part is done
-								fResult.write( str(s.name)+", "+ str(s.subdivision)+", "+ str(s.triangleCount)+", "+ str(s.averageBvhDepth)+", "+ str(s.totalTime)+", "+ str(s.computeTime)+", "+ str(s.memoryTime)+", "+ str(s.memoryRelative) + "\n")
+								line = self.makeLine([allNames[s.nameId], s.nameId, s.subdivision, s.triangleCount, s.averageBvhDepth, s.totalTime, s.computeTime, s.memoryTime, s.memoryRelative])
+								fResult.write( line + "\n")
+	def makeLine(self, array):
+		line = "" + str(array[0])
+		array.pop(0)
+		for element in array:
+			line += ", " + str(element)
+		return line
 
-
-program = everything()
-program.run()
+doAll = True
+# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
+workType = 0
+# 0 = avx, sse = 1
+gangType = 0
+if doAll:
+	for i in range(2):
+		for j in range(2):
+			program = everything(i,j)
+			program.run()
+else:
+	program = everything(workType, gangType)
+	program.run()

@@ -47,8 +47,8 @@
 \usepgfplotslibrary{colormaps}
 
 %for external pgfplots: https://tex.stackexchange.com/questions/7953/how-to-expand-texs-main-memory-size-pgfplots-memory-overload
-%\usepgfplotslibrary{external} 
-%\tikzexternalize
+\usepgfplotslibrary{external} 
+\tikzexternalize
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
@@ -312,6 +312,29 @@
 	}
 }
 
+%add discard of and discard of no option
+\pgfplotsset{
+	discard if/.style 2 args={
+		x filter/.append code={
+			\edef\tempa{\thisrow{#1}}
+			\edef\tempb{#2}
+			\ifx\tempa\tempb
+			\def\pgfmathresult{inf}
+			\fi
+		}
+	},
+	discard if not/.style 2 args={
+		x filter/.append code={
+			\edef\tempa{\thisrow{#1}}
+			\edef\tempb{#2}
+			\ifx\tempa\tempb
+			\else
+			\def\pgfmathresult{inf}
+			\fi
+		}
+	}
+}
+
 \begin{document}
 
 \iffalse
@@ -346,8 +369,12 @@ Lx = Leaf size of x
 \include{SecondPerfAnalysis}
 \fi
 
-\iftrue
+\iffalse
 \include{FirstComputeCostAnalysis}
+\fi
+
+\iftrue
+\include{FirstSubdivisionAnalysis}
 \fi
 
 
