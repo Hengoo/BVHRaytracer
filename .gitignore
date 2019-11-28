@@ -89,6 +89,7 @@ Analysis/*
 !Analysis/DataManagerRework.py
 !Analysis/DataManagerPerf.py
 !Analysis/DataManagerSolver.py
+!Analysis/DataCrop.py
 
 
 #ignore all ispc build results (also the build header)

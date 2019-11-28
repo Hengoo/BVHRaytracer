@@ -8,12 +8,14 @@ from os import path
 class everything:
 	def __init__(self):
 		#the folder all the scene folders are in: (leave empty if no folder)
-		self.folder = "SavesSortedEarlyStop/"
+		#self.folder = "SavesSortedEarlyStop/"
+		self.folder = ""
 		#names of the sceneFolders
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		self.names = ["sponza"]
+		self.names = ["amazonLumberyardInterior", "amazonLumberyardExterior"]
 		#prefixTo the folderNames
-		self.prefix = "Long"
+		#self.prefix = "Long" #< was for sponza long
+		self.prefix = ""
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = "Sorted"
 
@@ -22,9 +24,9 @@ class everything:
 
 		#maximum branchingfactor and max leafsite
 		self.minBranchingFactor = 4
-		self.maxBranchingFactor = 64
-		self.minLeafSize = 4
-		self.maxLeafSize = 64
+		self.maxBranchingFactor = 4
+		self.minLeafSize = 1
+		self.maxLeafSize = 16
 
 		#temprary cost function. needs replacement
 		self.nodeCostFactor = 1
@@ -47,7 +49,9 @@ class everything:
 			"end point overlap of leaf:",
 			"volume of leafs:",
 			"surface area of leafs:",
-			"average child fullness:"
+			"average child fullness:",
+			"primary aabb success ration:",
+			"primary primitive success ratio:",
 			]
 		self.variableOutputNames = [
 			"primaryNodeIntersections",
@@ -64,6 +68,8 @@ class everything:
 			"leafVolume",
 			"leafSurfaceArea",
 			"nodeFullness",
+			"primaryAabbSuccessRatio",
+			"primaryTriangleSuccessRatio",
 			]
 
 		#cost metrics that are split into node and leaf version. -> leaf * leaffactor and node * nodefactor to get total thing
@@ -91,25 +97,6 @@ class everything:
 			"secondaryWasteFactor"
 		]
 
-		#Variables that are multiplied by branching factor:
-		self.variableMultBranchNames = [
-			"primary intersections node:",
-			"secondary intersections node:"
-		]
-		self.variableMultBranchOutputNames = [
-			"primaryIntersectionMultBranch",
-			"secondaryIntersectionMultBranch"
-		]
-		#Variables that are multiplied by leaf size:
-		self.variableMultLeafNames = [
-			"primary intersections leaf:",
-			"secondary intersections leaf:"
-		]
-		self.variableMultLeafOutputNames = [
-			"primaryIntersectionsMultLeaf",
-			"secondaryIntersectionsMultLeaf"
-		]
-
 		#Variables that are multiplied cachline they use
 		self.variableNodeCachelinesNames = [
 			"primary intersections node:",
@@ -132,12 +119,8 @@ class everything:
 		self.costMetricsMin = [[2000000 for i in self.costMetricNames]for i in self.names]
 		self.normalizedVariablesMax = [[0 for i in self.normalizedVariableNames]for i in self.names]
 		self.normalizedVariablesMin = [[2000000 for i in self.normalizedVariableNames] for i in self.names]
-		self.variableMultBranchMax = [[0 for i in self.variableMultBranchNames]for i in self.names]
-		self.variableMultBranchMin = [[2000000 for i in self.variableMultBranchNames] for i in self.names]
-		self.variableMultLeafMax = [[0 for i in self.variableMultBranchNames]for i in self.names]
-		self.variableMultLeafMin = [[2000000 for i in self.variableMultBranchNames] for i in self.names]
-		self.variableNodeCachelineMax = [[0 for i in self.variableMultBranchNames]for i in self.names]
-		self.variableNodeCachelineMin = [[2000000 for i in self.variableMultBranchNames] for i in self.names]
+		self.variableNodeCachelineMax = [[0 for i in self.variableNodeCachelinesNames]for i in self.names]
+		self.variableNodeCachelineMin = [[2000000 for i in self.variableNodeCachelinesNames] for i in self.names]
 		#could also store min and max id (b and l)
 
 		# for each type of variable: array[nameId] -> value of current file.
@@ -145,9 +128,7 @@ class everything:
 		self.variables = [[0 for i in self.variableNames]for i in self.names]
 		self.costMetrics = [[0 for i in self.costMetricNames]for i in self.names]
 		self.normalizedVariables = [[0 for i in self.normalizedVariableNames] for i in self.names]
-		self.variableMultBranch = [[0 for i in self.variableMultBranchNames] for i in self.names]
-		self.variableMultLeaf = [[0 for i in self.variableMultLeafNames] for i in self.names]
-		self.variableNodeCacheline = [[0 for i in self.variableMultBranchNames] for i in self.names]
+		self.variableNodeCacheline = [[0 for i in self.variableNodeCachelinesNames] for i in self.names]
 
 
 	def run(self):
@@ -160,10 +141,6 @@ class everything:
 		for name in self.costMetricOutputNames:
 			firstLine += ", " + name
 		for name in self.normalizedVariableOutputNames:
-			firstLine += ", " + name
-		for name in self.variableMultBranchOutputNames:
-			firstLine += ", " + name
-		for name in self.variableMultLeafOutputNames:
 			firstLine += ", " + name
 		for name in self.variableNodeCachelinesOutputNames:
 			firstLine += ", " + name
@@ -287,20 +264,6 @@ class everything:
 				self.normalizedVariables[i][valueId] = 0
 			result += ", " + str(value / sceneNumber)
 
-		for valueId in range(len(self.variableMultBranchNames)):
-			value = 0
-			for i in range(len(self.names)):
-				value += self.variableMultBranch[i][valueId] / self.variableMultBranchMax[i][valueId]
-				self.variableMultBranch[i][valueId] = 0
-			result += ", " + str(value / sceneNumber)
-
-		for valueId in range(len(self.variableMultLeafNames)):
-			value = 0
-			for i in range(len(self.names)):
-				value += self.variableMultLeaf[i][valueId] /self.variableMultLeafMax[i][valueId]
-				self.variableMultLeaf[i][valueId] = 0
-			result += ", " + str(value / sceneNumber)
-
 		for valueId in range(len(self.variableNodeCachelinesNames)):
 			value = 0
 			for i in range(len(self.names)):
@@ -325,19 +288,12 @@ class everything:
 			value = self.normalizedVariables[sceneId][id]
 			result += ", " + str(value)
 			self.normalizedVariables[sceneId][id] = 0
-		for id in range(len(self.variableMultBranchNames)):
-			value = self.variableMultBranch[sceneId][id]
-			result += ", " + str(value)
-			self.variableMultBranch[sceneId][id] = 0
-		for id in range(len(self.variableMultLeafNames)):
-			value = self.variableMultLeaf[sceneId][id]
-			result += ", " + str(value)
-			self.variableMultLeaf[sceneId][id] = 0
 		for id in range(len(self.variableNodeCachelinesNames)):
 			value = self.variableNodeCacheline[sceneId][id]
 			result += ", " + str(value)
 			self.variableNodeCacheline[sceneId][id] = 0
 		return result + "\n"
+
 
 	def gatherAll(self, i, x, branch, leaf):
 		for v in range(len(self.variableNames)):
@@ -346,12 +302,9 @@ class everything:
 			self.gatherCostVariables(i,v,x)
 		for v in range(len(self.normalizedVariableNames)):
 			self.gatherNormalizedVariables(i, v, x)
-		for v in range(len(self.variableMultBranchNames)):
-			self.gatherMultBranchVariables(i, v, x, branch)
-		for v in range(len(self.variableMultLeafNames)):
-			self.gatherMultLeafVariables(i, v, x, leaf)
-		for v in range(len(self.variableMultBranchNames)):
+		for v in range(len(self.variableNodeCachelinesNames)):
 			self.gatherNodeCachelineVariables(i, v, x, branch)
+
 
 	def gatherVariables(self, sceneId, variableId, string):
 		if(string.find(self.variableNames[variableId]) != -1):
@@ -398,45 +351,21 @@ class everything:
 					break
 				except ValueError:
 					pass
-	def gatherMultBranchVariables(self, sceneId, variableId, string, branch):
-		if(string.find(self.variableMultBranchNames[variableId]) != -1):
-			for t in string.split():
-				try:
-					value = float(t) * branch
-					self.variableMultBranchMax[sceneId][variableId] = max(self.variableMultBranchMax[sceneId][variableId], value)
-					self.variableMultBranchMin[sceneId][variableId] = min(self.variableMultBranchMin[sceneId][variableId], value)
-					self.variableMultBranch[sceneId][variableId] += value
-					#only take first value (second one might be average)
-					break
-				except ValueError:
-					pass
 
-	def gatherMultLeafVariables(self, sceneId, variableId,string, leaf):
-		if(string.find(self.variableMultLeafNames[variableId]) != -1):
-			for t in string.split():
-				try:
-					value = float(t) * leaf
-					self.variableMultLeafMax[sceneId][variableId] = max(self.variableMultLeafMax[sceneId][variableId], value)
-					self.variableMultLeafMin[sceneId][variableId] = min(self.variableMultLeafMin[sceneId][variableId], value)
-					self.variableMultLeaf[sceneId][variableId] += value
-					#only take first value (second one might be average)
-					break
-				except ValueError:
-					pass
-	
 	def gatherNodeCachelineVariables(self, sceneId, variableId, string, branch):
-		if(string.find(self.variableMultBranchNames[variableId]) != -1):
+		if(string.find(self.variableNodeCachelinesNames[variableId]) != -1):
 			for t in string.split():
 				try:
 					byteNeeded = branch * 32
 					factor = byteNeeded / self.cachelineSize
 					value = float(t) * math.ceil(factor)
-					self.variableNodeCachelineMax[sceneId][variableId] = max(self.variableMultBranchMax[sceneId][variableId], value)
-					self.variableNodeCachelineMin[sceneId][variableId] = min(self.variableMultBranchMin[sceneId][variableId], value)
+					self.variableNodeCachelineMax[sceneId][variableId] = max(self.variableNodeCachelineMax[sceneId][variableId], value)
+					self.variableNodeCachelineMin[sceneId][variableId] = min(self.variableNodeCachelineMin[sceneId][variableId], value)
 					self.variableNodeCacheline[sceneId][variableId] += value
 					#only take first value (second one might be average)
 					break
 				except ValueError:
 					pass
+
 e = everything()
 e.run()

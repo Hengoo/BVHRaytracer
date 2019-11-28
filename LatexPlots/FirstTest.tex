@@ -47,8 +47,8 @@
 \usepgfplotslibrary{colormaps}
 
 %for external pgfplots: https://tex.stackexchange.com/questions/7953/how-to-expand-texs-main-memory-size-pgfplots-memory-overload
-\usepgfplotslibrary{external} 
-\tikzexternalize
+%\usepgfplotslibrary{external} 
+%\tikzexternalize
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
@@ -373,10 +373,13 @@ Lx = Leaf size of x
 \include{FirstComputeCostAnalysis}
 \fi
 
-\iftrue
+\iffalse
 \include{FirstSubdivisionAnalysis}
 \fi
 
+\iftrue
+\include{LeafNodeIntersectionPlots}
+\fi
 
 %\plotAll{Data/AverageTableSorted.txt}{Average of all normalized results. Sorted}
 %\newpage

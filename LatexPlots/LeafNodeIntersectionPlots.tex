@@ -1,0 +1,467 @@
+\section{Node Leaf intersections Lumberyard Interior}
+
+\pgfplotsset{
+	every axis/.append style={colorbar = false},
+}
+
+simple visualization of the table Lumberyard interior. 
+Reminder: Node intersection is when a ray might hit a node and all the Aabbs inside this node are tested. Aabb intersections are the exact number how often we do a ray aabb test.
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryNodeIntersections, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryLeafIntersections, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};
+		
+		\legend{Node intersections, Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		%ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize, y =primaryNodeIntersections, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryLeafIntersections} * 4, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};	
+		
+		\legend{Node intersections, 4 * Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Node and Leaf Intersections}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryAabb, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryPrimitive, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};	
+		
+		\legend{Aabb intersections, Triangle intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize, y =primaryAabb, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryPrimitive} * 4, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};	
+		
+		\legend{Aabb intersections, 4 * Triangle intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Aabb and Triangle intersections}
+\end{figure}
+
+\newpage
+
+Numbers normalized by the sum of Node Intersection + Leaf Intersection of the specific Leaf size.
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryNodeIntersections} / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections}), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryLeafIntersections} / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections}), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};
+		
+		\legend{Node intersection, Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		%ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryNodeIntersections} / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections} * 4), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryLeafIntersections} * 4 / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections} * 4), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};	
+		
+		\legend{Node intersections, 4 * Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Node and Leaf Intersections normalized}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryAabb} / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive}), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryPrimitive} / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive}), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};
+		
+		\legend{Node intersection, Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		%ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryAabb} / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive} * 4), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryPrimitive} * 4 / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive} * 4), col sep=comma]{Data/amazonLumberyardInteriorTable.txt};	
+		
+		\legend{Node intersections, 4 * Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Aabb and Triangle intersections normalized}
+\end{figure}
+
+\newpage
+
+Now to the intersection success ratio. (how many of the triangle tests where positive). For Nodes its always about 0.3 (mostly affected by branching factor)
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Success ratio,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]	
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryTriangleSuccessRatio, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};
+		
+		\legend{Triangle success ratio}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Successfull Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]	
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryTriangleSuccessRatio} * \thisrow{primaryPrimitive}, col sep=comma]{Data/amazonLumberyardInteriorTable.txt};
+		
+		\legend{Number triangle hits}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+\end{figure}
+
+So when we increase the leafsize we also get a bit more positive hits, but i think those hits are mostly within one leaf node.
+
+\section{Node Leaf intersections Lumberyard Exterior}
+
+Same as above but nor for the lumberyard exterior scene. The results are very similar and the lines would mostly overlap when in one graph.
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryNodeIntersections, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryLeafIntersections, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};
+		
+		\legend{Node intersections, Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		%ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize, y =primaryNodeIntersections, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryLeafIntersections} * 4, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};	
+		
+		\legend{Node intersections, 4 * Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Node and Leaf Intersections}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryAabb, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryPrimitive, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};	
+		
+		\legend{Aabb intersections, Triangle intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize, y =primaryAabb, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryPrimitive} * 4, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};	
+		
+		\legend{Aabb intersections, 4 * Triangle intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Aabb and Triangle intersections}
+\end{figure}
+
+\newpage
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryNodeIntersections} / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections}), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryLeafIntersections} / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections}), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};
+		
+		\legend{Node intersection, Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		%ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryNodeIntersections} / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections} * 4), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryLeafIntersections} * 4 / ( \thisrow{primaryNodeIntersections} + \thisrow{primaryLeafIntersections} * 4), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};	
+		
+		\legend{Node intersections, 4 * Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Node and Leaf Intersections normalized}
+\end{figure}
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryAabb} / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive}), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryPrimitive} / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive}), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};
+		
+		\legend{Node intersection, Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		%ylabel = Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]
+		%x expr = \thisrow{subdivision}
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryAabb} / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive} * 4), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};		
+		\addplot+[thick, mark=none]table[x = leafSize,  y expr = \thisrow{primaryPrimitive} * 4 / ( \thisrow{primaryAabb} + \thisrow{primaryPrimitive} * 4), col sep=comma]{Data/amazonLumberyardExteriorTable.txt};	
+		
+		\legend{Node intersections, 4 * Leaf intersections}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\caption{Aabb and Triangle intersections normalized}
+\end{figure}
+
+
+\begin{figure}[!htb]
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Success ratio,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]	
+		\addplot+[thick, mark=none]table[x = leafSize, y = primaryTriangleSuccessRatio, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};
+		
+		\legend{Triangle success ratio}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\begin{tikzpicture}
+		\begin{axis}
+		[
+		%view={90}{0} for x, view={0}{0} for y restriction
+		view={0}{0},
+		xlabel = Leaf size,
+		ylabel = Successfull Intersections,
+		cycle list name = linestyles*,
+		legend style={at={(0.05,1.25)}, anchor = north west},
+		%xtick = {0, 2, ..., 20},
+		%xticklabels={$8$,$16$,$24$,$32$,$40$,$48$,$56$,$64$,$72$,$80$,$88$,$96$,$104$,$112$,$120$,$128$},
+		]	
+		\addplot+[thick, mark=none]table[x = leafSize, y expr = \thisrow{primaryTriangleSuccessRatio} * \thisrow{primaryPrimitive}, col sep=comma]{Data/amazonLumberyardExteriorTable.txt};
+		
+		\legend{Number triangle hits}
+		\end{axis}
+		\end{tikzpicture}
+	\end{minipage}
+\end{figure}
