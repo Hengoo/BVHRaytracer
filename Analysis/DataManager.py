@@ -45,7 +45,7 @@ class everything:
 		self.folder = ""
 		#names of the sceneFolders
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		self.names = [9,10]
+		self.names = [4]
 		#prefixTo the folderNames
 		#self.prefix = "Long" #< was for sponza long
 		self.prefix = ""
@@ -62,7 +62,7 @@ class everything:
 		self.maxLeafSize = 16
 
 		#number of subdivisions we test:
-		self.subdivisionRange = [0, 0]
+		self.subdivisionRange = [0, 20]
 		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
 
 		#temprary cost function. needs replacement
@@ -210,17 +210,18 @@ class everything:
 		for scenes in self.storage:
 			#create file if i want one file for all subs
 			name = scenes.sceneName
-			for sub in scenes.subdivisions:
-				#output file:
-				if(self.subdivisionRange[1] == 0):
-					fResult = open(name + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
-					fResult2 = open(name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
-				else:
-					fResult = open(name + "Sub" + str(s) + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
-					fResult2 = open(name + "Sub" + str(s) + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
-				fResult.write(firstLine + "\n")
-				fResult2.write(firstLine + "\n")
-				lastBranch = -1
+
+			#output file:
+			if(self.subdivisionRange[1] == 0):
+				fResult = open(name + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
+				fResult2 = open(name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+			else:
+				fResult = open(name + "Sub" + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
+				fResult2 = open(name + "Sub" + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+			fResult.write(firstLine + "\n")
+			fResult2.write(firstLine + "\n")
+			lastBranch = -1
+			for subId, sub in enumerate(scenes.subdivisions):
 				for configStorage in sub:
 					#empty line for table with space if branching factor changes
 					if lastBranch != configStorage.branch:
