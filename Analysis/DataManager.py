@@ -1,378 +1,307 @@
 import os.path
+import math
 from os import path
 
-#collects the NAME_bx_lx_Info.txt data and writes them into a .txt to use in latex pgfplot
+allNames =[
+	"lizard",
+	"shiftHappens",
+	"erato",
+	"cubes",
+	"sponza",
+	"daviaRock",
+	"rungholt",
+	"breakfast",
+	"sanMiguel",
+	"amazonLumberyardInterior",
+	"amazonLumberyardExterior",
+	"amazonLumberyardCombinedExterior",
+	"gallery",
+]
 
-#I usualy rename the Analysis folder to something like nameSave or nameSaveSorted.
-names = ["shiftHappens", "sponza", "rungholt" , "erato", "lizard"]
-#folderNames = ["shiftHappensSave", "sponzaSaveSorted", "rungholtSave", "eratoSave", "lizard"]
-folderNames = ["shiftHappensSaveSorted", "sponzaSaveSorted", "rungholtSaveSorted", "eratoSaveSorted"]
+class sceneContainer:
+	def __init__(self):
+		self.sceneNameId = 0
+		self.sceneName = ""
+		self.subdivisions = []
 
-#if a singe id is chosen [2] it creates the table for this one scene
-#if multiple ids [0,1,2,3] are given then it creates the average table
-idsToSum = [3]
+class storageType:
+	def __init__(self, subdivision, branch, leaf, listOfVariableCounts):
+		self.branch = branch
+		self.leaf = leaf
+		self.subdivision = subdivision
+				#names of variables like node Intersection count
+		self.variableValues = [None for _ in range(listOfVariableCounts[0])]
+
+		#names of normalized variables like wasteFactor
+		self.normalizedVariableValues = [None for _ in range(listOfVariableCounts[1])]
+
+		#Variables that are multiplied cachline they use
+		self.variableNodeCachelinesValues = [None for _ in range(listOfVariableCounts[2])]
+
+class everything:
+	def __init__(self):
+		#the folder all the scene folders are in: (leave empty if no folder)
+		#self.folder = "SavesSortedEarlyStop/"
+		self.folder = ""
+		#names of the sceneFolders
+		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
+		self.names = [9,10]
+		#prefixTo the folderNames
+		#self.prefix = "Long" #< was for sponza long
+		self.prefix = ""
+		#Prefix to the output txt (so its sceneNamePrefix.txt)
+		self.outputPrefix = "Sorted"
+
+		# -1 for all, id otherwise (starting with 0)
+		self.singeIdOverride = -1
+
+		#maximum branchingfactor and max leafsite
+		self.minBranchingFactor = 4
+		self.maxBranchingFactor = 8
+		self.minLeafSize = 1
+		self.maxLeafSize = 16
+
+		#number of subdivisions we test:
+		self.subdivisionRange = [0, 0]
+		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
+
+		#temprary cost function. needs replacement
+		self.nodeCostFactor = 1
+		self.leafCostFactor = 1
+
+		self.cachelineSize = 128
+
+		#names of variables like node Intersection count
+		self.variableNames = [
+			"primary intersections node:",
+			"primary intersections leaf:",
+			"secondary intersections node:",
+			"secondary intersections leaf:",
+			"average leaf depth:",
+			"primary aabb intersections:",
+			"primary primitive intersections:",
+			"sah of node:",
+			"sah of leaf:",
+			"end point overlap of node:",
+			"end point overlap of leaf:",
+			"volume of leafs:",
+			"surface area of leafs:",
+			"average child fullness:",
+			"primary aabb success ration:",
+			"primary primitive success ratio:",
+			"secondary aabb success ration:",
+			"secondary primitive success ratio:",
+			"secondary aabb intersections:",
+			"secondary primitive intersections:",
+			]
+		self.variableOutputNames = [
+			"primaryNodeIntersections",
+			"primaryLeafIntersections",
+			"secondaryNodeIntersections",
+			"secondaryLeafIntersections",
+			"averageLeafDepth",
+			"primaryAabb",
+			"primaryPrimitive",
+			"nodeSah",
+			"leafSah",
+			"nodeEpo",
+			"leafEpo",
+			"leafVolume",
+			"leafSurfaceArea",
+			"nodeFullness",
+			"primaryAabbSuccessRatio",
+			"primaryTriangleSuccessRatio",
+			"secondaryAabbSuccessRatio",
+			"secondaryTriangleSuccessRatio",
+			"secondaryAabb",
+			"secondaryPrimitive",
+			]
+
+		#names of normalized variables like wasteFactor
+		self.normalizedVariableNames = [
+			"primary waste factor:",
+			"secondary waste factor:"
+		]
+		self.normalizedVariableOutputNames = [
+			"primaryWasteFactor",
+			"secondaryWasteFactor"
+		]
+
+		#Variables that are multiplied cachline they use
+		self.variableNodeCachelinesNames = [
+			"primary intersections node:",
+			"secondary intersections node:"
+		]
+		self.variableNodeCachelinesOutputNames = [
+			"primaryNodeCachelines",
+			"secondaryNodeCachelines"
+		]
+
+		#fullness would be some special thing becuase its divided by leafsize
+		# -> could do variables divided by leafsize and ones divided by branchFactor
+		# -> and ones multiplied by it?
+
+		#initialize storage
+		self.storage = [None for _ in range(len(self.names))]
 
 
-#maximum branchingfactor and max leafsite
-maxBranchingFactor = 16
-maxLeafSize = 16
+	def run(self):
+		# now loop over all scenes to do the single scene file (and collect min max)
+		# then loop over all and get averages
 
-#temprary cost function. needs replacement
-nodeCostFactor = 1/4
-leafCostFactor = 1
+		firstLine = "branchFactor, leafSize, subdivision"
+		for name in self.variableOutputNames:
+			firstLine += ", " + name
+		for name in self.normalizedVariableOutputNames:
+			firstLine += ", " + name
+		for name in self.variableNodeCachelinesOutputNames:
+			firstLine += ", " + name
 
-if (len(idsToSum) == 1):
-	fResult = open(names[idsToSum[0]] + "TableSorted.txt", "w+")
-else:
-	fResult = open("AverageTableSorted.txt", "w+")
+		storage = []
 
-#i just always calculate the min and max values -> might write down b and l of min??
-minNodeInter = [200000000] * len(names)
-minLeafInter = [200000000] * len(names)
-minShadowNodeInter = [200000000] * len(names)
-minShadowLeafInter = [200000000] * len(names)
-minCost = [200000000] * len(names)
-minShadowCost = [200000000] * len(names)
-minEpo = [200000000] * len(names)
-minSah = [200000000] * len(names)
+		for loopId, nameId in enumerate(self.names):
+			self.storage[loopId] = sceneContainer()
+			self.storage[loopId].sceneName = allNames[nameId]
+			self.storage[loopId].sceneNameId = name
+			self.storage[loopId].subdivisions = [[] for _ in range(self.subdivisionCount)]
 
-maxNodeInter = [0] * len(names)
-maxLeafInter = [0] * len(names)
-maxShadowNodeInter = [0] * len(names)
-maxShadowLeafInter = [0] * len(names)
-maxCost = [0] * len(names)
-maxShadowCost = [0] * len(names)
-maxEpo = [0] * len(names)
-maxSah = [0] * len(names)
+		for loopId, nameId in enumerate(self.names):
+			name = allNames[nameId]
+			for s in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
+				for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
+					for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
+						branch = b + self.minBranchingFactor
+						leaf = l + self.minLeafSize
 
-fResult.write("branchFactor, leafSize, nodeIntersections, shadowNodeIntersections, allNodeIntersections, leafIntersections, shadowLeafIntersections, allLeafIntersections, leafFullness, cost, shadowCost, sah, epo, wasteFactor\n")
-
-#First loop, calc min and max + and if only one file write file
-for b in range(maxBranchingFactor - 1):
-	#a space after each x axis -> needed so pgfplot uses the data correct
-	if(len(idsToSum) == 1):
-		fResult.write("\n")
-	for l in range(maxLeafSize):
-		branch = b + 2
-		leaf = l + 1
-
-		nodeInter = 0
-		leafInter = 0
-		shadowNodeInter = 0
-		shadowLeafInter = 0
-		fullness = 0
-		cost = 0
-		shadowCost = 0
-		epo = 0
-		sah = 0
-		wasteFactor = 0
-		shadowWasteFactor = 0
-
-		#branching factor from 2 to 16, leafsize from 1 to 16
-		for id in idsToSum:
-			#need tmp value for things that use the cost factor
-			tmpCost = 0
-			tmpShadowCost = 0
-			tmpEpo = 0
-			tmpSah = 0
-			fileName = folderNames[id] + "/" + names[id] + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
-			fileName2 = folderNames[id] + "/" + names[id] + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
-			if(path.exists(fileName2)):
-				#open file and read important values
-				f = open(fileName2, "r")
-				if f.mode == 'r':
-					for x in f:
-						#approach for all keywords:
-						#check if keyword fits ->#find number -> add number * factor to cost    (later also gather color)
-
-						if (x.find("Sah of Nodes:") != -1):
-							for t in x.split():
-								try:
-									tmpSah += float(t) * nodeCostFactor
-									#take first value (second one is the average)
-									break
-								except ValueError:
-									pass
-						if (x.find("Sah of leafs:") != -1):
-							for t in x.split():
-								try:
-									tmpSah += float(t) * leafCostFactor
-									#take first value (second one is the average)
-									break
-								except ValueError:
-									pass
-						if (x.find("End-Point Overlap of Nodes:") != -1):
-							for t in x.split():
-								try:
-									tmpEpo += float(t) * nodeCostFactor
-									#take first value (second one is the average)
-									break
-								except ValueError:
-									pass
-						if (x.find("End-Point Overlap of Leafs:") != -1):
-							for t in x.split():
-								try:
-									tmpEpo += float(t) * leafCostFactor
-									#take first value (second one is the average)
-									break
-								except ValueError:
-									pass
-						minSah[id] = min(tmpSah, minSah[id])
-						maxSah[id] = max(tmpSah, maxSah[id])
-						minEpo[id] = min(tmpEpo, minEpo[id])
-						maxEpo[id] = max(tmpEpo, maxEpo[id])
-				sah += tmpSah
-				epo += tmpEpo
-
-			if(path.exists(fileName)):
-				#open file and read important values
-				f = open(fileName, "r")
-				if f.mode == 'r':
-					for x in f:
-						#approach for all keywords:
-						#check if keyword fits ->#find number -> add number * factor to cost    (later also gather color)
+						storagePerSubdivision = storageType(s, branch, leaf, [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)])
 						
+						if(self.subdivisionRange[1] == 0):
+							fileName  = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
+							fileName2 = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
+						else:
+							fileName  = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
+							fileName2 = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
 
-						#node intersections (normal and shadowray)
-						if (x.find("shadow node intersections:") != -1):
-							for t in x.split():
-								try:
-									value = float(t)
-									shadowNodeInter += value
-									minShadowNodeInter[id] = min(value, minShadowNodeInter[id])
-									maxShadowNodeInter[id] = max(value, maxShadowNodeInter[id])
-									tmpShadowCost += value * nodeCostFactor
-								except ValueError:
-									pass
-						elif (x.find("node intersections:") != -1):
-							for t in x.split():
-								try:
-									value = float(t)
-									nodeInter += value
-									minNodeInter[id] = min(value, minNodeInter[id])
-									maxNodeInter[id] = max(value, maxNodeInter[id])
-									tmpCost += value * nodeCostFactor
-									
-								except ValueError:
-									pass
+						anyFileExists = False
+						if (path.exists(fileName)):
+							#open file and read important values
+							f = open(fileName, "r")
+							if f.mode == 'r':
+								self.gatherAll(storagePerSubdivision, f)
+								anyFileExists = True
 
-						#leaf intersections (normal and shadowray)
-						if (x.find("shadow leaf intersections:") != -1):
-							for t in x.split():
-								try:
-									value = float(t)
-									shadowLeafInter += value
-									minShadowLeafInter[id] = min(value, minShadowLeafInter[id])
-									maxShadowLeafInter[id] = max(value, maxShadowLeafInter[id])
-									tmpShadowCost += value * leafCostFactor
+						if (path.exists(fileName2)):
+							#open file and read important values
+							f = open(fileName2, "r")
+							if f.mode == 'r':
+								self.gatherAll(storagePerSubdivision, f)
+								anyFileExists = True
 
-								except ValueError:
-									pass
-						elif (x.find("leaf intersections:") != -1):
-							for t in x.split():
-								try:
-									value = float(t)
-									leafInter += value
-									minLeafInter[id] = min(value, minLeafInter[id])
-									maxLeafInter[id] = max(value, maxLeafInter[id])
-									tmpCost += value * leafCostFactor
-								except ValueError:
-									pass
+						if anyFileExists:
+							self.storage[loopId].subdivisions[s].append(storagePerSubdivision)
 
-						#fullness: (for now i use leaf fullness for memory efficiency (child fullness is not that important i think))
-						if (x.find("averag leaf fullness:") != -1):
-							for t in x.split():
-								try:
-									#normalize fullness by leafsize
-									fullness = float(t) / leaf
-								except ValueError:
-									pass
+		#remove all empty fields (due to scenes with different max subdivision)
+		for scenes in self.storage:
+			for sub in reversed(range(self.subdivisionCount)):
+				if (len(scenes.subdivisions[sub]) == 0):
+					scenes.subdivisions.pop(sub)
 
-						#waste Factor
-						if (x.find("shadow waste factor:") != -1):
-							for t in x.split():
-								try:
-									shadowWasteFactor += float(t)
-								except ValueError:
-									pass
-						elif (x.find("waste factor:") != -1):
-							for t in x.split():
-								try:
-									wasteFactor = float(t)
-								except ValueError:
-									pass
-						minShadowCost[id] = min(tmpShadowCost, minShadowCost[id])
-						maxShadowCost[id] = max(tmpShadowCost, maxShadowCost[id])
-						minCost[id] = min(tmpCost, minCost[id])
-						maxCost[id] = max(tmpCost, maxCost[id])
-				cost += tmpCost
-				shadowCost += tmpShadowCost
-
-			else:
-				print("Was not able to open file: " + folderNames[id] + "/" + names[id] + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt")
-
-		if len(idsToSum) == 1:
-			fResult.write(str(branch) + ", " + str(leaf) + ", " + str(nodeInter) + ", " + str(shadowNodeInter) + ", " + str(shadowNodeInter + nodeInter)
-			+ ", " + str(leafInter) + ", " + str(shadowLeafInter) + ", " + str(leafInter + shadowLeafInter) + ", " + str(fullness) + ", " + str(cost) + ", " + str(shadowCost)
-			+ ", " + str(sah) + ", " + str(epo) + ", " + str(wasteFactor) + "\n")
-if len(idsToSum) > 1:
-	#Second loop over everything, uses min and max to return normalised average
-	for b in range(maxBranchingFactor - 1):
-		#a space after each x axis -> needed so pgfplot uses the data correct
-		fResult.write("\n")
-		for l in range(maxLeafSize):
-			branch = b + 2
-			leaf = l + 1
-
-			nodeInter = 0
-			leafInter = 0
-			shadowNodeInter = 0
-			shadowLeafInter = 0
-			fullness = 0
-			cost = 0
-			shadowCost = 0
-			epo = 0
-			sah = 0
-			wasteFactor = 0
-			shadowWasteFactor = 0
-
-			#branching factor from 2 to 16, leafsize from 1 to 16
-			for id in idsToSum:
-				fileName = folderNames[id] + "/" + names[id] + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
-				fileName2 = folderNames[id] + "/" + names[id] + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
-				if(path.exists(fileName2)):
-					#open file and read important values
-					f = open(fileName2, "r")
-					if f.mode == 'r':
-						for x in f:
-							#approach for all keywords:
-							#check if keyword fits ->#find number -> add number * factor to cost    (later also gather color)
-
-							if (x.find("Sah of Nodes:") != -1):
-								for t in x.split():
-									try:
-										sah += (float(t) * nodeCostFactor) / maxSah[id]
-										#take first value (second one is the average)
-										break
-									except ValueError:
-										pass
-							if (x.find("Sah of leafs:") != -1):
-								for t in x.split():
-									try:
-										sah += (float(t) * leafCostFactor) / maxSah[id]
-										#take first value (second one is the average)
-										break
-									except ValueError:
-										pass
-							if (x.find("End-Point Overlap of Nodes:") != -1):
-								for t in x.split():
-									try:
-										epo += (float(t) * nodeCostFactor) / maxEpo[id]
-										#take first value (second one is the average)
-										break
-									except ValueError:
-										pass
-							if (x.find("End-Point Overlap of Leafs:") != -1):
-								for t in x.split():
-									try:
-										epo += (float(t) * leafCostFactor) / maxEpo[id]
-										#take first value (second one is the average)
-										break
-									except ValueError:
-										pass
-
-				if(path.exists(fileName)):
-					#open file and read important values
-					f = open(fileName, "r")
-					if f.mode == 'r':
-						for x in f:
-							#approach for all keywords:
-							#check if keyword fits ->#find number -> add number * factor to cost    (later also gather color)
-
-							#node intersections (normal and shadowray)
-							if (x.find("shadow node intersections:") != -1):
-								for t in x.split():
-									try:
-										value = float(t)
-										shadowNodeInter += value / maxShadowNodeInter[id]
-										shadowCost += (value * nodeCostFactor) / maxShadowCost[id]
-									except ValueError:
-										pass
-							elif (x.find("node intersections:") != -1):
-								for t in x.split():
-									try:
-										value = float(t)
-										nodeInter += value / maxNodeInter[id]
-										cost += (value * nodeCostFactor) / maxCost[id]
-									except ValueError:
-										pass
-
-							#leaf intersections (normal and shadowray)
-							if (x.find("shadow leaf intersections:") != -1):
-								for t in x.split():
-									try:
-										value = float(t)
-										shadowLeafInter += value / maxShadowLeafInter[id]
-										shadowCost += (value * leafCostFactor) / maxShadowCost[id]
-									except ValueError:
-										pass
-							elif (x.find("leaf intersections:") != -1):
-								for t in x.split():
-									try:
-										value = float(t)
-										leafInter += value / maxLeafInter[id]
-										cost += (value * leafCostFactor) / maxCost[id]
-									except ValueError:
-										pass
-
-							#fullness: (for now i use leaf fullness for memory efficiency (child fullness is not that important i think))
-							if (x.find("averag leaf fullness:") != -1):
-								for t in x.split():
-									try:
-										#normalize fullness by leafsize
-										fullness += float(t) / leaf
-									except ValueError:
-										pass
-							
-							#waste Factor
-							if (x.find("shadow waste factor:") != -1):
-								for t in x.split():
-									try:
-										shadowWasteFactor += float(t)
-									except ValueError:
-										pass
-							elif (x.find("waste factor:") != -1):
-								for t in x.split():
-									try:
-										wasteFactor += float(t)
-									except ValueError:
-										pass
-					#leafInter += (tmpLeafInter - minLeafInter[id]) / (maxLeafInter[id] - minLeafInter[id])
-					#nodeInter += (tmpNodeInter - minNodeInter[id]) / (maxNodeInter[id] - minNodeInter[id])
-					#shadowLeafInter += (tmpShadowLeafInter - minShadowLeafInter[id]) / (maxShadowLeafInter[id] - minShadowLeafInter[id])
-					#shadowNodeInter += (tmpShadowNodeInter - minShadowNodeInter[id]) / (maxShadowNodeInter[id] - minShadowNodeInter[id])
-					#cost += (tmpCost - minCost[id]) / (maxCost[id] - minCost[id])
-					#shadowCost += (tmpShadowCost - minShadowCost[id]) / (maxShadowCost[id] - minShadowCost[id])
-
-					#leafInter += tmpLeafInter / maxLeafInter[id]
-					#nodeInter += tmpNodeInter / maxNodeInter[id]
-					#shadowLeafInter += tmpShadowLeafInter / maxShadowLeafInter[id]
-					#shadowNodeInter += tmpShadowNodeInter / maxShadowNodeInter[id]
-					#cost += tmpCost / maxCost[id]
-					#shadowCost += tmpShadowCost / maxShadowCost[id]
-					#fullness += tmpFullness
+		#loop over storage and do output (and average?)
+		for scenes in self.storage:
+			#create file if i want one file for all subs
+			name = scenes.sceneName
+			for sub in scenes.subdivisions:
+				#output file:
+				if(self.subdivisionRange[1] == 0):
+					fResult = open(name + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
+					fResult2 = open(name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
 				else:
-					print("Was not able to open file: " + folderNames[id] + "/" + names[id] + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt")
-			leafInter /= len(idsToSum)
-			shadowLeafInter /= len(idsToSum)
-			nodeInter /= len(idsToSum)
-			shadowNodeInter /= len(idsToSum)
-			fullness /= len(idsToSum)
-			cost /= len(idsToSum)
-			shadowCost /= len(idsToSum)
-			sah /= len(idsToSum)
-			epo /= len(idsToSum)
-			wasteFactor /= len(idsToSum)
-			fResult.write(str(branch) + ", " + str(leaf) + ", " + str(nodeInter) + ", " + str(shadowNodeInter) + ", " + str(shadowNodeInter + nodeInter)
-			+ ", " + str(leafInter) + ", " + str(shadowLeafInter) + ", " + str(leafInter + shadowLeafInter) + ", " + str(fullness) + ", " + str(cost) + ", " + str(shadowCost)
-			+ ", " + str(sah) + ", " + str(epo) + ", " + str(wasteFactor) + "\n")
+					fResult = open(name + "Sub" + str(s) + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
+					fResult2 = open(name + "Sub" + str(s) + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				fResult.write(firstLine + "\n")
+				fResult2.write(firstLine + "\n")
+				lastBranch = -1
+				for configStorage in sub:
+					#empty line for table with space if branching factor changes
+					if lastBranch != configStorage.branch:
+						fResult.write("\n")
+					lastBranch = configStorage.branch
+
+					#write results
+					line = self.makeLine([configStorage.branch, configStorage.leaf, configStorage.subdivision])
+					line += ", " + self.makeLine(configStorage.variableValues)
+					line += ", " + self.makeLine(configStorage.normalizedVariableValues)
+					line += ", " + self.makeLine(configStorage.variableNodeCachelinesValues)
+
+					fResult.write(line + "\n")
+					fResult2.write(line + "\n")
+
+	def makeLine(self, array):
+		line = "" + str(array[0])
+		array.pop(0)
+		for element in array:
+			line += ", " + str(element)
+		return line
+
+	def gatherAll(self, subStorage, file):
+		for vId, keyToMatch in enumerate(self.variableNames):
+			anyHit = False
+			file.seek(0)
+			for line in file:
+				hit, value = self.gatherVariable(keyToMatch, line)
+				if hit:
+					if anyHit:
+						print("ERROR: variable was found twice")
+					anyHit = True
+					subStorage.variableValues[vId] = value
+
+		for vId, keyToMatch in enumerate(self.normalizedVariableNames):
+			anyHit = False
+			file.seek(0)
+			for line in file:
+				hit, value = self.gatherVariable(keyToMatch, line)
+				if hit:
+					if anyHit:
+						print("ERROR: normalized variable was found twice")
+					anyHit = True
+					subStorage.normalizedVariableValues[vId] = value
+
+		for vId, keyToMatch in enumerate(self.variableNodeCachelinesNames):
+			anyHit = False
+			file.seek(0)
+			for line in file:
+				hit, value = self.gatherNodeCachelineVariable(keyToMatch, line, subStorage.branch)
+				if hit:
+					if anyHit:
+						print("ERROR: cacheline variable was found twice")
+					anyHit = True
+					subStorage.variableNodeCachelinesValues[vId] = value
+
+	def gatherVariable(self, keyToMatch, string):
+		if(string.find(keyToMatch) != -1):
+			for t in string.split():
+				try:
+					value = float(t)
+					return True, value
+					#only take first value (second one might be average)
+					break
+				except ValueError:
+					pass
+		return False, 0
+
+	def gatherNodeCachelineVariable(self, keyToMatch, string, branch):
+		if(string.find(keyToMatch) != -1):
+			for t in string.split():
+				try:
+					byteNeeded = branch * 32
+					factor = byteNeeded / self.cachelineSize
+					value = float(t) * math.ceil(factor)
+					return True, value
+					#only take first value (second one might be average)
+					break
+				except ValueError:
+					pass
+		return False, 0
+
+e = everything()
+e.run()

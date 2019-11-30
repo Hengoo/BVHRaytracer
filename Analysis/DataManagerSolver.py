@@ -98,8 +98,8 @@ class everything:
 		
 		storage = [[] for _ in range(len(self.names))]
 
-		for nameId, nameIndex in enumerate(self.names):
-			name = allNames[nameIndex]
+		for loopId, nameId in enumerate(self.names):
+			name = allNames[nameId]
 			for s in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
 				anyFound = False
 				#loop over b and l
@@ -165,7 +165,7 @@ class everything:
 							#store data for second iteration
 							#storagePerName.append([branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, name, s])
 
-							storagePerName.append(storageType(nameIndex, s, branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, ))
+							storagePerName.append(storageType(nameId, s, branch, leaf, dataPoints[0][0], dataPoints[1][0], dataPoints[self.workType + 2][0], computeCost, memoryCost, memoryFactor, ))
 							
 
 							"""
@@ -197,7 +197,7 @@ class everything:
 							"""
 							fResult.write(str(branch) + ", " + str(leaf) + ", " + str(memoryPart[0]) + ", " + str(computeCost) + ", " + str(memoryCost) + ", " + str(computeNorm) + ", " + str(memoryNorm) + ", " + str(memoryFactor) + "\n")
 				if len(storagePerName) != 0:
-					storage[nameId].append(storagePerName)
+					storage[loopId].append(storagePerName)
 		if anyFound:
 			fResult.close()
 		#now loop over the different scenes and do analysis depending on tree depth

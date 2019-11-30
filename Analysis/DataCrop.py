@@ -5,7 +5,9 @@ from os import path
 
 tableInput = "amazonLumberyardInteriorTableSorted.txt"
 tableOutput = "amazonLumberyardInteriorTable.txt"
-collumsToKeep = ["branchFactor", "leafSize", "primaryNodeIntersections", "primaryAabb", "primaryLeafIntersections", "primaryPrimitive", "primaryAabbSuccessRatio", "primaryTriangleSuccessRatio"]
+#tableInput = "amazonLumberyardExteriorTableSorted.txt"
+#tableOutput = "amazonLumberyardExteriorTable.txt"
+collumsToKeep = ["branchFactor", "leafSize", "primaryNodeIntersections", "primaryAabb", "primaryLeafIntersections", "primaryPrimitive", "primaryAabbSuccessRatio", "primaryTriangleSuccessRatio","secondaryNodeIntersections", "secondaryAabb", "secondaryLeafIntersections", "secondaryPrimitive", "secondaryAabbSuccessRatio", "secondaryTriangleSuccessRatio"]
 
 #open table
 if (path.exists(tableInput)):

@@ -33,6 +33,7 @@ allNames =[
 
 class sceneContainer:
 	def __init__(self):
+		self.sceneNameId = 0
 		self.sceneName = ""
 		self.subdivisions = []
 
@@ -42,7 +43,6 @@ class storageType:
 		self.leaf = 0
 		self.branchMemory = 0
 		self.leafMemory = 0
-		self.nameId = 0
 		self.subdivision = 0
 		self.triangleCount = 0
 		self.averageBvhDepth = 0
@@ -72,7 +72,6 @@ class everything:
 		self.gangName = ["Avx", "Sse"]
 
 		#the folder all the scene folders are in: (leave empty if no folder)
-		#self.folder = "SavesPerf/Laptop/NodeMemoryAvx/"
 		if(self.subdivisionRange[1] == 0):
 			self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "Memory" + self.gangName[self.gangType] +"/"
 		else:
@@ -105,10 +104,11 @@ class everything:
 		# then loop over all and get averages
 
 
-		for nameId, name in enumerate(self.names):
-			self.storage[nameId] = sceneContainer()
-			self.storage[nameId].sceneName = allNames[name]
-			self.storage[nameId].subdivisions = [[] for _ in range(self.subdivisionCount)]
+		for loopId, nameId in enumerate(self.names):
+			self.storage[loopId] = sceneContainer()
+			self.storage[loopId].sceneName = allNames[nameId]
+			self.storage[loopId].sceneNameId = nameId
+			self.storage[loopId].subdivisions = [[] for _ in range(self.subdivisionCount)]
 		
 		firstLine = self.getFirstLine()
 		
@@ -116,7 +116,7 @@ class everything:
 		for mb in self.possibleMemorySizes:
 			for ml in self.possibleMemorySizes:
 				#now do what normal data manger does, loop over b and l and write files
-				for i, nameId in enumerate(self.names):
+				for loopId, nameId in enumerate(self.names):
 					name = allNames[nameId]
 					for s in range(self.subdivisionCount):
 						#anyFound = False
@@ -136,8 +136,8 @@ class everything:
 									#open file and read important values
 									f = open(fileName, "r")
 									if f.mode == 'r':
-										storagePart = self.fillStorage(f, nameId, branch, leaf, mb, ml, s)
-										self.storage[i].subdivisions[s].append(storagePart)
+										storagePart = self.fillStorage(f, branch, leaf, mb, ml, s)
+										self.storage[loopId].subdivisions[s].append(storagePart)
 
 
 		#remove all empty fields (due to scenes with different max subdivision)
@@ -145,7 +145,6 @@ class everything:
 			for i in reversed(range(self.subdivisionCount)):
 				if (len(s.subdivisions[i]) == 0):
 					s.subdivisions.pop(i)
-		abc = 0
 
 	def printEverything(self):
 		#prints all files:
@@ -163,7 +162,7 @@ class everything:
 								continue
 							if not foundAny:
 								configText = "b" + str(obj.branch) + "l" + str(obj.leaf)
-								name = allNames[obj.nameId]
+								name = scene.sceneName
 								if(self.subdivisionRange[1] == 0):
 									fileName = self.outputFolderName + name + "/" + name + self.prefix + self.outputPrefix + configText + "Table.txt"
 									if not os.path.exists(self.outputFolderName + name):
@@ -193,7 +192,7 @@ class everything:
 		for scene in self.storage:
 			for sub in scene.subdivisions:
 				for obj in sub:
-					line = self.makeLine([allNames[obj.nameId], obj.nameId, obj.subdivision, obj.branch, obj.branchMemory, obj.leaf, obj.leafMemory, obj.triangleCount, obj.averageBvhDepth, obj.totalTime, obj.timeRaySum, obj.timeTriangleSum, obj.timeNodeSum])
+					line = self.makeLine([scene.sceneName, scene.sceneNameId, obj.subdivision, obj.branch, obj.branchMemory, obj.leaf, obj.leafMemory, obj.triangleCount, obj.averageBvhDepth, obj.totalTime, obj.timeRaySum, obj.timeTriangleSum, obj.timeNodeSum])
 					fResult.write(line + "\n")
 
 	def makeLine(self, array):
@@ -218,9 +217,8 @@ class everything:
 
 		return foundAnything, result
 
-	def fillStorage(self, file, nameId, branch, leaf, branchMemory, leafMemory, subdivision):
+	def fillStorage(self, file, branch, leaf, branchMemory, leafMemory, subdivision):
 		storage = storageType()
-		storage.nameId = nameId
 		storage.branch = branch
 		storage.leaf = leaf
 		storage.subdivision = subdivision
