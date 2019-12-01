@@ -294,8 +294,7 @@ class everything:
 								fResult.write( line + "\n")
 	def makeLine(self, array):
 		line = "" + str(array[0])
-		array.pop(0)
-		for element in array:
+		for element in array[1:]:
 			line += ", " + str(element)
 		return line
 

@@ -38,6 +38,10 @@ class storageType:
 		#Variables that are multiplied cachline they use
 		self.variableNodeCachelinesValues = [None for _ in range(listOfVariableCounts[2])]
 
+		self.totalTime = None
+		self.nodeTime = None
+		self.leafTime = None
+
 class everything:
 	def __init__(self):
 		#the folder all the scene folders are in: (leave empty if no folder)
@@ -56,10 +60,10 @@ class everything:
 		self.singeIdOverride = -1
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 4
+		self.minBranchingFactor = 8
 		self.maxBranchingFactor = 8
-		self.minLeafSize = 1
-		self.maxLeafSize = 16
+		self.minLeafSize = 8
+		self.maxLeafSize = 8
 
 		#number of subdivisions we test:
 		self.subdivisionRange = [0, 20]
@@ -144,6 +148,12 @@ class everything:
 		#initialize storage
 		self.storage = [None for _ in range(len(self.names))]
 
+		#folder to the performance files. For now its the laptop per files
+		if(self.subdivisionRange[1] == 0):
+			self.perfFolder = "SavesPerf/Laptop/NodeMemoryAvx/"
+		else:
+			self.perfFolder = "SavesPerf/Laptop/NodeMemorySubAvx/"
+
 
 	def run(self):
 		# now loop over all scenes to do the single scene file (and collect min max)
@@ -156,6 +166,7 @@ class everything:
 			firstLine += ", " + name
 		for name in self.variableNodeCachelinesOutputNames:
 			firstLine += ", " + name
+		firstLine += ", totalTime, nodeTime, leafTime, perNodeCost, perLeafCost, sahNodeFactor"
 
 		storage = []
 
@@ -178,9 +189,11 @@ class everything:
 						if(self.subdivisionRange[1] == 0):
 							fileName  = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
+							fileName3 = self.perfFolder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
 						else:
 							fileName  = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
+							fileName3 = self.perfFolder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
 
 						anyFileExists = False
 						if (path.exists(fileName)):
@@ -195,6 +208,13 @@ class everything:
 							f = open(fileName2, "r")
 							if f.mode == 'r':
 								self.gatherAll(storagePerSubdivision, f)
+								anyFileExists = True
+
+						if (path.exists(fileName3)):
+							#open file and read important values
+							f = open(fileName3, "r")
+							if f.mode == 'r':
+								self.gatherPerf(storagePerSubdivision, f)
 								anyFileExists = True
 
 						if anyFileExists:
@@ -233,14 +253,20 @@ class everything:
 					line += ", " + self.makeLine(configStorage.variableValues)
 					line += ", " + self.makeLine(configStorage.normalizedVariableValues)
 					line += ", " + self.makeLine(configStorage.variableNodeCachelinesValues)
+					sahNodeFactor , nodeCost, leafCost = None, None, None
+					if configStorage.totalTime != None and configStorage.variableValues[0] != None:
+						#i calculate the cost for one node intersection and for one leaf intersection
+						nodeCost = configStorage.nodeTime / (configStorage.variableValues[0] + configStorage.variableValues[2])
+						leafCost = configStorage.leafTime / (configStorage.variableValues[1] + configStorage.variableValues[3])
+						sahNodeFactor = nodeCost / leafCost
+					line += ", " + self.makeLine([configStorage.totalTime, configStorage.nodeTime, configStorage.leafTime, nodeCost, leafCost, sahNodeFactor])
 
 					fResult.write(line + "\n")
 					fResult2.write(line + "\n")
 
 	def makeLine(self, array):
 		line = "" + str(array[0])
-		array.pop(0)
-		for element in array:
+		for element in array[1:]:
 			line += ", " + str(element)
 		return line
 
@@ -277,6 +303,35 @@ class everything:
 						print("ERROR: cacheline variable was found twice")
 					anyHit = True
 					subStorage.variableNodeCachelinesValues[vId] = value
+
+	def gatherPerf(self, subStorage, file):
+		anyHit = False
+		file.seek(0)
+		for line in file:
+			hit, value = self.gatherVariable("Time for all rays (SUM):", line)
+			if hit:
+				if anyHit:
+					print("ERROR: total time was found twice")
+				anyHit = True
+				subStorage.totalTime = value
+		anyHit = False
+		file.seek(0)
+		for line in file:
+			hit, value = self.gatherVariable("Time all rays(sum) - triangle(sum):", line)
+			if hit:
+				if anyHit:
+					print("ERROR: node time was found twice")
+				anyHit = True
+				subStorage.nodeTime = value
+		anyHit = False
+		file.seek(0)
+		for line in file:
+			hit, value = self.gatherVariable("Time for triangle intersections (SUM):", line)
+			if hit:
+				if anyHit:
+					print("ERROR: leaf time was found twice")
+				anyHit = True
+				subStorage.leafTime = value
 
 	def gatherVariable(self, keyToMatch, string):
 		if(string.find(keyToMatch) != -1):

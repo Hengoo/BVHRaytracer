@@ -61,7 +61,7 @@ class everything:
 		self.maxLeafSizeList = [[64, 8], [64, 4]]
 		
 		#number of subdivisions we test:
-		self.subdivisionRange = [0, 0]
+		self.subdivisionRange = [0, 20]
 		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
 
 		# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
@@ -81,8 +81,8 @@ class everything:
 		self.outputFolderName = "SavesPerf/Laptop/Summary/"
 
 		#nameIds of the tables
-		#self.names = [4, 9]
-		self.names = [7,8,9,10,11,12]
+		self.names = [4]
+		#self.names = [7,8,9,10,11,12]
 
 		#prefixTo the folderNames
 		#self.prefix = "SSESeqMemoryLeaf"
@@ -197,8 +197,7 @@ class everything:
 
 	def makeLine(self, array):
 		line = "" + str(array[0])
-		array.pop(0)
-		for element in array:
+		for element in array[1:]:
 			line += ", " + str(element)
 		return line
 
