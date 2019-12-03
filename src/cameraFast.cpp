@@ -93,7 +93,7 @@ void CameraFast::renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemo
 	//calculate median
 	//this sorts by the first value of the tupel (the total raytracer time)
 	sort(results.begin(), results.end());
-	auto median = results[sampleCount / 2 ];
+	auto median = results[sampleCount / 2];
 
 	if (!mute)
 	{
@@ -115,7 +115,7 @@ void CameraFast::renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemo
 
 		//add some extra information needed for final analysis (tri count and average tree depth)
 
-		myfile << "Average BVH depth: " <<nodeManager.averageBvhDepth << std::endl;
+		myfile << "Average BVH depth: " << nodeManager.averageBvhDepth << std::endl;
 		myfile << "Triangle Count: " << nodeManager.triangleCount << std::endl;
 	}
 	else
@@ -130,11 +130,15 @@ template <size_t gangSize, size_t nodeMemory>
 std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemory>& nodeManager,
 	unsigned ambientSampleCount, float ambientDistance)
 {
-	fillRenderInfo();
+	//fillRenderInfo();
 	auto timeBeginRaytracer = getTime();
-	std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
-		[&](auto& info)
+
+//	std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+//		[&](auto& info)
+#pragma omp parallel for
+	for (int i = 0; i < width * height; i++)
 		{
+			RenderInfo info((i % width - width / 2.f), -(i / width - height / 2.f), i);
 			auto timeBeforeRay = getTime();
 			double timeTriangleTest = 0;
 			glm::vec3 pos = getRayTargetPosition(info);
@@ -171,29 +175,29 @@ std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNode
 					imageResult = (uint8_t)(factor * 255);
 				}
 			}
-			//important to override previous data
-			timesTriangles[info.index] = timeTriangleTest;
-			timesRay[info.index] = getTimeSpan(timeBeforeRay);
-			//distance render version (for large scenes)
-			//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
-			//imageResult = (uint8_t)(distanceToCamera / 50.f);
+		//important to override previous data
+		timesTriangles[info.index] = timeTriangleTest;
+		timesRay[info.index] = getTimeSpan(timeBeforeRay);
+		//distance render version (for large scenes)
+		//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
+		//imageResult = (uint8_t)(distanceToCamera / 50.f);
 
-			image[info.index * 4 + 0] = imageResult;
-			image[info.index * 4 + 1] = imageResult;
-			image[info.index * 4 + 2] = imageResult;
-			image[info.index * 4 + 3] = 255;
+		image[info.index * 4 + 0] = imageResult;
+		image[info.index * 4 + 1] = imageResult;
+		image[info.index * 4 + 2] = imageResult;
+		image[info.index * 4 + 3] = 255;
 
-			//render ambient sum average:
-			//ambientSum = glm::normalize(ambientSum);
-			//image[info.index * 4 + 0] = (uint8_t)(ambientSum.x * 127 + 127);
-			//image[info.index * 4 + 1] = (uint8_t)(ambientSum.y * 127 + 127);
-			//image[info.index * 4 + 2] = (uint8_t)(ambientSum.z * 127 + 127);
+		//render ambient sum average:
+		//ambientSum = glm::normalize(ambientSum);
+		//image[info.index * 4 + 0] = (uint8_t)(ambientSum.x * 127 + 127);
+		//image[info.index * 4 + 1] = (uint8_t)(ambientSum.y * 127 + 127);
+		//image[info.index * 4 + 2] = (uint8_t)(ambientSum.z * 127 + 127);
 
-			//surface normal render version:
-			//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
-			//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
-			//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
-		});
+		//surface normal render version:
+		//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
+		//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
+		//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+	}
 
 	double totalTime = getTimeSpan(timeBeginRaytracer);
 	double timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), 0.0);

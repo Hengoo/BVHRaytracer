@@ -7,6 +7,7 @@
 
 void Camera::fillRenderInfo()
 {
+	renderInfos.resize(height * width);
 	//fill RenderInfo array.
 	for (int i = 0; i < width * height; i++)
 	{

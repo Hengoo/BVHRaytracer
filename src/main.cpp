@@ -43,6 +43,7 @@ int main()
 
 	std::cout << "sizes of the nodes: FIX if its not 128 256 ..." << std::endl;
 
+	/*
 	std::cout << sizeof(FastNode<4>) << std::endl;
 	std::cout << sizeof(FastNode<8>) << std::endl;
 	std::cout << sizeof(FastNode<12>) << std::endl;
@@ -53,6 +54,7 @@ int main()
 	std::cout << sizeof(FastNode<48>) << std::endl;
 	std::cout << sizeof(FastNode<56>) << std::endl;
 	std::cout << sizeof(FastNode<64>) << std::endl;
+	*/
 
 	RayTracer rayTracer;
 

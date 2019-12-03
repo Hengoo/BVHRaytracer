@@ -47,7 +47,7 @@ public:
 		: path(path), name(name), problem(problem), position(position), focalLength(focalLength), height(height), width(width)
 	{
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
-		renderInfos.resize(height * width);
+		//renderInfos.resize(height * width);
 	}
 
 	Camera(std::string path, std::string name, std::string problem, glm::mat4 transform,
@@ -55,7 +55,7 @@ public:
 		: path(path), name(name), problem(problem), transform(transform), focalLength(focalLength), height(height), width(width)
 	{
 		position = transform * glm::vec4(0, 0, 0, 1);
-		renderInfos.resize(height * width);
+		//renderInfos.resize(height * width);
 	}
 
 protected:
