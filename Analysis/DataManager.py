@@ -49,25 +49,34 @@ class everything:
 		self.folder = ""
 		#names of the sceneFolders
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		self.names = [4]
+		#self.names = [7, 8, 9, 10, 11, 12]
+		self.names = [9]
+		
 		#prefixTo the folderNames
 		#self.prefix = "Long" #< was for sponza long
 		self.prefix = ""
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
-		self.outputPrefix = "Sorted"
+		self.outputPrefix = ""
 
 		# -1 for all, id otherwise (starting with 0)
 		self.singeIdOverride = -1
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 8
-		self.maxBranchingFactor = 8
-		self.minLeafSize = 8
-		self.maxLeafSize = 8
+		self.minBranchingFactor = 4
+		self.maxBranchingFactor = 16
+		self.minLeafSize = 4
+		self.maxLeafSize = 16
+
+		self.branchStep = 4
+		self.leafStep = 4
 
 		#number of subdivisions we test:
-		self.subdivisionRange = [0, 20]
+		self.subdivisionRange = [0, 16]
 		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
+
+		# 0 = avx, sse = 1
+		self.gangType = 1
+		self.gangName = ["Avx", "Sse"]
 
 		#temprary cost function. needs replacement
 		self.nodeCostFactor = 1
@@ -150,9 +159,11 @@ class everything:
 
 		#folder to the performance files. For now its the laptop per files
 		if(self.subdivisionRange[1] == 0):
-			self.perfFolder = "SavesPerf/Laptop/NodeMemoryAvx/"
+			self.perfFolder = "SavesPerf/Laptop/Perf" + self.gangName[self.gangType] + "/"
 		else:
-			self.perfFolder = "SavesPerf/Laptop/NodeMemorySubAvx/"
+			self.perfFolder = "SavesPerf/Laptop/PerfSub"+ self.gangName[self.gangType] +"/"
+
+		self.listVariableCount = [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)]
 
 
 	def run(self):
@@ -173,18 +184,21 @@ class everything:
 		for loopId, nameId in enumerate(self.names):
 			self.storage[loopId] = sceneContainer()
 			self.storage[loopId].sceneName = allNames[nameId]
-			self.storage[loopId].sceneNameId = name
+			self.storage[loopId].sceneNameId = nameId
 			self.storage[loopId].subdivisions = [[] for _ in range(self.subdivisionCount)]
+
+		#averageStorage = [[] for _ in range(self.subdivisionCount)]
 
 		for loopId, nameId in enumerate(self.names):
 			name = allNames[nameId]
 			for s in range(self.subdivisionRange[1] - self.subdivisionRange[0] + 1):
-				for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
-					for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
+				for b in range(0, self.maxBranchingFactor -(self.minBranchingFactor - 1), self.branchStep):
+					for l in range(0, self.maxLeafSize - (self.minLeafSize - 1), self.leafStep):
 						branch = b + self.minBranchingFactor
 						leaf = l + self.minLeafSize
 
-						storagePerSubdivision = storageType(s, branch, leaf, [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)])
+						storagePerSubdivision = storageType(s, branch, leaf, self.listVariableCount)
+
 						
 						if(self.subdivisionRange[1] == 0):
 							fileName  = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
@@ -216,6 +230,7 @@ class everything:
 							if f.mode == 'r':
 								self.gatherPerf(storagePerSubdivision, f)
 								anyFileExists = True
+						
 
 						if anyFileExists:
 							self.storage[loopId].subdivisions[s].append(storagePerSubdivision)
@@ -225,8 +240,8 @@ class everything:
 			for sub in reversed(range(self.subdivisionCount)):
 				if (len(scenes.subdivisions[sub]) == 0):
 					scenes.subdivisions.pop(sub)
-
-		#loop over storage and do output (and average?)
+		
+		#loop over storage and do output
 		for scenes in self.storage:
 			#create file if i want one file for all subs
 			name = scenes.sceneName
@@ -263,6 +278,19 @@ class everything:
 
 					fResult.write(line + "\n")
 					fResult2.write(line + "\n")
+
+		#one for each subdivision and one for each branc / leafsize combination
+		#the more im thinking about it, average isnt that usefull
+		#averageStorage = [[] for _ in range(self.subdivisionCount)]
+		#average
+		#sceneCount = len(self.names)
+		#if sceneCount > 1:
+			#fResult = open("AverageTableWithSpace.txt")
+			#fResult2 = open("AverageTable.txt")
+
+
+
+				
 
 	def makeLine(self, array):
 		line = "" + str(array[0])
