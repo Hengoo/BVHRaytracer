@@ -41,9 +41,8 @@ int main()
 	return EXIT_SUCCESS;
 	*/
 
-	std::cout << "sizes of the nodes: FIX if its not 128 256 ..." << std::endl;
-
 	/*
+	std::cout << "sizes of the nodes: FIX if its not 128 256 ..." << std::endl;
 	std::cout << sizeof(FastNode<4>) << std::endl;
 	std::cout << sizeof(FastNode<8>) << std::endl;
 	std::cout << sizeof(FastNode<12>) << std::endl;

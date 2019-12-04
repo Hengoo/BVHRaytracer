@@ -1,7 +1,7 @@
 #include "fastRay.h"
 
 
-FastRay::FastRay(glm::vec3 pos, glm::vec3 direction, bool shadowRay)
+FastRay::FastRay(const glm::vec3& pos, const glm::vec3& direction,const bool shadowRay)
 	: pos(pos), direction(direction), shadowRay(shadowRay)
 {	this->direction = glm::normalize(direction);
 

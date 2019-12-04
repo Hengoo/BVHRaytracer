@@ -46,7 +46,9 @@ class everything:
 	def __init__(self):
 		#the folder all the scene folders are in: (leave empty if no folder)
 		#self.folder = "SavesSortedEarlyStop/"
-		self.folder = ""
+		self.folder = "Results/"
+		self.outputFolder = "Summary/"
+
 		#names of the sceneFolders
 		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
 		#self.names = [7, 8, 9, 10, 11, 12]
@@ -71,7 +73,7 @@ class everything:
 		self.leafStep = 4
 
 		#number of subdivisions we test:
-		self.subdivisionRange = [0, 16]
+		self.subdivisionRange = [0, 0]
 		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
 
 		# 0 = avx, sse = 1
@@ -159,11 +161,14 @@ class everything:
 
 		#folder to the performance files. For now its the laptop per files
 		if(self.subdivisionRange[1] == 0):
-			self.perfFolder = "SavesPerf/Laptop/Perf" + self.gangName[self.gangType] + "/"
+			self.perfFolder = "Results/"
 		else:
-			self.perfFolder = "SavesPerf/Laptop/PerfSub"+ self.gangName[self.gangType] +"/"
+			self.perfFolder = "Results/"
 
 		self.listVariableCount = [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)]
+
+		if not os.path.exists(self.outputFolder):
+			os.makedirs(self.outputFolder)
 
 
 	def run(self):
@@ -178,8 +183,6 @@ class everything:
 		for name in self.variableNodeCachelinesOutputNames:
 			firstLine += ", " + name
 		firstLine += ", totalTime, nodeTime, leafTime, perNodeCost, perLeafCost, sahNodeFactor"
-
-		storage = []
 
 		for loopId, nameId in enumerate(self.names):
 			self.storage[loopId] = sceneContainer()
@@ -203,11 +206,11 @@ class everything:
 						if(self.subdivisionRange[1] == 0):
 							fileName  = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
-							fileName3 = self.perfFolder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
+							fileName3 = self.perfFolder + name + self.gangName[self.gangType] +"Perf" + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
 						else:
 							fileName  = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
-							fileName3 = self.perfFolder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
+							fileName3 = self.perfFolder + name + self.gangName[self.gangType] +"Perf" + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
 
 						anyFileExists = False
 						if (path.exists(fileName)):
@@ -248,11 +251,11 @@ class everything:
 
 			#output file:
 			if(self.subdivisionRange[1] == 0):
-				fResult = open(name + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
-				fResult2 = open(name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				fResult = open(self.outputFolder + name + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
+				fResult2 = open(self.outputFolder + name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
 			else:
-				fResult = open(name + "Sub" + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
-				fResult2 = open(name + "Sub" + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				fResult = open(self.outputFolder + name + "Sub" + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
+				fResult2 = open(self.outputFolder + name + "Sub" + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
 			fResult.write(firstLine + "\n")
 			fResult2.write(firstLine + "\n")
 			lastBranch = -1

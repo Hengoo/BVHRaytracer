@@ -22,14 +22,14 @@ public:
 
 
 	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::mat4 transform,
-		float focalLength = 0.866f, size_t height = 360, size_t width = 640);
+		float focalLength = 0.866f, size_t height = 1080, size_t width = 1920);
 
 	template <size_t gangSize, size_t nodeMemory>
-	std::tuple<float, float, float> renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemory>& nodeManager, unsigned ambientSampleCount,
-		float ambientDistance);
+	std::tuple<float, float, float> renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory>& nodeManager,
+		const unsigned ambientSampleCount, const float ambientDistance);
 
 	//renders 6 images, We take median of the last 5 renders
 	template <size_t gangSize, size_t nodeMemory>
-	void renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemory>& nodeManager, unsigned ambientSampleCount,
-		float ambientDistance, bool mute);
+	void renderImages(const bool saveImage,const FastNodeManager<gangSize, nodeMemory>& nodeManager,const unsigned ambientSampleCount,
+		const float ambientDistance, const bool mute);
 };

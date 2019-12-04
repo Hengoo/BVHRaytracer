@@ -25,5 +25,5 @@ public:
 	float tMax;
 	bool shadowRay;
 
-	FastRay(glm::vec3 pos, glm::vec3 direction, bool shadowRay = false);
+	FastRay(const glm::vec3& pos, const glm::vec3& direction, const bool shadowRay = false);
 };

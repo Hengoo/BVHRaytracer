@@ -184,7 +184,7 @@ FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
 }
 
 template <size_t gangSize, size_t nodeMemory>
-bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& timeTriangleTest)
+bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
 	//TODO: test perfroamnce if pair is faster !!
@@ -228,7 +228,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 			continue;
 		}
 
-		FastNode<nodeMemory>* node = &compactNodes[id];
+		const FastNode<nodeMemory>* node = &compactNodes[id];
 
 		if (!node->hasChildren)
 		{
@@ -306,7 +306,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 }
 
 template <size_t gangSize, size_t nodeMemory>
-bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, double& timeTriangleTest)
+bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, double& timeTriangleTest) const
 {
 	//bvh intersection for secondary hits. -> anyhit
 	//differences: no normal / positon return for triangles. No aabb distance stop (saving distance of aabb intersections since we stop after first hit)
@@ -344,7 +344,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 		uint32_t id = queue.back();
 		queue.pop_back();
 
-		FastNode<nodeMemory>* node = &compactNodes[id];
+		const FastNode<nodeMemory>* node = &compactNodes[id];
 
 		if (!node->hasChildren)
 		{

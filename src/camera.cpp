@@ -18,7 +18,7 @@ void Camera::fillRenderInfo()
 	}
 }
 
-glm::vec3 Camera::getAmbientDirection(RenderInfo& info, int i, glm::vec3& surfaceNormal)
+glm::vec3 Camera::getAmbientDirection(const RenderInfo& info, const int i, const glm::vec3& surfaceNormal)
 {
 	//i need two deterministic random values. Currently pixel index but could also be intersect position
 	auto hashFunction = std::hash<size_t>();
@@ -29,7 +29,7 @@ glm::vec3 Camera::getAmbientDirection(RenderInfo& info, int i, glm::vec3& surfac
 	return direction;
 }
 
-glm::vec3 Camera::sampleHemisphere(float u, float v, glm::vec3& normal, int m)
+glm::vec3 Camera::sampleHemisphere(const float u, const float v, const glm::vec3& normal, const int m)
 {
 	//inspired by this blogpost and adjusted for my needs
 	//https://blog.thomaspoulet.fr/uniform-sampling-on-unit-hemisphere/
@@ -57,7 +57,7 @@ glm::vec3 Camera::sampleHemisphere(float u, float v, glm::vec3& normal, int m)
 	return glm::vec3(res2);
 }
 
-glm::vec3 Camera::getRayTargetPosition(RenderInfo& info)
+glm::vec3 Camera::getRayTargetPosition(const RenderInfo& info)
 {
 	glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
 	//next line to get perfect forward ray

@@ -20,41 +20,41 @@
 
 
 //I just want to use template in the cpp ...
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 4>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 8>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 12>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 16>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 20>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 24>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 28>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<4, 32>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 4>& const nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 8>& const nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 12>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 16>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 20>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 24>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 28>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 32>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
 
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 8>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 16>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 24>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 32>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 40>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 48>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 56>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(bool saveImage, FastNodeManager<8, 64>& nodeManager, unsigned ambientSampleCount, float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 16>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 24>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 32>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 40>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 48>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 56>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 64>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
 
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 4>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 8>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 12>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 16>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 20>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 24>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 28>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<4, 32>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 4>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 12>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 16>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 20>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 24>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 28>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 32>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
 
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 8>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 16>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 24>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 32>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 40>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 48>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 56>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
-template void CameraFast::renderImages(bool saveImage, FastNodeManager<8, 64>& nodeManager, unsigned ambientSampleCount, float ambientDistance, bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 16>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 24>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 32>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 40>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 48>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 56>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 64>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
 
 
 CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::vec3 position, glm::vec3 lookCenter
@@ -72,13 +72,21 @@ CameraFast::CameraFast(std::string path, std::string name, std::string problem, 
 {
 	image.resize(height * width * 4);
 	timesRay.resize(height * width);
+	timesTriangles.resize(height * width);
 }
 
 template <size_t gangSize, size_t nodeMemory>
-void CameraFast::renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemory>& nodeManager,
-	unsigned ambientSampleCount, float ambientDistance, bool mute)
+void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory>& nodeManager,
+	const unsigned ambientSampleCount, const float ambientDistance, const bool mute)
 {
-	renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance);
+	//if image should be saved one first run to save the image. Just to be sure we still do one render we trough away before performance measurements
+	if (saveImage)
+	{
+		renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance);
+	}
+
+	//"first" render to load everything in cache
+	renderImage(false, nodeManager, ambientSampleCount, ambientDistance);
 
 	//has to be an odd number for correct median
 	int sampleCount = 5;
@@ -97,10 +105,30 @@ void CameraFast::renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemo
 
 	if (!mute)
 	{
-		std::cout << "Raytracing took " << std::get<0>(median) << " seconds." << std::endl;
-		std::cout << "ray sum took " << std::get<1>(median) << " seconds." << std::endl;
-		std::cout << "triangleTests took " << std::get<2>(median) << " seconds." << std::endl;
-		std::cout << "all rays minus triangle took " << std::get<1>(median) - std::get<2>(median) << " seconds." << std::endl;
+		bool detailed = true;
+		if (!detailed)
+		{
+			std::cout << "Raytracing took " << std::get<0>(median) << " seconds." << std::endl;
+			std::cout << "ray sum took " << std::get<1>(median) << " seconds." << std::endl;
+			std::cout << "triangleTests took " << std::get<2>(median) << " seconds." << std::endl;
+			std::cout << "all rays minus triangle took " << std::get<1>(median) - std::get<2>(median) << " seconds." << std::endl;
+		}
+		else
+		{
+			float totalDiff0 = 0;
+			float totalDiff1 = 0;
+			float totalDiff2 = 0;
+			for (auto& i : results)
+			{
+				totalDiff0 += std::abs(std::get<0>(i) - std::get<0>(median));
+				totalDiff1 += std::abs(std::get<1>(i) - std::get<1>(median));
+				totalDiff2 += std::abs(std::get<2>(i) - std::get<2>(median));
+			}
+			std::cout << "Raytracing took " << std::get<0>(median) << " seconds. Difference between tries: " << totalDiff0 << std::endl;
+			std::cout << "ray sum took " << std::get<1>(median) << " seconds. Difference between tries: " << totalDiff1 << std::endl;
+			std::cout << "triangleTests took " << std::get<2>(median) << " seconds. Difference between tries: " << totalDiff2 << std::endl;
+			std::cout << "all rays minus triangle took " << std::get<1>(median) - std::get<2>(median) << " seconds." << std::endl;
+		}
 	}
 
 	std::ofstream myfile(path + "/" + name + problem + problemPrefix + "_Perf.txt");
@@ -123,22 +151,34 @@ void CameraFast::renderImages(bool saveImage, FastNodeManager<gangSize, nodeMemo
 		std::cerr << "unable to open perf output file" << std::endl;
 	}
 	myfile.close();
-
 }
 
 template <size_t gangSize, size_t nodeMemory>
-std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNodeManager<gangSize, nodeMemory>& nodeManager,
-	unsigned ambientSampleCount, float ambientDistance)
+std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory>& nodeManager,
+	const unsigned ambientSampleCount, const float ambientDistance)
 {
 	//fillRenderInfo();
 	auto timeBeginRaytracer = getTime();
 
-//	std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
-//		[&](auto& info)
-#pragma omp parallel for
-	for (int i = 0; i < width * height; i++)
+	//similar performance compared to openMp versions, but openMp is more consistent (large difference)
+	//	std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
+	//		[&](auto& info)
+
+	//dynamic 4 is the most consistent but the difference is not that large (test where done with the exe and windwos realtime mode, 30 samples)
+	//This result is good because dynamic is the shedule that is most suited for for out problem since every ray can take differently long
+//#pragma omp parallel for schedule(dynamic, 4)
+
+	unsigned smallSize = 8;
+
+	for (int i = 0; i < (width / smallSize) * (height / smallSize); i++)
+	{
+#pragma omp parallel for schedule(dynamic, 4)
+		for (int j = 0; j < smallSize * smallSize; j++)
 		{
-			RenderInfo info((i % width - width / 2.f), -(i / width - height / 2.f), i);
+			RenderInfo info(
+				((i * smallSize) % width - width / 2.f) + (j % smallSize),
+				-((i * smallSize) / width - height / 2.f) + (j / smallSize),
+				i * smallSize * smallSize + j);
 			auto timeBeforeRay = getTime();
 			double timeTriangleTest = 0;
 			glm::vec3 pos = getRayTargetPosition(info);
@@ -175,40 +215,52 @@ std::tuple<float, float, float> CameraFast::renderImage(bool saveImage, FastNode
 					imageResult = (uint8_t)(factor * 255);
 				}
 			}
-		//important to override previous data
-		timesTriangles[info.index] = timeTriangleTest;
-		timesRay[info.index] = getTimeSpan(timeBeforeRay);
-		//distance render version (for large scenes)
-		//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
-		//imageResult = (uint8_t)(distanceToCamera / 50.f);
+			//important to override previous data
+			timesTriangles[info.index] = timeTriangleTest;
+			timesRay[info.index] = getTimeSpan(timeBeforeRay);
+			//distance render version (for large scenes)
+			//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
+			//imageResult = (uint8_t)(distanceToCamera / 50.f);
 
-		image[info.index * 4 + 0] = imageResult;
-		image[info.index * 4 + 1] = imageResult;
-		image[info.index * 4 + 2] = imageResult;
-		image[info.index * 4 + 3] = 255;
+			image[info.index * 4 + 0] = imageResult;
+			image[info.index * 4 + 1] = imageResult;
+			image[info.index * 4 + 2] = imageResult;
+			image[info.index * 4 + 3] = 255;
 
-		//render ambient sum average:
-		//ambientSum = glm::normalize(ambientSum);
-		//image[info.index * 4 + 0] = (uint8_t)(ambientSum.x * 127 + 127);
-		//image[info.index * 4 + 1] = (uint8_t)(ambientSum.y * 127 + 127);
-		//image[info.index * 4 + 2] = (uint8_t)(ambientSum.z * 127 + 127);
+			//render ambient sum average:
+			//ambientSum = glm::normalize(ambientSum);
+			//image[info.index * 4 + 0] = (uint8_t)(ambientSum.x * 127 + 127);
+			//image[info.index * 4 + 1] = (uint8_t)(ambientSum.y * 127 + 127);
+			//image[info.index * 4 + 2] = (uint8_t)(ambientSum.z * 127 + 127);
 
-		//surface normal render version:
-		//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
-		//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
-		//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+			//surface normal render version:
+			//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
+			//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
+			//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+		}
 	}
-
 	double totalTime = getTimeSpan(timeBeginRaytracer);
 	double timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), 0.0);
 	double timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), 0.0);
 
-
-
 	if (saveImage)
 	{
-		encodeTwoSteps(path + "/" + name + "_Perf.png", image, width, height);
+		//reorder image before we can save it.
+		std::vector<uint8_t> imageCorrect;
+		imageCorrect.resize(height * width * 4);
+		for (int w = 0; w < width; w++)
+			for (int h = 0; h < height; h++)
+			{
+				//one line of smallsize
+				int id = (w % smallSize) * smallSize * smallSize + w / smallSize + h * smallSize;
+				id += (h % smallSize) * smallSize * width;
+				int idOrig = w + h * w;
+				imageCorrect[id * 4 + 0] = image[idOrig * 4 + 0];
+				imageCorrect[id * 4 + 1] = image[idOrig * 4 + 1];
+				imageCorrect[id * 4 + 2] = image[idOrig * 4 + 2];
+				imageCorrect[id * 4 + 3] = image[idOrig * 4 + 3];
+			}
+		encodeTwoSteps(path + "/" + name + "_Perf.png", imageCorrect, width, height);
 	}
-
 	return std::make_tuple(totalTime, timeRaySum, timeTrianglesSum);
 }

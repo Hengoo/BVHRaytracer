@@ -108,8 +108,8 @@ public:
 	int leafSize;
 	int leafMemory;
 	int branchingFactor;
-	bool intersect(FastRay& ray, double& timeTriangleTest);
-	bool intersectSecondary(FastRay& ray, double& timeTriangleTest);
+	bool intersect(FastRay& ray, double& timeTriangleTest) const;
+	bool intersectSecondary(FastRay& ray, double& timeTriangleTest) const;
 
 	float averageBvhDepth;
 	uint32_t triangleCount;
