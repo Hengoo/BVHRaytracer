@@ -105,7 +105,7 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 
 	if (!mute)
 	{
-		bool detailed = true;
+		bool detailed = false;
 		if (!detailed)
 		{
 			std::cout << "Raytracing took " << std::get<0>(median) << " seconds." << std::endl;
@@ -169,16 +169,16 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 //#pragma omp parallel for schedule(dynamic, 4)
 
 	unsigned smallSize = 8;
-
+#pragma omp parallel for schedule(dynamic, 4)
 	for (int i = 0; i < (width / smallSize) * (height / smallSize); i++)
 	{
-#pragma omp parallel for schedule(dynamic, 4)
 		for (int j = 0; j < smallSize * smallSize; j++)
 		{
 			RenderInfo info(
 				((i * smallSize) % width - width / 2.f) + (j % smallSize),
-				-((i * smallSize) / width - height / 2.f) + (j / smallSize),
+				-(((i * smallSize) / width) * smallSize - height / 2.f) - (j / smallSize),
 				i * smallSize * smallSize + j);
+
 			auto timeBeforeRay = getTime();
 			double timeTriangleTest = 0;
 			glm::vec3 pos = getRayTargetPosition(info);
@@ -248,17 +248,18 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 		//reorder image before we can save it.
 		std::vector<uint8_t> imageCorrect;
 		imageCorrect.resize(height * width * 4);
-		for (int w = 0; w < width; w++)
-			for (int h = 0; h < height; h++)
+
+		for (int h = 0; h < height; h++)
+			for (int w = 0; w < width; w++)
 			{
 				//one line of smallsize
-				int id = (w % smallSize) * smallSize * smallSize + w / smallSize + h * smallSize;
-				id += (h % smallSize) * smallSize * width;
-				int idOrig = w + h * w;
-				imageCorrect[id * 4 + 0] = image[idOrig * 4 + 0];
-				imageCorrect[id * 4 + 1] = image[idOrig * 4 + 1];
-				imageCorrect[id * 4 + 2] = image[idOrig * 4 + 2];
-				imageCorrect[id * 4 + 3] = image[idOrig * 4 + 3];
+				int id = (w / smallSize) * smallSize * smallSize + w % smallSize + (h % smallSize) * smallSize;
+				id += (h / smallSize) * width * smallSize;
+				int idOrig = w + h * width;
+				imageCorrect[idOrig * 4 + 0] = image[id * 4 + 0];
+				imageCorrect[idOrig * 4 + 1] = image[id * 4 + 1];
+				imageCorrect[idOrig * 4 + 2] = image[id * 4 + 2];
+				imageCorrect[idOrig * 4 + 3] = image[id * 4 + 3];
 			}
 		encodeTwoSteps(path + "/" + name + "_Perf.png", imageCorrect, width, height);
 	}

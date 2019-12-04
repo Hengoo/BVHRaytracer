@@ -43,7 +43,7 @@ public:
 	float focalLength;
 
 	Camera(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter
-		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
+		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1024, size_t width = 1920)
 		: path(path), name(name), problem(problem), position(position), focalLength(focalLength), height(height), width(width)
 	{
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
@@ -51,7 +51,7 @@ public:
 	}
 
 	Camera(std::string path, std::string name, std::string problem, glm::mat4 transform,
-		float focalLength = 0.866f, size_t height = 1080, size_t width = 1920)
+		float focalLength = 0.866f, size_t height = 1024, size_t width = 1920)
 		: path(path), name(name), problem(problem), transform(transform), focalLength(focalLength), height(height), width(width)
 	{
 		position = transform * glm::vec4(0, 0, 0, 1);
