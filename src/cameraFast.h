@@ -15,14 +15,14 @@ private:
 public:
 	//only black and white image for now ->  image is only height * width and not height * width * 4
 
-	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::vec3 position, glm::vec3 lookCenter
-		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1024, size_t width = 1920);
+	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int workGroupSize, glm::vec3 position, glm::vec3 lookCenter
+		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920);
 	//CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::vec3 position, glm::vec3 lookCenter
-	//	, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1080, size_t width = 1920);
+	//	, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920);
 
 
-	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::mat4 transform,
-		float focalLength = 0.866f, size_t height = 1024, size_t width = 1920);
+	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int workGroupSize, glm::mat4 transform,
+		float focalLength = 0.866f, size_t height = 1088, size_t width = 1920);
 
 	template <size_t gangSize, size_t nodeMemory>
 	std::tuple<float, float, float> renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory>& nodeManager,
@@ -30,6 +30,6 @@ public:
 
 	//renders 6 images, We take median of the last 5 renders
 	template <size_t gangSize, size_t nodeMemory>
-	void renderImages(const bool saveImage,const FastNodeManager<gangSize, nodeMemory>& nodeManager,const unsigned ambientSampleCount,
+	void renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory>& nodeManager, const unsigned ambientSampleCount,
 		const float ambientDistance, const bool mute);
 };

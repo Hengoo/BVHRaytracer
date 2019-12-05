@@ -38,21 +38,23 @@ public:
 	size_t height;
 	size_t width;
 
+	int workGroupSize;
+
 	//1.37f for 40 degree, 0.866f for 60 degree (horizontal fov)
 	//This focallength has most likely nothing to do with real life focal length
 	float focalLength;
 
-	Camera(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter
-		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1024, size_t width = 1920)
-		: path(path), name(name), problem(problem), position(position), focalLength(focalLength), height(height), width(width)
+	Camera(std::string path, std::string name, std::string problem, int workGroupSize, glm::vec3 position, glm::vec3 lookCenter
+		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
+		: path(path), name(name), problem(problem), workGroupSize(workGroupSize), position(position), focalLength(focalLength), height(height), width(width)
 	{
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
 		//renderInfos.resize(height * width);
 	}
 
-	Camera(std::string path, std::string name, std::string problem, glm::mat4 transform,
-		float focalLength = 0.866f, size_t height = 1024, size_t width = 1920)
-		: path(path), name(name), problem(problem), transform(transform), focalLength(focalLength), height(height), width(width)
+	Camera(std::string path, std::string name, std::string problem, int workGroupSize, glm::mat4 transform,
+		float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
+		: path(path), name(name), problem(problem), workGroupSize(workGroupSize), transform(transform), focalLength(focalLength), height(height), width(width)
 	{
 		position = transform * glm::vec4(0, 0, 0, 1);
 		//renderInfos.resize(height * width);
@@ -64,9 +66,9 @@ protected:
 
 
 	//deterministic random direction for ambient occlusion. i is the number of the current ambient ray.
-	glm::vec3 getAmbientDirection(const RenderInfo& info,const int i,const glm::vec3& surfaceNormal);
+	glm::vec3 getAmbientDirection(const RenderInfo& info, const int i, const glm::vec3& surfaceNormal);
 
-	glm::vec3 sampleHemisphere(const float u,const float v, const glm::vec3& normal, const int m = 1);
+	glm::vec3 sampleHemisphere(const float u, const float v, const glm::vec3& normal, const int m = 1);
 
 	glm::vec3 getRayTargetPosition(const RenderInfo& info);
 };

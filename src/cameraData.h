@@ -62,17 +62,17 @@ public:
 	uint64_t shadowSuccessfulAabbIntersections;
 	uint64_t shadowAabbIntersections;
 
-	CameraData(std::string path, std::string name, std::string problem, glm::vec3 position, glm::vec3 lookCenter
-		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1024, size_t width = 1920)
-		:Camera(path, name, problem, position, lookCenter, upward, focalLength, height, width)
+	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, glm::vec3 position, glm::vec3 lookCenter
+		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
+		:Camera(path, name, problem, workGroupSize, position, lookCenter, upward, focalLength, height, width)
 	{
 		image.resize(height * width * 4);
 		initializeVariables();
 	}
 
-	CameraData(std::string path, std::string name, std::string problem, glm::mat4 transform,
-		float focalLength = 0.866f, size_t height = 1024, size_t width = 1920)
-		:Camera(path, name, problem, transform, focalLength, height, width)
+	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, glm::mat4 transform,
+		float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
+		:Camera(path, name, problem, workGroupSize, transform, focalLength, height, width)
 	{
 		image.resize(height * width * 4);
 		initializeVariables();
@@ -82,7 +82,7 @@ public:
 	template<typename T>
 	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
 		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount,
-		float ambientDistance, bool castShadows, int renderType, bool mute)
+		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis)
 	{
 		/*
 		glm::vec3 decScale;
@@ -382,8 +382,71 @@ public:
 				myfile.close();
 			}
 		}
-		else std::cerr << "Unable to open file" << std::endl;
+		else std::cerr << "Unable to open file for image analysis resutls" << std::endl;
 
+		if (doWorkGroupAnalysis)
+		{
+			//lets look at average work group depth, variance (and standart deviation? )
+			std::ofstream fileWorkGroup(path + "/" + name + problem + "_WorkGroupDepthInfo.txt");
+			if (fileWorkGroup.is_open())
+			{
+				//output will be a table
+				fileWorkGroup << "nodeAverage, nodeMax, nodeVariance, nodeStandardDeviation, leafAverage, leafMax, leafVariance, leafStandardDeviation" << std::endl;
+				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+				{
+					int nodeMax = 0;
+					int nodeSum = 0;
+					int leafMax = 0;
+					int leafSum = 0;
+					//take sum and max of node and leaf intersections
+					for (int j = 0; j < workGroupSize * workGroupSize; j++)
+					{
+						int w = ((i * workGroupSize) % width) + (j % workGroupSize);
+						int h = (((i * workGroupSize) / width) * workGroupSize) + (j / workGroupSize);
+						int index = i * workGroupSize * workGroupSize + j;
+						int index2 = w + h * width;
+						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
+						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
+						nodeSum += nodeInter;
+						leafSum += leafInter;
+						nodeMax = std::max(nodeMax, nodeInter);
+						leafMax = std::max(leafMax, leafInter);
+					}
+					float nodeAverage = nodeSum / (float)(workGroupSize * workGroupSize);
+					float leafAverage = leafSum / (float)(workGroupSize * workGroupSize);
+
+
+					float leafVariance = 0;
+					float leafSd = 0;
+					float nodeVariance = 0;
+					float nodeSd = 0;
+					//second loop for standard deviation and variance
+					for (int j = 0; j < workGroupSize * workGroupSize; j++)
+					{
+						int w = ((i * workGroupSize) % width) + (j % workGroupSize);
+						int h = (((i * workGroupSize) / width) * workGroupSize) + (j / workGroupSize);
+						int index = i * workGroupSize * workGroupSize + j;
+						int index2 = w + h * width;
+						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
+						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
+						leafVariance += pow(leafInter - leafAverage, 2);
+						nodeVariance += pow(nodeInter - nodeAverage, 2);
+					}
+					leafVariance = leafVariance / (workGroupSize * workGroupSize);
+					nodeVariance = nodeVariance / (workGroupSize * workGroupSize);
+					leafSd = sqrt(leafVariance);
+					nodeSd = sqrt(nodeVariance);
+
+					fileWorkGroup << nodeAverage << ", " << nodeMax << ", " << nodeVariance << ", " << nodeSd << ", "
+						<< leafAverage << ", " << leafMax << ", " << leafVariance << ", " << leafSd << std::endl;
+
+					//std::cerr << nodeMax << " " << nodeSum << " " << nodeAverage << " " << leafMax << " " << leafSum << " " << leafAverage << std::endl;
+					//std::cerr << nodeSd << " " << nodeVariance << " " << leafSd << " " << leafVariance << std::endl;
+					//std::cerr << "---------------------------------" << std::endl;
+				}
+			}
+			else std::cerr << "Unable to open file for work group analysis" << std::endl;
+		}
 
 		if (saveImage)
 		{

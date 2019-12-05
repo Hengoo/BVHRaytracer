@@ -43,21 +43,37 @@ void RayTracer::run()
 	}
 
 	std::cout << "Settings: " << std::endl;
-	std::cout << "LeafSize from " << minLeafSize << " to " << maxLeafSize << std::endl;
-	std::cout << "Branching factor from " << minBranch << " to " << maxBranch << std::endl;
-	if (saveImage) std::cout << "save image" << std::endl;
-	if (saveDepthDetailedImage) std::cout << "save DepthDetailedImage" << std::endl;
-	if (bvhAnalysis) std::cout << "do bvhAnalysis" << std::endl;
-	if (saveBvhImage) std::cout << "save BvhImage" << std::endl;
+	std::cout << "LeafSize from " << minLeafSize << " to " << maxLeafSize << " with a step size of " << leafStep << std::endl;
+	std::cout << "Branching factor from " << minBranch << " to " << maxBranch << " with a step size of " << branchStep << std::endl;
+	if (renderAnalysisImage)
+	{
+		std::cout << "render analysis image" << std::endl;
+		if (saveImage) std::cout << "save image" << std::endl;
+		if (saveDepthDetailedImage) std::cout << "save DepthDetailedImage" << std::endl;
+	}
+
+	if (bvhAnalysis)
+	{
+		std::cout << "do bvhAnalysis" << std::endl;
+		if (saveBvhImage) std::cout << "save BvhImage" << std::endl;
+	}
+	if (doPerformanceTest)
+	{
+		std::cout << "do Performance tests" << std::endl;
+		if (doNodeMemoryTest)std::cout << "do Node Memory tests" << std::endl;
+		if (doLeafMemoryTest)std::cout << "do Leaf Memory tests" << std::endl;
+	}
 	std::cout << "render type: " << renderType << std::endl;
 	for (auto& s : scenarios)
 	{
 		std::cout << "scenario: " << s << std::endl;
 	}
-	std::cout << "bucket count: " << bucketCount << std::endl;
+	std::cout << "Bvh Sah bucket count: " << bucketCount << std::endl;
 	std::cout << "compact Node order: " << compactNodeOrder << std::endl;
 	//std::cout << "Sah Node cost factor: " << nodeCostFactor << std::endl;
 	//std::cout << "Sah Triangle cost factor: " << triangleCostFactor << std::endl;
+
+	std::cout << "Workgroup size of " << workGroupSize << std::endl;
 
 	unsigned gangSize = getGangSize();
 	std::cout << "Gang size of " << gangSize << std::endl;
@@ -510,7 +526,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 8> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -521,7 +537,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 16> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -532,7 +548,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 24> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -543,7 +559,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 32> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -554,7 +570,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 40> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -565,7 +581,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 48> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -576,7 +592,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 56> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -587,7 +603,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<8, 64> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 				}
@@ -618,7 +634,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 4> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -629,7 +645,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 8> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -640,7 +656,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 12> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -651,7 +667,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 16> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -662,7 +678,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 20> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -673,7 +689,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 24> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -684,7 +700,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 28> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
@@ -695,7 +711,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 					{
 						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
 						FastNodeManager<4, 32> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, cameraPos, cameraTarget);
+						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
 						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
 					}
 				}
@@ -711,15 +727,17 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			{
 				CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+				CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
+				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 			}
 			else
 			{
 				CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+				CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
+				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 			}
 		}
 		else
@@ -731,8 +749,9 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			}
 			CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 			//create camera and render image
-			CameraData c(path, name, problem, cameraPos, cameraTarget);
-			c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount, ambientDistance, castShadows, renderType, mute);
+			CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
+			c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
+				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 		}
 	}
 	std::cout << "All to do with rendering took " << getTimeSpan(timeBeginRendering) << " seconds." << std::endl;
@@ -842,6 +861,11 @@ void RayTracer::readConfig()
 				if (res != std::string::npos)
 				{
 					subdivisionStep = std::stoi(line.substr(line.find("=") + 1));
+				}
+				res = line.find("workGroupSize", 0);
+				if (res != std::string::npos)
+				{
+					workGroupSize = std::stoi(line.substr(line.find("=") + 1));
 				}
 
 				//floats:
@@ -976,6 +1000,18 @@ void RayTracer::readConfig()
 					else
 					{
 						std::cerr << "doLeafMemoryTest value written wrong -> default = false" << std::endl;
+					}
+				}
+				res = line.find("doWorkGroupAnalysis", 0);
+				if (res != std::string::npos)
+				{
+					res = line.find("true", 0);
+					res2 = line.find("false", 0);
+					if (res != std::string::npos)doWorkGroupAnalysis = true;
+					else if (res2 != std::string::npos)doWorkGroupAnalysis = false;
+					else
+					{
+						std::cerr << "doWorkGroupAnalysis value written wrong -> default = false" << std::endl;
 					}
 				}
 			}

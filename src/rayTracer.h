@@ -24,6 +24,7 @@ class RayTracer
 	bool bvhAnalysis;
 	bool saveBvhImage;
 	bool mute;
+	bool doWorkGroupAnalysis;
 
 	bool doPerformanceTest;
 	bool doNodeMemoryTest;
@@ -56,6 +57,8 @@ class RayTracer
 	int subdivisionStart;
 	int subdivisionEnd;
 	int subdivisionStep;
+
+	int workGroupSize;
 
 
 public:

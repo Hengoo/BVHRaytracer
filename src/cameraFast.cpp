@@ -57,18 +57,18 @@ template void CameraFast::renderImages(const bool saveImage, const FastNodeManag
 template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 64>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
 
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::vec3 position, glm::vec3 lookCenter
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int workGroupSize, glm::vec3 position, glm::vec3 lookCenter
 	, glm::vec3 upward, float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix)
+	:Camera(path, name, problem, workGroupSize, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix)
 {
 	image.resize(height * width * 4);
 	timesRay.resize(height * width);
 	timesTriangles.resize(height * width);
 }
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, glm::mat4 transform,
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int workGroupSize, glm::mat4 transform,
 	float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, transform, focalLength, height, width), problemPrefix(problemPrefix)
+	:Camera(path, name, problem, workGroupSize, transform, focalLength, height, width), problemPrefix(problemPrefix)
 {
 	image.resize(height * width * 4);
 	timesRay.resize(height * width);
@@ -168,16 +168,15 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 	//This result is good because dynamic is the shedule that is most suited for for out problem since every ray can take differently long
 //#pragma omp parallel for schedule(dynamic, 4)
 
-	unsigned smallSize = 8;
 #pragma omp parallel for schedule(dynamic, 4)
-	for (int i = 0; i < (width / smallSize) * (height / smallSize); i++)
+	for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 	{
-		for (int j = 0; j < smallSize * smallSize; j++)
+		for (int j = 0; j < workGroupSize * workGroupSize; j++)
 		{
 			RenderInfo info(
-				((i * smallSize) % width - width / 2.f) + (j % smallSize),
-				-(((i * smallSize) / width) * smallSize - height / 2.f) - (j / smallSize),
-				i * smallSize * smallSize + j);
+				((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
+				-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
+				i * workGroupSize * workGroupSize + j);
 
 			auto timeBeforeRay = getTime();
 			double timeTriangleTest = 0;
@@ -253,8 +252,8 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			for (int w = 0; w < width; w++)
 			{
 				//one line of smallsize
-				int id = (w / smallSize) * smallSize * smallSize + w % smallSize + (h % smallSize) * smallSize;
-				id += (h / smallSize) * width * smallSize;
+				int id = (w / workGroupSize) * workGroupSize * workGroupSize + w % workGroupSize + (h % workGroupSize) * workGroupSize;
+				id += (h / workGroupSize) * width * workGroupSize;
 				int idOrig = w + h * width;
 				imageCorrect[idOrig * 4 + 0] = image[id * 4 + 0];
 				imageCorrect[idOrig * 4 + 1] = image[id * 4 + 1];
