@@ -205,7 +205,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					//deterministic random direction
 					auto direction = getAmbientDirection(info, surfaceNormal, i);
 					//ambientSum += direction;
-					auto secondaryRay = FastRay(surfacePosition + direction * 0.001f, direction);
+					auto secondaryRay = FastRay(surfacePosition + surfaceNormal * 0.001f, direction);
 					secondaryRay.tMax = ambientDistance;
 					//shoot secondary ray
 					if (nodeManager.intersectSecondary(secondaryRay, timeTriangleTest))
@@ -217,7 +217,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				if (ambientSampleCount != 0)
 				{
 					float factor = 1 - (ambientResult / (float)ambientSampleCount);
-					factor = (factor + 1) / 2.f;
+					//factor = (factor + 1) / 2.f;
 					imageResult = (uint8_t)(factor * 255);
 				}
 			}

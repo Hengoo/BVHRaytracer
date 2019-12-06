@@ -29,32 +29,26 @@ glm::vec3 Camera::getAmbientDirection(const RenderInfo& info, const glm::vec3& s
 	return direction;
 }
 
-glm::vec3 Camera::sampleHemisphere(const glm::vec3& normal, const float u, const float v, const int m)
+glm::vec3 Camera::sampleHemisphere(const glm::vec3& normal, const float u, const float v)
 {
-	//inspired by this blogpost and adjusted for my needs
+	//inspired by this blogpost and adjusted for my needs (changed it a bit to be faster)
 	//https://blog.thomaspoulet.fr/uniform-sampling-on-unit-hemisphere/
-	float theta = acos(pow(1 - u, 1 / (float)(1 + m)));
-	float phi = 2 * M_PI * v;
 
-	float x = sin(theta) * cos(phi);
-	float y = sin(theta) * sin(phi);
-	float z = -cos(theta);
+	//uniform sampling over 
+	float phi = acos(1 - 2 * u);
+	float theta = 2 * M_PI * v;
 
-	//i dont like this approach but for now it has to do
-	glm::vec4 tmp(x, y, z, 0);
-	glm::vec3 up(0);
-	if (abs(normal.y) < 0.9f)
+	float x = sin(phi) * cos(theta);
+	float y = sin(phi) * sin(theta);
+	float z = cos(phi);
+
+	glm::vec3 result(x, y, z);
+	if (glm::dot(result, normal) <= 0)
 	{
-		up.y = 1;
+		result = -result;
 	}
-	else
-	{
-		up.x = 1;
-	}
-	auto matrix = glm::lookAt(glm::vec3(0), normal, up);
-
-	auto res2 = tmp * matrix;
-	return glm::vec3(res2);
+	//return result + normal * 0.2f;
+	return result;
 }
 
 glm::vec3 Camera::getRayTargetPosition(const RenderInfo& info)
