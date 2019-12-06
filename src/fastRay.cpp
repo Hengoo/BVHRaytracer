@@ -4,8 +4,6 @@
 FastRay::FastRay(const glm::vec3& pos, const glm::vec3& direction)
 	: pos(pos), direction(direction)
 {
-	this->direction = glm::normalize(direction);
-
 	//fix infinite because 0 / 0 is NaN
 	invDirection = 1.0f / (this->direction);
 	if (direction.x == 0)
