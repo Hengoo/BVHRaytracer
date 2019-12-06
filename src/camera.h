@@ -66,9 +66,9 @@ protected:
 
 
 	//deterministic random direction for ambient occlusion. i is the number of the current ambient ray.
-	glm::vec3 getAmbientDirection(const RenderInfo& info, const int i, const glm::vec3& surfaceNormal);
+	glm::vec3 getAmbientDirection(const RenderInfo& info, const glm::vec3& surfaceNormal, const int i);
 
-	glm::vec3 sampleHemisphere(const float u, const float v, const glm::vec3& normal, const int m = 1);
+	glm::vec3 sampleHemisphere(const glm::vec3& normal, const float u, const float v, const int m = 1);
 
 	glm::vec3 getRayTargetPosition(const RenderInfo& info);
 };

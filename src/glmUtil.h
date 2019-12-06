@@ -58,7 +58,7 @@ static inline float calcTriangleSurfaceArea(const glm::vec3& v0, const glm::vec3
 {
 	glm::vec3 a = v1 - v0;
 	glm::vec3 b = v2 - v0;
-	return 0.5 * glm::length(glm::cross(a, b));
+	return 0.5f * glm::length(glm::cross(a, b));
 }
 
 static inline float calcSurfaceAreaPolygon(const std::vector<glm::vec3>& points, const std::vector<std::pair<int, int>>& lines, const glm::vec3& normal)

@@ -120,4 +120,9 @@ public:
 
 	//first add all children of node, then recusion for each child
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
+
+	//calculates the surface normalof the triangle
+	void getSurfaceNormalTri(FastRay& ray, glm::vec3& surfaceNormal) const;
+	//calculates the surface normal and position
+	void getSurfaceNormalPosition(FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition) const;
 };

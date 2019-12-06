@@ -335,6 +335,9 @@ void RayTracer::run()
 			root->propagateTransform();
 			//get primitive vector (this is what the bvh creator works on, so its copied for each image)
 
+			auto pathOrig = path;
+			auto pathPerfOrig = pathPerf;
+
 			primPointVector primitives;
 			preparePrimitives(primitives, *root, 0);
 			size_t primVectorSize = primitives.size();
@@ -356,16 +359,33 @@ void RayTracer::run()
 
 				if (subdivisionEnd != 0)
 				{
-					path = "Analysis" "/" + name + "Sub" + ::std::to_string(subDivCount);
-					if (CreateDirectory(path.data(), NULL) ||
-						ERROR_ALREADY_EXISTS == GetLastError())
+					if (renderAnalysisImage || bvhAnalysis)
 					{
+						path = pathOrig + "Sub" + ::std::to_string(subDivCount);
+						if (CreateDirectory(path.data(), NULL) ||
+							ERROR_ALREADY_EXISTS == GetLastError())
+						{
 
+						}
+						else
+						{
+							std::cerr << "failed to create directory" << std::endl;
+							return;
+						}
 					}
-					else
+					if (doPerformanceTest)
 					{
-						std::cerr << "failed to create directory" << std::endl;
-						return;
+						pathPerf = pathPerfOrig + "Sub" + ::std::to_string(subDivCount);
+						if (CreateDirectory(pathPerf.data(), NULL) ||
+							ERROR_ALREADY_EXISTS == GetLastError())
+						{
+
+						}
+						else
+						{
+							std::cerr << "failed to create directory" << std::endl;
+							return;
+						}
 					}
 				}
 

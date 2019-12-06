@@ -1,9 +1,10 @@
 #include "fastRay.h"
 
 
-FastRay::FastRay(const glm::vec3& pos, const glm::vec3& direction,const bool shadowRay)
-	: pos(pos), direction(direction), shadowRay(shadowRay)
-{	this->direction = glm::normalize(direction);
+FastRay::FastRay(const glm::vec3& pos, const glm::vec3& direction)
+	: pos(pos), direction(direction)
+{
+	this->direction = glm::normalize(direction);
 
 	//fix infinite because 0 / 0 is NaN
 	invDirection = 1.0f / (this->direction);
@@ -20,7 +21,6 @@ FastRay::FastRay(const glm::vec3& pos, const glm::vec3& direction,const bool sha
 		invDirection.z = std::numeric_limits<float>::max();
 	}
 	tMax = 222222.f;
-	surfaceNormal = glm::vec3(0, 0, 0);
-	surfacePosition = glm::vec3(0, 0, 0);
-
+	leafIndex = 0;
+	triIndex = 0;
 }

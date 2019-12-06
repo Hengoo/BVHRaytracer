@@ -131,7 +131,7 @@ public:
 					for (size_t i = 0; i < ambientSampleCount; i++)
 					{
 						//deterministic random direction
-						auto direction = getAmbientDirection(info, i, ray.surfaceNormal);
+						auto direction = getAmbientDirection(info, ray.surfaceNormal, i);
 						Ray ambientRay(ray.surfacePosition + direction * 0.001f, direction, bvh, true);
 						ambientRay.tMax = ambientDistance;
 

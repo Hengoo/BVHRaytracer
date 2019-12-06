@@ -61,7 +61,7 @@ class everything:
 		self.maxLeafSizeList = [[64, 8], [64, 4]]
 		
 		#number of subdivisions we test:
-		self.subdivisionRange = [0, 20]
+		self.subdivisionRange = [0, 5]
 		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
 
 		# 0 = leaf , 1 = node (need to adjust when table change!) (i separate those since i dont want to do a combined performance test since it gets messy quite fast)
@@ -73,15 +73,17 @@ class everything:
 
 		#the folder all the scene folders are in: (leave empty if no folder)
 		if(self.subdivisionRange[1] == 0):
-			self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "Memory" + self.gangName[self.gangType] +"/"
+			#self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "Memory" + self.gangName[self.gangType] +"/"
+			self.folder = "Results/"
 		else:
-			self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "MemorySub" + self.gangName[self.gangType] +"/"
+			#self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "MemorySub" + self.gangName[self.gangType] +"/"
+			self.folder = "Results/"
 
 		#real outputFolder is outputFolderName + names + outputPrefix
-		self.outputFolderName = "SavesPerf/Laptop/Summary/"
+		self.outputFolderName = "Summary/"
 
 		#nameIds of the tables
-		self.names = [4]
+		self.names = [0]
 		#self.names = [7,8,9,10,11,12]
 
 		#prefixTo the folderNames
@@ -120,6 +122,14 @@ class everything:
 					name = allNames[nameId]
 					for s in range(self.subdivisionCount):
 						#anyFound = False
+		
+						#the folder all the scene folders are in: (leave empty if no folder)
+						if(self.subdivisionRange[1] == 0):
+							#self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "Memory" + self.gangName[self.gangType] +"/"
+							folder = self.folder + name + self.gangName[self.gangType] +"Perf/"
+						else:
+							#self.folder = "SavesPerf/Laptop/" +self.workName[self.workType] + "MemorySub" + self.gangName[self.gangType] +"/"
+							folder = self.folder + name + self.gangName[self.gangType] + "PerfSub" + str(s) + "/"
 
 						for b in range(self.maxBranchingFactor -(self.minBranchingFactor - 1)):
 							for l in range(self.maxLeafSize - (self.minLeafSize - 1)):
@@ -128,9 +138,9 @@ class everything:
 
 								#test all variables of this file
 								if(self.subdivisionRange[1] == 0):
-									fileName = self.folder + name+ self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml) + "_Perf.txt"
+									fileName = folder + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml) + "_Perf.txt"
 								else:
-									fileName = self.folder + name +"Sub"+ str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml) + "_Perf.txt"
+									fileName = folder + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(mb) + "_ml" + str(ml) + "_Perf.txt"
 								if (path.exists(fileName)):
 
 									#open file and read important values

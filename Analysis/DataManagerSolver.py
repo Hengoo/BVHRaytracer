@@ -49,11 +49,12 @@ class everything:
 		self.gangType = gangType
 		self.gangName = ["Avx", "Sse"]
 
-		self.subdivisionRange = [0, 0]
+		self.subdivisionRange = [0, 5]
 
 		#nameIds of the tables:
 		#self.names = [4, 9]
-		self.names = [7,8,9,10,11,12]
+		#self.names = [7,8,9,10,11,12]
+		self.names = [0]
 
 		#prefix to the table
 		#self.prefix = ["SSESeqMemoryLeaf", "SSESeqMemoryNode"]
@@ -112,15 +113,15 @@ class everything:
 						leaf = l + self.minLeafSize
 						#open table:
 						if (self.subdivisionRange[1] == 0):
-							tableName = "SavesPerf/Laptop/Summary/" + name + "/" + name + self.prefix + "b" + str(branch) + "l" + str(leaf) + self.prefix2
+							tableName = "Summary/" + name + "/" + name + self.prefix + "b" + str(branch) + "l" + str(leaf) + self.prefix2
 						else:
-							tableName = "SavesPerf/Laptop/Summary/" + name + "Sub" + str(s) + "/" + name + self.prefix + "b" + str(branch) + "l" + str(leaf) + self.prefix2
+							tableName = "Summary/" + name + "Sub" + str(s) + "/" + name + self.prefix + "b" + str(branch) + "l" + str(leaf) + self.prefix2
 						if (path.exists(tableName)):
 							if not (anyFound):
 								if (self.subdivisionRange[1] == 0):
-									fileName = "SavesPerf/Laptop/Summary/" + name + "/" + name + self.prefix + "ComputeCostTable.txt"
+									fileName = "Summary/" + name + "/" + name + self.prefix + "ComputeCostTable.txt"
 								else:
-									fileName = "SavesPerf/Laptop/Summary/" + name + "Sub" + str(s) + "/" + name + self.prefix + "ComputeCostTable.txt"
+									fileName = "Summary/" + name + "Sub" + str(s) + "/" + name + self.prefix + "ComputeCostTable.txt"
 								fResult = open(fileName, "w+")
 								firstLine = "branchFactor, leafSize, triangleCount, averageBvhDepth, memorySize, " + self.dataOutName[self.workType] +", memoryCost, " + self.dataOutName[self.workType] + "Norm, memoryCostNorm, memoryRelative"
 								fResult.write(firstLine + "\n")
@@ -284,7 +285,7 @@ class everything:
 									anyFound = True
 
 									#overfiew over multiple scenes:
-									fileName = "SavesPerf/Laptop/Summary/" + self.prefix + "Perf_N" + str(branch) +"L" + str(leaf) + ".txt"
+									fileName = "Summary/" + self.prefix + "Perf_N" + str(branch) +"L" + str(leaf) + ".txt"
 									fResult = open(fileName, "w+")
 									firstLine = "name, nameId, subdivision, triangleCount, averageBvhDepth, totalTime, computeTime, memoryTime , memoryRelative"
 									fResult.write(firstLine + "\n")

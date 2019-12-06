@@ -20,14 +20,14 @@
 
 
 //I just want to use template in the cpp ...
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 4>& const nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 8>& const nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 12>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 16>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 20>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 24>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 28>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 32>& const nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 4>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 12>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 16>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 20>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 24>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 28>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 32>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
 
 template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
 template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 16>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
@@ -193,12 +193,19 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				//shoot secondary ray:
 				unsigned ambientResult = 0;
 
+				//get surface normal and position from triangle index info.
+
+				glm::vec3 surfaceNormal(0);
+				glm::vec3 surfacePosition(0);
+				nodeManager.getSurfaceNormalPosition(ray, surfaceNormal, surfacePosition);
+				//glm::vec3 surfacePosition = ray.pos + ray.direction * (ray.tMax);
+				//nodeManager.getSurfaceNormalTri(ray, surfaceNormal);
 				for (size_t i = 0; i < ambientSampleCount; i++)
 				{
 					//deterministic random direction
-					auto direction = getAmbientDirection(info, i, ray.surfaceNormal);
+					auto direction = getAmbientDirection(info, surfaceNormal, i);
 					//ambientSum += direction;
-					auto secondaryRay = FastRay(ray.surfacePosition + direction * 0.001f, direction, true);
+					auto secondaryRay = FastRay(surfacePosition + direction * 0.001f, direction);
 					secondaryRay.tMax = ambientDistance;
 					//shoot secondary ray
 					if (nodeManager.intersectSecondary(secondaryRay, timeTriangleTest))

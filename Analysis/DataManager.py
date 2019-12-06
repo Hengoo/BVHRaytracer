@@ -77,7 +77,7 @@ class everything:
 		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
 
 		# 0 = avx, sse = 1
-		self.gangType = 1
+		self.gangType = 0
 		self.gangName = ["Avx", "Sse"]
 
 		#temprary cost function. needs replacement

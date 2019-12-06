@@ -18,18 +18,18 @@ void Camera::fillRenderInfo()
 	}
 }
 
-glm::vec3 Camera::getAmbientDirection(const RenderInfo& info, const int i, const glm::vec3& surfaceNormal)
+glm::vec3 Camera::getAmbientDirection(const RenderInfo& info, const glm::vec3& surfaceNormal, const int i)
 {
 	//i need two deterministic random values. Currently pixel index but could also be intersect position
 	auto hashFunction = std::hash<size_t>();
 	float u = hashFunction(info.index * 599 + i * 223) / (float)(std::numeric_limits<size_t>::max());
 	float v = hashFunction(info.index * 181 + i * 691) / (float)(std::numeric_limits<size_t>::max());
 
-	auto direction = sampleHemisphere(u, v, surfaceNormal);
+	auto direction = sampleHemisphere(surfaceNormal, u, v);
 	return direction;
 }
 
-glm::vec3 Camera::sampleHemisphere(const float u, const float v, const glm::vec3& normal, const int m)
+glm::vec3 Camera::sampleHemisphere(const glm::vec3& normal, const float u, const float v, const int m)
 {
 	//inspired by this blogpost and adjusted for my needs
 	//https://blog.thomaspoulet.fr/uniform-sampling-on-unit-hemisphere/

@@ -84,12 +84,12 @@ static inline float3 computeNormal(const float3& p0,const float3& p1,const float
 //input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tMax -> is our output
 //storage is needed for varing leafsize -> seems like i have to copy paste it once for 4, 8, and 12 to not have it
 export uniform int triIntersect(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo,
- uniform float surfaceNormals[], uniform float surfacePositions[], uniform unsigned int leafMemory, uniform unsigned int leafSize)
+ uniform unsigned int leafMemory, uniform unsigned int leafSize)
 {
 	//large value so reduce_min never gets masked variables
 	varying float tStore = 1000000;
-	varying float3 surfaceNormal;
-	varying float3 surfacePosition;
+	//orig index is needed because second loop is over gangsize and not the full leaf
+	varying int origIndex = -1;
 	uniform bool result = false;
 
 	foreach(index = 0 ... leafMemory)
@@ -101,11 +101,8 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 			
 		//now we have loaded it: if index > leafMemory: or it with something to make sure its loaded and then stop
 		//cif since leafmemory and leafsize should be a multiple of the gangsize.
-		cif(index > leafSize)
+		if(index > leafSize)
 		{
-			surfaceNormal += p0;
-			surfaceNormal += p1;
-			surfaceNormal += p2;
 			continue;
 		}
 		
@@ -152,9 +149,7 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 			{
 				result = true;
 				tStore = t;
-				//its faster to normalize it later.
-				surfaceNormal = computeNormal(p0,p1,p2);
-				surfacePosition = p0 + e1 * b1 + e2 * b2;
+				origIndex = index;
 			}
 		}
 	}
@@ -168,24 +163,7 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 		{
 			if(bestT == val)
 			{
-				index = programIndex;
-				normalize(surfaceNormal);
-				/*
-				surfaceNormals[programIndex ] = surfaceNormal.x;
-				surfaceNormals[programIndex + programCount ] = surfaceNormal.y;
-				surfaceNormals[programIndex + programCount * 2 ] = surfaceNormal.z;
-
-				surfacePositions[programIndex ] = surfacePosition.x;
-				surfacePositions[programIndex + programCount ] = surfacePosition.y;
-				surfacePositions[programIndex + programCount * 2 ] = surfacePosition.z;
-				*/
-				surfaceNormals[programIndex*3 ] = surfaceNormal.x;
-				surfaceNormals[programIndex*3 + 1] = surfaceNormal.y;
-				surfaceNormals[programIndex*3 + 2] = surfaceNormal.z;
-
-				surfacePositions[programIndex *3 ] = surfacePosition.x;
-				surfacePositions[programIndex *3 +1] = surfacePosition.y;
-				surfacePositions[programIndex *3 +2] = surfacePosition.z;
+				index = origIndex;
 			}
 		}
 		return reduce_max(index);
@@ -208,14 +186,11 @@ export uniform bool triAnyHit(const uniform float tri[], uniform unsigned int tr
 		float3 p0 = { tri[triId + index                 ], tri[triId + index + leafMemory    ], tri[triId + index + leafMemory * 2] };
 		float3 p1 = { tri[triId + index + leafMemory * 3], tri[triId + index + leafMemory * 4], tri[triId + index + leafMemory * 5] };
 		float3 p2 = { tri[triId + index + leafMemory * 6], tri[triId + index + leafMemory * 7], tri[triId + index + leafMemory * 8] };
-			
+
 		//now we have loaded it: if index > leafMemory: or it with something to make sure its loaded and then stop
 		//cif since leafmemory and leafsize should be a multiple of the gangsize.
-		cif(index > leafSize)
+		if(index > leafSize)
 		{
-			//surfaceNormal += p0;
-			//surfaceNormal += p1;
-			//surfaceNormal += p2;
 			continue;
 		}
 		
@@ -273,7 +248,7 @@ export uniform bool aabbIntersect(const uniform float bounds[], uniform float di
 	{
 		//load bounds:
 
-		float3 boundMin = { bounds[index             ], bounds[index + nodeMemory    ], bounds[index + nodeMemory * 2] };
+		float3 boundMin = { bounds[index                 ], bounds[index + nodeMemory    ], bounds[index + nodeMemory * 2] };
 		float3 boundMax = { bounds[index + nodeMemory * 3], bounds[index + nodeMemory * 4], bounds[index + nodeMemory * 5] };
 
 		//its faster to just compute trough it with 0,0,0 and 0,0,0 ...
