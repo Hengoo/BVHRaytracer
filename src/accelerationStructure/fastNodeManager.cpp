@@ -189,9 +189,9 @@ template <size_t gangSize, size_t nodeMemory>
 bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
-	std::vector<std::tuple<uint32_t, float>> queue;
-	queue.reserve(40);
-	queue.push_back(std::make_tuple<uint32_t, float>(0, 0));
+	std::array<std::tuple<uint32_t, float>, 32> queueArray;
+	queueArray[0] = std::make_tuple<uint32_t, float>(0, 0);
+	uint8_t queueIndex = 1;
 
 	bool result = false;
 
@@ -212,16 +212,14 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 		rayInfo[i + 7] = ray.direction[i];
 	}
 
-	while (queue.size() != 0)
+	while (queueIndex != 0)
 	{
 		//get current id (most recently added because we do depth first)
-		auto tup = queue.back();
-		queue.pop_back();
+		auto& tup = queueArray[--queueIndex];
 		if (std::get<1>(tup) > ray.tMax)
 		{
 			continue;
 		}
-
 		const FastNode<nodeMemory>* node = &compactNodes[std::get<0>(tup)];
 
 		if (!node->hasChildren)
@@ -260,7 +258,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 						{
 							if (aabbDistances[cId] != -100000)
 							{
-								queue.push_back(std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]));
+								queueArray[queueIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
 								aabbDistances[cId] = -100000;
 							}
 						});
@@ -272,7 +270,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 						{
 							if (aabbDistances[cId] != -100000)
 							{
-								queue.push_back(std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]));
+								queueArray[queueIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
 								aabbDistances[cId] = -100000;
 							}
 						});
@@ -291,9 +289,9 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 	//differences: no return for triangles. No aabb distance stop (no saving of distance of aabb intersections since we stop after first hit)
 
 	//ids of ndodes that we still need to test:
-	std::vector<uint32_t> queue;
-	queue.reserve(40);
-	queue.push_back(0);
+	std::array<uint32_t, 32> queueArray;
+	queueArray[0] = 0;
+	uint8_t queueIndex = 1;
 	bool result = false;
 
 	std::array<float, nodeMemory> aabbDistances;
@@ -315,11 +313,10 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 	}
 
 
-	while (queue.size() != 0)
+	while (queueIndex != 0)
 	{
 		//get current id (most recently added because we do depth first)
-		uint32_t id = queue.back();
-		queue.pop_back();
+		uint32_t id = queueArray[--queueIndex];
 
 		const FastNode<nodeMemory>* node = &compactNodes[id];
 
@@ -349,7 +346,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 				{
 					if (aabbDistances[i] != -100000)
 					{
-						queue.push_back(node->childIdBegin + i);
+						queueArray[queueIndex++] = node->childIdBegin + i;
 						aabbDistances[i] = -100000;
 					}
 				}
@@ -377,7 +374,7 @@ void FastNodeManager<gangSize, nodeMemory>::customTreeOrder(NodeAnalysis* n, std
 
 //calculates the surface normalof the triangle
 template <size_t gangSize, size_t nodeMemory>
-void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalTri(FastRay& ray, glm::vec3& surfaceNormal) const
+inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalTri(FastRay& ray, glm::vec3& surfaceNormal) const
 {
 	//we need the 3 positions of the triangle
 	glm::vec3 p0(trianglePoints[ray.triIndex + ray.leafIndex], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 2]);
@@ -388,7 +385,7 @@ void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalTri(FastRay& ray, gl
 
 //calculates the surface normalof the triangle
 template <size_t gangSize, size_t nodeMemory>
-void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalPosition(FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition) const
+inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalPosition(FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition) const
 {
 	//we need the 3 positions of the triangle
 	glm::vec3 p0(trianglePoints[ray.triIndex + ray.leafIndex], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 2]);

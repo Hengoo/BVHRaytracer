@@ -109,7 +109,9 @@ public:
 	int leafMemory;
 	int branchingFactor;
 	bool intersect(FastRay& ray, double& timeTriangleTest) const;
+	bool intersectWide(FastRay& ray, double& timeTriangleTest) const;
 	bool intersectSecondary(FastRay& ray, double& timeTriangleTest) const;
+	bool intersectSecondaryWide(FastRay& ray, double& timeTriangleTest) const;
 
 	float averageBvhDepth;
 	uint32_t triangleCount;
@@ -122,7 +124,7 @@ public:
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
 
 	//calculates the surface normalof the triangle
-	void getSurfaceNormalTri(FastRay& ray, glm::vec3& surfaceNormal) const;
+	inline void getSurfaceNormalTri(FastRay& ray, glm::vec3& surfaceNormal) const;
 	//calculates the surface normal and position
-	void getSurfaceNormalPosition(FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition) const;
+	inline void getSurfaceNormalPosition(FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition) const;
 };
