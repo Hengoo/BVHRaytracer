@@ -186,7 +186,7 @@ FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
 }
 
 template <size_t gangSize, size_t nodeMemory>
-bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& timeTriangleTest) const
+bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
 	std::array<std::tuple<uint32_t, float>, 32> queueArray;
@@ -197,20 +197,6 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 
 	std::array<float, nodeMemory> aabbDistances;
 	aabbDistances.fill(-100000);
-	std::array<float, 10> rayInfo = {};
-	rayInfo[0] = ray.tMax;
-	for (int i = 0; i < 3; i++)
-	{
-		rayInfo[i + 1] = ray.pos[i];
-	}
-	for (int i = 0; i < 3; i++)
-	{
-		rayInfo[i + 4] = ray.invDirection[i];
-	}
-	for (int i = 0; i < 3; i++)
-	{
-		rayInfo[i + 7] = ray.direction[i];
-	}
 
 	while (queueIndex != 0)
 	{
@@ -226,13 +212,13 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 		{
 			auto timeBeforeTriangleTest = getTime();
 
-			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, (float*)rayInfo.data(), leafMemory, leafSize);
+			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize);
 			//it returns the hit id -> -1 = no hit
 			if (resultIndex != -1)
 			{
 				result = true;
-				ray.leafIndex = node->primIdBegin;
-				ray.triIndex = resultIndex;
+				leafIndex = node->primIdBegin;
+				triIndex = resultIndex;
 			}
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 		}
@@ -244,7 +230,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
-			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), (float*)rayInfo.data(), nodeMemory, branchingFactor))
+			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 			{
 				int8_t code = 0;
 				code = code | (ray.direction[0] <= 0);
@@ -278,7 +264,6 @@ bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, double& time
 			}
 		}
 	}
-	ray.tMax = rayInfo[0];
 	return result;
 }
 
@@ -297,22 +282,6 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 	std::array<float, nodeMemory> aabbDistances;
 	aabbDistances.fill(-100000);
 
-	std::array<float, 10> rayInfo = {};
-	rayInfo[0] = ray.tMax;
-	for (int i = 0; i < 3; i++)
-	{
-		rayInfo[i + 1] = ray.pos[i];
-	}
-	for (int i = 0; i < 3; i++)
-	{
-		rayInfo[i + 4] = ray.invDirection[i];
-	}
-	for (int i = 0; i < 3; i++)
-	{
-		rayInfo[i + 7] = ray.direction[i];
-	}
-
-
 	while (queueIndex != 0)
 	{
 		//get current id (most recently added because we do depth first)
@@ -324,7 +293,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 		{
 			auto timeBeforeTriangleTest = getTime();
 
-			if (triAnyHit(trianglePoints.data(), node->primIdBegin, (float*)rayInfo.data(), leafMemory, leafSize))
+			if (triAnyHit(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize))
 			{
 				//we dont care about exact result for shadowrays (could do other ispc intersection for it
 				timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
@@ -340,7 +309,7 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
-			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), (float*)rayInfo.data(), nodeMemory, branchingFactor))
+			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 			{
 				for (int i = 0; i < branchingFactor; i++)
 				{
@@ -353,7 +322,6 @@ bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, dou
 			}
 		}
 	}
-	ray.tMax = rayInfo[0];
 	return result;
 }
 
@@ -374,23 +342,23 @@ void FastNodeManager<gangSize, nodeMemory>::customTreeOrder(NodeAnalysis* n, std
 
 //calculates the surface normalof the triangle
 template <size_t gangSize, size_t nodeMemory>
-inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalTri(FastRay& ray, glm::vec3& surfaceNormal) const
+inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalTri(const FastRay& ray, glm::vec3& surfaceNormal, const uint32_t leafIndex, const uint8_t triIndex) const
 {
 	//we need the 3 positions of the triangle
-	glm::vec3 p0(trianglePoints[ray.triIndex + ray.leafIndex], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 2]);
-	glm::vec3 p1(trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 3], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 4], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 5]);
-	glm::vec3 p2(trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 6], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 7], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 8]);
+	glm::vec3 p0(trianglePoints[triIndex + leafIndex], trianglePoints[triIndex + leafIndex + leafMemory], trianglePoints[triIndex + leafIndex + leafMemory * 2]);
+	glm::vec3 p1(trianglePoints[triIndex + leafIndex + leafMemory * 3], trianglePoints[triIndex + leafIndex + leafMemory * 4], trianglePoints[triIndex + leafIndex + leafMemory * 5]);
+	glm::vec3 p2(trianglePoints[triIndex + leafIndex + leafMemory * 6], trianglePoints[triIndex + leafIndex + leafMemory * 7], trianglePoints[triIndex + leafIndex + leafMemory * 8]);
 	surfaceNormal = computeNormal(p0, p1, p2);
 }
 
 //calculates the surface normalof the triangle
 template <size_t gangSize, size_t nodeMemory>
-inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalPosition(FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition) const
+inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalPosition(const FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition, const uint32_t leafIndex, const uint8_t triIndex) const
 {
 	//we need the 3 positions of the triangle
-	glm::vec3 p0(trianglePoints[ray.triIndex + ray.leafIndex], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 2]);
-	glm::vec3 p1(trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 3], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 4], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 5]);
-	glm::vec3 p2(trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 6], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 7], trianglePoints[ray.triIndex + ray.leafIndex + leafMemory * 8]);
+	glm::vec3 p0(trianglePoints[triIndex + leafIndex], trianglePoints[triIndex + leafIndex + leafMemory], trianglePoints[triIndex + leafIndex + leafMemory * 2]);
+	glm::vec3 p1(trianglePoints[triIndex + leafIndex + leafMemory * 3], trianglePoints[triIndex + leafIndex + leafMemory * 4], trianglePoints[triIndex + leafIndex + leafMemory * 5]);
+	glm::vec3 p2(trianglePoints[triIndex + leafIndex + leafMemory * 6], trianglePoints[triIndex + leafIndex + leafMemory * 7], trianglePoints[triIndex + leafIndex + leafMemory * 8]);
 	surfaceNormal = computeNormal(p0, p1, p2);
 
 	//calculating t a bit more accurate. (im not sure why the calcualtion in ispc is that wrong?)

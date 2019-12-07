@@ -181,12 +181,13 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			auto timeBeforeRay = getTime();
 			double timeTriangleTest = 0;
 			glm::vec3 pos = getRayTargetPosition(info);
-			auto ray = FastRay(position, pos - position);
+			FastRay ray(position, pos - position);
 
 			uint8_t imageResult = 0;
-
+			uint32_t leafIndex = 0;
+			uint8_t triIndex = 0;
 			//shoot primary ray.
-			bool result = nodeManager.intersect(ray, timeTriangleTest);
+			bool result = nodeManager.intersect(ray, leafIndex, triIndex, timeTriangleTest);
 
 			if (result)
 			{
@@ -194,34 +195,29 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				unsigned ambientResult = 0;
 
 				//get surface normal and position from triangle index info.
-
 				glm::vec3 surfaceNormal(0);
 				glm::vec3 surfacePosition(0);
-				nodeManager.getSurfaceNormalPosition(ray, surfaceNormal, surfacePosition);
+				nodeManager.getSurfaceNormalPosition(ray, surfaceNormal, surfacePosition, leafIndex, triIndex);
 				//glm::vec3 surfacePosition = ray.pos + ray.direction * (ray.tMax);
 				//nodeManager.getSurfaceNormalTri(ray, surfaceNormal);
 				for (size_t i = 0; i < ambientSampleCount; i++)
 				{
 					//deterministic random direction
 					auto direction = getAmbientDirection(info, surfaceNormal, i);
-					//ambientSum += direction;
-					auto secondaryRay = FastRay(surfacePosition + surfaceNormal * 0.001f, direction);
-					secondaryRay.tMax = ambientDistance;
+					ray = FastRay(surfacePosition + surfaceNormal * 0.001f, direction, ambientDistance);
+
 					//shoot secondary ray
-					if (nodeManager.intersectSecondary(secondaryRay, timeTriangleTest))
+					if (nodeManager.intersectSecondary(ray, timeTriangleTest))
 					{
 						ambientResult++;
 					}
 				}
 
-				if (ambientSampleCount != 0)
-				{
-					float factor = 1 - (ambientResult / (float)ambientSampleCount);
-					//factor = (factor + 1) / 2.f;
-					imageResult = (uint8_t)(factor * 255);
-				}
+				float factor = 1 - (ambientResult / (float)ambientSampleCount);
+				//factor = (factor + 1) / 2.f;
+				imageResult = (uint8_t)(factor * 255);
 			}
-			//important to override previous data
+			//important to override previous data since we do more than one run.
 			timesTriangles[info.index] = timeTriangleTest;
 			timesRay[info.index] = getTimeSpan(timeBeforeRay);
 			//distance render version (for large scenes)
