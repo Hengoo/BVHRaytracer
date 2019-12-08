@@ -8,40 +8,196 @@
 #include "..\timing.h"
 #include "..\fastRay.h"
 
-
-template class FastNodeManager<4, 4>;
-template class FastNodeManager<4, 8>;
-template class FastNodeManager<4, 12>;
-template class FastNodeManager<4, 16>;
-template class FastNodeManager<4, 20>;
-template class FastNodeManager<4, 24>;
-template class FastNodeManager<4, 28>;
-template class FastNodeManager<4, 32>;
-
-template class FastNodeManager<8, 8>;
-template class FastNodeManager<8, 16>;
-template class FastNodeManager<8, 24>;
-template class FastNodeManager<8, 32>;
-template class FastNodeManager<8, 40>;
-template class FastNodeManager<8, 48>;
-template class FastNodeManager<8, 56>;
-template class FastNodeManager<8, 64>;
-
-/*
-//for 16 gang size.
-template class FastNodeManager<16, 4>;
-template class FastNodeManager<16, 8>;
-template class FastNodeManager<16, 12>;
-template class FastNodeManager<16, 16>;*/
-
 // Include the header file that the ispc compiler generates
 #include "..\ISPC/ISPCBuild/rayTracer_ISPC.h"
 using namespace::ispc;
 
-template <size_t gangSize, size_t nodeMemory>
-FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
+//macros to tell cpp what template this class is used for.
+
+//we need all version of gangsize, branchmemory, workGroupSize
+#define macro1() macro2(8) macro2(16) macro2(32)
+
+#define macro2(wGS) macro3(4 ,wGS) macro4(8, wGS)
+
+//macro3 does gangisze 4
+#define macro3(gS, wGS) macro5(gS, 4, wGS)\
+macro5(gS, 8, wGS)\
+macro5(gS, 12, wGS)\
+macro5(gS, 16, wGS)\
+macro5(gS, 20, wGS)\
+macro5(gS, 24, wGS)\
+macro5(gS, 28, wGS)\
+macro5(gS, 32, wGS)\
+macro5(gS, 36, wGS)\
+macro5(gS, 40, wGS)\
+macro5(gS, 44, wGS)\
+macro5(gS, 48, wGS)\
+macro5(gS, 52, wGS)\
+macro5(gS, 56, wGS)\
+macro5(gS, 60, wGS)\
+macro5(gS, 64, wGS)\
+
+//macro4 does gangsize 8
+#define macro4(gS, wGS) macro5(gS, 8, wGS)\
+macro5(gS, 16, wGS)\
+macro5(gS, 24, wGS)\
+macro5(gS, 32, wGS)\
+macro5(gS, 40, wGS)\
+macro5(gS, 48, wGS)\
+macro5(gS, 56, wGS)\
+macro5(gS, 64, wGS)
+
+#define macro5(gS, mS, wGS) template class FastNodeManager<gS, mS, wGS>;
+
+//template class FastNodeManager<4, 4, 8>;
+macro1()
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
+{
+	//ids of ndodes that we still need to test:
+	std::array<std::tuple<uint32_t, float>, 32> queueArray;
+	queueArray[0] = std::make_tuple<uint32_t, float>(0, 0);
+	uint8_t queueIndex = 1;
+
+	bool result = false;
+
+	std::array<float, nodeMemory> aabbDistances;
+	aabbDistances.fill(-100000);
+
+	while (queueIndex != 0)
+	{
+		//get current id (most recently added because we do depth first)
+		auto& tup = queueArray[--queueIndex];
+		if (std::get<1>(tup) > ray.tMax)
+		{
+			continue;
+		}
+		const FastNode<nodeMemory>* node = &compactNodes[std::get<0>(tup)];
+
+		if (!node->hasChildren)
+		{
+			auto timeBeforeTriangleTest = getTime();
+
+			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize);
+			//it returns the hit id -> -1 = no hit
+			if (resultIndex != -1)
+			{
+				result = true;
+				leafIndex = node->primIdBegin;
+				triIndex = resultIndex;
+			}
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+		}
+		else
+		{
+			//child tests: 
+			//ispc version:
+
+			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
+
+			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
+			{
+				int8_t code = 0;
+				code = code | (ray.direction[0] <= 0);
+				code = code | ((ray.direction[1] <= 0) << 1);
+				bool reverse = ray.direction[2] <= 0;
+				if (reverse)
+				{
+					code = code ^ 3;
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						[&](auto& cId)
+						{
+							if (aabbDistances[cId] != -100000)
+							{
+								queueArray[queueIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
+								aabbDistances[cId] = -100000;
+							}
+						});
+				}
+				else
+				{
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+						[&](auto& cId)
+						{
+							if (aabbDistances[cId] != -100000)
+							{
+								queueArray[queueIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
+								aabbDistances[cId] = -100000;
+							}
+						});
+				}
+			}
+		}
+	}
+	return result;
+}
+
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(FastRay& ray, double& timeTriangleTest) const
+{
+	//bvh intersection for secondary hits. -> anyhit
+	//differences: no return for triangles. No aabb distance stop (no saving of distance of aabb intersections since we stop after first hit)
+
+	//ids of ndodes that we still need to test:
+	std::array<uint32_t, 32> queueArray;
+	queueArray[0] = 0;
+	uint8_t queueIndex = 1;
+	bool result = false;
+
+	std::array<float, nodeMemory> aabbDistances;
+	aabbDistances.fill(-100000);
+
+	while (queueIndex != 0)
+	{
+		//get current id (most recently added because we do depth first)
+		uint32_t id = queueArray[--queueIndex];
+
+		const FastNode<nodeMemory>* node = &compactNodes[id];
+
+		if (!node->hasChildren)
+		{
+			auto timeBeforeTriangleTest = getTime();
+
+			if (triAnyHit(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize))
+			{
+				//we dont care about exact result for shadowrays (could do other ispc intersection for it
+				timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+				return true;
+			}
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+		}
+		else
+		{
+			//child tests: 
+			//ispc version:
+
+			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
+
+			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
+			{
+				for (int i = 0; i < branchingFactor; i++)
+				{
+					if (aabbDistances[i] != -100000)
+					{
+						queueArray[queueIndex++] = node->childIdBegin + i;
+						aabbDistances[i] = -100000;
+					}
+				}
+			}
+		}
+	}
+	return result;
+}
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+FastNodeManager<gangSize, nodeMemory, workGroupSize>::FastNodeManager(Bvh& bvh, int leafMemory)
 	:leafMemory(leafMemory)
 {
+
 	//very similar to compactNodeManager
 
 	//general appraoch: save all analysisNodes in a vector -> then write the id (the position in the vector)
@@ -52,8 +208,11 @@ FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
 	nodeVector.push_back(bvh.getAnalysisRoot());
 	customTreeOrder(bvh.getAnalysisRoot(), nodeVector);
 
+
 	leafSize = bvh.leafSize;
 	branchingFactor = bvh.branchingFactor;
+
+	//std::cerr << " " << leafSize << " " << leafMemory << " " << branchingFactor << " " << gangSize << " " << nodeMemory << " " << workGroupSize << std::endl;
 	if (branchingFactor > nodeMemory)
 	{
 		std::cerr << "branching factor is larger than node memory!!" << std::endl;
@@ -185,149 +344,9 @@ FastNodeManager<gangSize, nodeMemory>::FastNodeManager(Bvh& bvh, int leafMemory)
 	}
 }
 
-template <size_t gangSize, size_t nodeMemory>
-bool FastNodeManager<gangSize, nodeMemory>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
-{
-	//ids of ndodes that we still need to test:
-	std::array<std::tuple<uint32_t, float>, 32> queueArray;
-	queueArray[0] = std::make_tuple<uint32_t, float>(0, 0);
-	uint8_t queueIndex = 1;
-
-	bool result = false;
-
-	std::array<float, nodeMemory> aabbDistances;
-	aabbDistances.fill(-100000);
-
-	while (queueIndex != 0)
-	{
-		//get current id (most recently added because we do depth first)
-		auto& tup = queueArray[--queueIndex];
-		if (std::get<1>(tup) > ray.tMax)
-		{
-			continue;
-		}
-		const FastNode<nodeMemory>* node = &compactNodes[std::get<0>(tup)];
-
-		if (!node->hasChildren)
-		{
-			auto timeBeforeTriangleTest = getTime();
-
-			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize);
-			//it returns the hit id -> -1 = no hit
-			if (resultIndex != -1)
-			{
-				result = true;
-				leafIndex = node->primIdBegin;
-				triIndex = resultIndex;
-			}
-			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
-		}
-		else
-		{
-			//child tests: 
-			//ispc version:
-
-			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
-			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
-
-			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
-			{
-				int8_t code = 0;
-				code = code | (ray.direction[0] <= 0);
-				code = code | ((ray.direction[1] <= 0) << 1);
-				bool reverse = ray.direction[2] <= 0;
-				if (reverse)
-				{
-					code = code ^ 3;
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
-						[&](auto& cId)
-						{
-							if (aabbDistances[cId] != -100000)
-							{
-								queueArray[queueIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
-								aabbDistances[cId] = -100000;
-							}
-						});
-				}
-				else
-				{
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
-						[&](auto& cId)
-						{
-							if (aabbDistances[cId] != -100000)
-							{
-								queueArray[queueIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
-								aabbDistances[cId] = -100000;
-							}
-						});
-				}
-			}
-		}
-	}
-	return result;
-}
-
-template <size_t gangSize, size_t nodeMemory>
-bool FastNodeManager<gangSize, nodeMemory>::intersectSecondary(FastRay& ray, double& timeTriangleTest) const
-{
-	//bvh intersection for secondary hits. -> anyhit
-	//differences: no return for triangles. No aabb distance stop (no saving of distance of aabb intersections since we stop after first hit)
-
-	//ids of ndodes that we still need to test:
-	std::array<uint32_t, 32> queueArray;
-	queueArray[0] = 0;
-	uint8_t queueIndex = 1;
-	bool result = false;
-
-	std::array<float, nodeMemory> aabbDistances;
-	aabbDistances.fill(-100000);
-
-	while (queueIndex != 0)
-	{
-		//get current id (most recently added because we do depth first)
-		uint32_t id = queueArray[--queueIndex];
-
-		const FastNode<nodeMemory>* node = &compactNodes[id];
-
-		if (!node->hasChildren)
-		{
-			auto timeBeforeTriangleTest = getTime();
-
-			if (triAnyHit(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize))
-			{
-				//we dont care about exact result for shadowrays (could do other ispc intersection for it
-				timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
-				return true;
-			}
-			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
-		}
-		else
-		{
-			//child tests: 
-			//ispc version:
-
-			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
-			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
-
-			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
-			{
-				for (int i = 0; i < branchingFactor; i++)
-				{
-					if (aabbDistances[i] != -100000)
-					{
-						queueArray[queueIndex++] = node->childIdBegin + i;
-						aabbDistances[i] = -100000;
-					}
-				}
-			}
-		}
-	}
-	return result;
-}
-
 //first add all children of node, then recusion for each child
-template <size_t gangSize, size_t nodeMemory>
-void FastNodeManager<gangSize, nodeMemory>::customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector)
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+void FastNodeManager<gangSize, nodeMemory, workGroupSize>::customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector)
 {
 	//same as in nodeManager
 	for (auto& c : n->children)
@@ -341,8 +360,8 @@ void FastNodeManager<gangSize, nodeMemory>::customTreeOrder(NodeAnalysis* n, std
 }
 
 //calculates the surface normalof the triangle
-template <size_t gangSize, size_t nodeMemory>
-inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalTri(const FastRay& ray, glm::vec3& surfaceNormal, const uint32_t leafIndex, const uint8_t triIndex) const
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+inline void FastNodeManager<gangSize, nodeMemory, workGroupSize>::getSurfaceNormalTri(const FastRay& ray, glm::vec3& surfaceNormal, const uint32_t leafIndex, const uint8_t triIndex) const
 {
 	//we need the 3 positions of the triangle
 	glm::vec3 p0(trianglePoints[triIndex + leafIndex], trianglePoints[triIndex + leafIndex + leafMemory], trianglePoints[triIndex + leafIndex + leafMemory * 2]);
@@ -351,9 +370,9 @@ inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalTri(const Fas
 	surfaceNormal = computeNormal(p0, p1, p2);
 }
 
-//calculates the surface normalof the triangle
-template <size_t gangSize, size_t nodeMemory>
-inline void FastNodeManager<gangSize, nodeMemory>::getSurfaceNormalPosition(const FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition, const uint32_t leafIndex, const uint8_t triIndex) const
+//calculates the surface normal and position
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+inline void FastNodeManager<gangSize, nodeMemory, workGroupSize>::getSurfaceNormalPosition(const FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition, const uint32_t leafIndex, const uint8_t triIndex) const
 {
 	//we need the 3 positions of the triangle
 	glm::vec3 p0(trianglePoints[triIndex + leafIndex], trianglePoints[triIndex + leafIndex + leafMemory], trianglePoints[triIndex + leafIndex + leafMemory * 2]);

@@ -392,18 +392,18 @@ public:
 			{
 				//output will be a table
 				fileWorkGroup << "nodeAverage, nodeMax, nodeVariance, nodeStandardDeviation, leafAverage, leafMax, leafVariance, leafStandardDeviation" << std::endl;
-				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+				for (int i = 0; i < (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize); i++)
 				{
 					int nodeMax = 0;
 					int nodeSum = 0;
 					int leafMax = 0;
 					int leafSum = 0;
 					//take sum and max of node and leaf intersections
-					for (int j = 0; j < workGroupSize * workGroupSize; j++)
+					for (int j = 0; j < nonTemplateWorkGroupSize * nonTemplateWorkGroupSize; j++)
 					{
-						int w = ((i * workGroupSize) % width) + (j % workGroupSize);
-						int h = (((i * workGroupSize) / width) * workGroupSize) + (j / workGroupSize);
-						int index = i * workGroupSize * workGroupSize + j;
+						int w = ((i * nonTemplateWorkGroupSize) % width) + (j % nonTemplateWorkGroupSize);
+						int h = (((i * nonTemplateWorkGroupSize) / width) * nonTemplateWorkGroupSize) + (j / nonTemplateWorkGroupSize);
+						int index = i * nonTemplateWorkGroupSize * nonTemplateWorkGroupSize + j;
 						int index2 = w + h * width;
 						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
 						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
@@ -412,8 +412,8 @@ public:
 						nodeMax = std::max(nodeMax, nodeInter);
 						leafMax = std::max(leafMax, leafInter);
 					}
-					float nodeAverage = nodeSum / (float)(workGroupSize * workGroupSize);
-					float leafAverage = leafSum / (float)(workGroupSize * workGroupSize);
+					float nodeAverage = nodeSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+					float leafAverage = leafSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 
 
 					float leafVariance = 0;
@@ -421,19 +421,19 @@ public:
 					float nodeVariance = 0;
 					float nodeSd = 0;
 					//second loop for standard deviation and variance
-					for (int j = 0; j < workGroupSize * workGroupSize; j++)
+					for (int j = 0; j < nonTemplateWorkGroupSize * nonTemplateWorkGroupSize; j++)
 					{
-						int w = ((i * workGroupSize) % width) + (j % workGroupSize);
-						int h = (((i * workGroupSize) / width) * workGroupSize) + (j / workGroupSize);
-						int index = i * workGroupSize * workGroupSize + j;
+						int w = ((i * nonTemplateWorkGroupSize) % width) + (j % nonTemplateWorkGroupSize);
+						int h = (((i * nonTemplateWorkGroupSize) / width) * nonTemplateWorkGroupSize) + (j / nonTemplateWorkGroupSize);
+						int index = i * nonTemplateWorkGroupSize * nonTemplateWorkGroupSize + j;
 						int index2 = w + h * width;
 						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
 						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
 						leafVariance += pow(leafInter - leafAverage, 2);
 						nodeVariance += pow(nodeInter - nodeAverage, 2);
 					}
-					leafVariance = leafVariance / (workGroupSize * workGroupSize);
-					nodeVariance = nodeVariance / (workGroupSize * workGroupSize);
+					leafVariance = leafVariance / (nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+					nodeVariance = nodeVariance / (nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 					leafSd = sqrt(leafVariance);
 					nodeSd = sqrt(nodeVariance);
 

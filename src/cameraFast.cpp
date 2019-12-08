@@ -18,66 +18,69 @@
 #include <numeric>
 // std::accumulate
 
+//macros to tell cpp what template this class is used for.
 
-//I just want to use template in the cpp ...
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 4>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 12>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 16>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 20>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 24>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 28>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<4, 32>& nodeManager, const  unsigned ambientSampleCount, const float ambientDistance);
+//we need all version of gangsize, branchmemory, workGroupSize
+#define macro1() macro2(8) macro2(16) macro2(32)
 
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 16>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 24>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 32>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 40>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 48>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 56>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
-template std::tuple<float, float, float>  CameraFast::renderImage(const bool saveImage, const FastNodeManager<8, 64>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);
+#define macro2(wGS) macro3(4 ,wGS) macro4(8, wGS)
 
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 4>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 12>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 16>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 20>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 24>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 28>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<4, 32>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+//macro3 does gangisze 4
+#define macro3(gS, wGS) macro5(gS, 4, wGS)\
+macro5(gS, 8, wGS)\
+macro5(gS, 12, wGS)\
+macro5(gS, 16, wGS)\
+macro5(gS, 20, wGS)\
+macro5(gS, 24, wGS)\
+macro5(gS, 28, wGS)\
+macro5(gS, 32, wGS)\
+macro5(gS, 36, wGS)\
+macro5(gS, 40, wGS)\
+macro5(gS, 44, wGS)\
+macro5(gS, 48, wGS)\
+macro5(gS, 52, wGS)\
+macro5(gS, 56, wGS)\
+macro5(gS, 60, wGS)\
+macro5(gS, 64, wGS)\
 
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 8>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 16>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 24>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 32>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 40>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 48>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 56>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<8, 64>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+//macro4 does gangsize 8
+#define macro4(gS, wGS) macro5(gS, 8, wGS)\
+macro5(gS, 16, wGS)\
+macro5(gS, 24, wGS)\
+macro5(gS, 32, wGS)\
+macro5(gS, 40, wGS)\
+macro5(gS, 48, wGS)\
+macro5(gS, 56, wGS)\
+macro5(gS, 64, wGS)
 
+#define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);\
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int workGroupSize, glm::vec3 position, glm::vec3 lookCenter
+//template class FastNodeManager<4, 4, 8>;
+macro1()
+
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, glm::vec3 position, glm::vec3 lookCenter
 	, glm::vec3 upward, float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, workGroupSize, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix)
 {
 	image.resize(height * width * 4);
 	timesRay.resize(height * width);
 	timesTriangles.resize(height * width);
 }
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int workGroupSize, glm::mat4 transform,
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, glm::mat4 transform,
 	float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, workGroupSize, transform, focalLength, height, width), problemPrefix(problemPrefix)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, transform, focalLength, height, width), problemPrefix(problemPrefix)
 {
 	image.resize(height * width * 4);
 	timesRay.resize(height * width);
 	timesTriangles.resize(height * width);
 }
 
-template <size_t gangSize, size_t nodeMemory>
-void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory>& nodeManager,
-	const unsigned ambientSampleCount, const float ambientDistance, const bool mute)
+//renders 6 images, We take median of the last 5 renders
+template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
+void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager, const unsigned ambientSampleCount,
+	const float ambientDistance, const bool mute)
 {
 	//if image should be saved one first run to save the image. Just to be sure we still do one render we trough away before performance measurements
 	if (saveImage)
@@ -153,8 +156,8 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	myfile.close();
 }
 
-template <size_t gangSize, size_t nodeMemory>
-std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory>& nodeManager,
+template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
+std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager,
 	const unsigned ambientSampleCount, const float ambientDistance)
 {
 	//fillRenderInfo();

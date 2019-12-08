@@ -38,23 +38,24 @@ public:
 	size_t height;
 	size_t width;
 
-	int workGroupSize;
+	//a bit dump, but for most parts i dont need template workGroup size.
+	int nonTemplateWorkGroupSize;
 
 	//1.37f for 40 degree, 0.866f for 60 degree (horizontal fov)
 	//This focallength has most likely nothing to do with real life focal length
 	float focalLength;
 
-	Camera(std::string path, std::string name, std::string problem, int workGroupSize, glm::vec3 position, glm::vec3 lookCenter
+	Camera(std::string path, std::string name, std::string problem, int nonTemplateWorkGroupSize, glm::vec3 position, glm::vec3 lookCenter
 		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
-		: path(path), name(name), problem(problem), workGroupSize(workGroupSize), position(position), focalLength(focalLength), height(height), width(width)
+		: path(path), name(name), problem(problem), nonTemplateWorkGroupSize(nonTemplateWorkGroupSize), position(position), focalLength(focalLength), height(height), width(width)
 	{
 		transform = glm::inverse(glm::lookAt(position, lookCenter, upward));
 		//renderInfos.resize(height * width);
 	}
 
-	Camera(std::string path, std::string name, std::string problem, int workGroupSize, glm::mat4 transform,
+	Camera(std::string path, std::string name, std::string problem, int nonTemplateWorkGroupSize, glm::mat4 transform,
 		float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
-		: path(path), name(name), problem(problem), workGroupSize(workGroupSize), transform(transform), focalLength(focalLength), height(height), width(width)
+		: path(path), name(name), problem(problem), nonTemplateWorkGroupSize(nonTemplateWorkGroupSize), transform(transform), focalLength(focalLength), height(height), width(width)
 	{
 		position = transform * glm::vec4(0, 0, 0, 1);
 		//renderInfos.resize(height * width);

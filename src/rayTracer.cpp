@@ -17,6 +17,65 @@
 #include "lights/pointLight.h"
 #include "lights/directionalLight.h"
 
+
+//macros to start the template render stuff ... yeay (i think i still prefer it over rekursive template)
+//what it does: convert the 3 numbers we read from a file to compile time values so we can use them in templates
+//it also starts multiple renders in case we need node memory tests
+#define startPerfRender(gangS, branchMem, workGroupS){					\
+	if(gangS == 4 ) startPerfRender2(4, branchMem, workGroupS);			\
+	if(gangS == 8 ) startPerfRender2(8, branchMem, workGroupS);			\
+}
+
+#define startPerfRender2(gangS, branchMem, workGroupS){					\
+if(workGroupS == 8 ) startPerfRender3(gangS, branchMem, 8);				\
+if(workGroupS == 16) startPerfRender3(gangS, branchMem, 16);			\
+if(workGroupS == 32) startPerfRender3(gangS, branchMem, 32);			\
+}
+
+#define startPerfRender3(gangS, branchMem, workGroupS) {				\
+	if (doNodeMemoryTest)												\
+	{																	\
+		startPerfRender4(gangS, branchMem, workGroupS);					\
+		startPerfRender4(gangS, branchMem + gangS, workGroupS);			\
+		startPerfRender4(gangS, branchMem + gangS * 2, workGroupS);		\
+		startPerfRender4(gangS, branchMem + gangS * 3, workGroupS);		\
+	}																	\
+	else																\
+	{																	\
+		startPerfRender4(gangS, branchMem, workGroupS)					\
+	}																	\
+}
+
+#define startPerfRender4(gangS, branchMem, workGroupS){					\
+	if(branchMem == 8 ) startPerfRender5(gangS, 8, workGroupS);			\
+	if(branchMem == 16 ) startPerfRender5(gangS, 16, workGroupS);		\
+	if(branchMem == 24 ) startPerfRender5(gangS, 24, workGroupS);		\
+	if(branchMem == 32 ) startPerfRender5(gangS, 32, workGroupS);		\
+	if(branchMem == 40 ) startPerfRender5(gangS, 40, workGroupS);		\
+	if(branchMem == 48 ) startPerfRender5(gangS, 48, workGroupS);		\
+	if(branchMem == 56 ) startPerfRender5(gangS, 56, workGroupS);		\
+	if(branchMem == 64 ) startPerfRender5(gangS, 64, workGroupS);		\
+if constexpr (gangS == 4)												\
+{																		\
+	if(branchMem == 4 ) startPerfRender5(gangS, 4, workGroupS);			\
+	if(branchMem == 12 ) startPerfRender5(gangS, 12, workGroupS);		\
+	if(branchMem == 20 ) startPerfRender5(gangS, 20, workGroupS);		\
+	if(branchMem == 28 ) startPerfRender5(gangS, 28, workGroupS);		\
+	if(branchMem == 36 ) startPerfRender5(gangS, 36, workGroupS);		\
+	if(branchMem == 44 ) startPerfRender5(gangS, 44, workGroupS);		\
+	if(branchMem == 52 ) startPerfRender5(gangS, 52, workGroupS);		\
+	if(branchMem == 60 ) startPerfRender5(gangS, 60, workGroupS);		\
+}}
+
+#define startPerfRender5(gangS, branchMem, workGroupS) 	{												\
+	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
+	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory);								\
+	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, cameraPos, cameraTarget);			\
+	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);						\
+}
+
+
+
 // Include the header file that the ispc compiler generates
 #include "ISPC/ISPCBuild/rayTracer_ISPC.h"
 using namespace::ispc;
@@ -509,232 +568,20 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 		int dataPoints = 4;
 		for (int i = 0; i < perfLoopCount; i++)
 		{
-			//i hate this but still prefer it over other solutions i found to iterate over templates
-			if (gangSize == 8)
+			//with avx i currently do steps of 8 for leafs and nodes memory
+			int minLeafMemory = ceil(leafSize / (float)gangSize) * gangSize;
+			int minBranchMemory = ceil(branchingFactor / (float)gangSize) * gangSize;
+			int maxLeafMemory = minLeafMemory + gangSize * 3;
+
+			if (!doLeafMemoryTest)
 			{
-				//avx
-
-				//with avx i currently do steps of 8 for leafs and nodes memory
-				int minLeafMemory = ceil(leafSize / 8.0f) * 8;
-				int minBranchMemory = ceil(branchingFactor / 8.0f) * 8;
-				int maxLeafMemory = minLeafMemory + 8 * 3;
-
-
-				//its <gangsize, nodeMemory> manager(bvh, leafMemory)
-				/*
-				int maxMem = 16;
-				if (maxLeafSize > 16)
-				{
-					maxMem = ceil(maxLeafSize / 8.0f) * 8;
-					//we do 3 additional memory steps over our end point so we have 4 data points for the maxLeaf
-					maxMem += 8 * 3;
-				}
-				if (!doLeafMemoryTest)
-				{
-					maxMem = minLeafMemory;
-				}*/
-
-				if (!doLeafMemoryTest)
-				{
-					maxLeafMemory = minLeafMemory;
-				}
-
-				for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
-				{
-					unsigned current = gangSize;
-					if (branchingFactor <= current)
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 8> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 16> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 24> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 32> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 40> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 48> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 56> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<8, 64> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-				}
+				maxLeafMemory = minLeafMemory;
 			}
-			else if (gangSize == 4)
+
+			for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
 			{
-				//sse
-				//witph sse i currently do steps of 4 for leafs and nodes memory
-				int minLeafMemory = ceil(leafSize / 4.0f) * 4;
-				int minBranchMemory = ceil(branchingFactor / 4.0f) * 4;
-				int maxLeafMemory = minLeafMemory + 4 * 3;
-				/*
-				int maxMem = 16;
-				if (maxLeafSize > 16)
-				{
-					maxMem = ceil(maxLeafSize / 4.0f) * 4;
-				}
-				*/
-				if (!doLeafMemoryTest)
-				{
-					maxLeafMemory = minLeafMemory;
-				}
-
-				for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += 4)
-				{
-					int current = gangSize;
-					if (branchingFactor <= current)
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 4> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 8> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 12> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 16> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 20> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 24> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 28> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-					if (doNodeMemoryTest && current > (dataPoints - 2)* gangSize + minBranchMemory)
-						continue;
-					current += gangSize;
-
-					if ((branchingFactor <= current) && (doNodeMemoryTest || branchingFactor > current - gangSize))
-					{
-						std::string problemPrefix = "_mb" + std::to_string(current) + "_ml" + std::to_string(leafMemory);
-						FastNodeManager<4, 32> manager(bvh, leafMemory);
-						CameraFast c(pathPerf, name, problem, problemPrefix, workGroupSize, cameraPos, cameraTarget);
-						c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);
-					}
-				}
+				//macro that manages the calling of the right renderer (thx templates...)
+				startPerfRender(gangSize, minBranchMemory, workGroupSize);
 			}
 		}
 	}

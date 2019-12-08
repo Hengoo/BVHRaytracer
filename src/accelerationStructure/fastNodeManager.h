@@ -8,7 +8,7 @@
 
 class FastRay;
 
-template  <size_t nodeMemory>
+template  <unsigned nodeMemory>
 struct alignas(32) FastNode
 {
 
@@ -86,7 +86,7 @@ struct FastTriangle
 	}
 };
 
-template <size_t gangSize, size_t nodeMemory>
+template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize >
 class FastNodeManager
 {
 	std::vector<FastNode<nodeMemory>>compactNodes;
@@ -109,9 +109,9 @@ public:
 	int leafMemory;
 	int branchingFactor;
 	bool intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const;
-	bool intersectWide(FastRay& ray, double& timeTriangleTest) const;
 	bool intersectSecondary(FastRay& ray, double& timeTriangleTest) const;
-	bool intersectSecondaryWide(FastRay& ray, double& timeTriangleTest) const;
+	//bool intersectWide(std::array<FastRay, 8 * 8>& rays, std::array<uint32_t, 8 * 8>& leafIndex, std::array<uint8_t, 8 * 8>& triIndex, double& timeTriangleTest) const;
+	//bool intersectSecondaryWide(FastRay& ray, double& timeTriangleTest) const;
 
 	float averageBvhDepth;
 	uint32_t triangleCount;
@@ -125,6 +125,7 @@ public:
 
 	//calculates the surface normalof the triangle
 	inline void getSurfaceNormalTri(const FastRay& ray, glm::vec3& surfaceNormal, const uint32_t leafIndex, const uint8_t triIndex) const;
+
 	//calculates the surface normal and position
 	inline void getSurfaceNormalPosition(const FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition, const uint32_t leafIndex, const uint8_t triIndex) const;
 };
