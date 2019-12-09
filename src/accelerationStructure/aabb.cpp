@@ -1,7 +1,7 @@
 #include "aabb.h"
 
 //compute best split for every node
-primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget)
+primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget, float& sahSplitCost)
 {
 	//method should be usable for all nodes?
 
@@ -29,11 +29,12 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfac
 		});
 	//make the split with the best metric:
 	auto bestElement = std::min_element(metric.begin(), metric.end());
+	sahSplitCost = *bestElement;
 	return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
 }
 
 //compute best split for every node with sorting
-primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSurfaceArea, int leafTarget, int8_t& sortAxis)
+primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSurfaceArea, int leafTarget, int8_t& sortAxis, float& sahSplitCost)
 {
 	//method should be usable for all nodes?
 
@@ -54,7 +55,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSu
 			node.sweepRight();
 			met += node.sah(invSurfaceArea, leafTarget);
 		});
-	node = Aabb(0, primitiveEnd, primitiveEnd);
+	node = Aabb(0.f, primitiveEnd, primitiveEnd);
 	std::for_each(std::execution::seq, metric.rbegin(), metric.rend(),
 		[&](auto& met)
 		{
@@ -63,95 +64,20 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSu
 		});
 	//make the split with the best metric:
 	auto bestElement = std::min_element(metric.begin(), metric.end());
+	sahSplitCost = *bestElement;
 	return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
 }
 
-//compute best split with buckets
-primPointVector::iterator Aabb::PrimIntervall::computerBestSplit(float invSurfaceArea, int leafTarget,
-	int bucketCount, glm::vec3& centerMin, glm::vec3& centerMax, uint16_t sortAxis)
-{
-	//method should be usable for all nodes?
-
-	size_t size = getPrimCount();
-
-	//greedy approach with buckets:
-
-	//split primitives into buckets:
-	std::vector<std::unique_ptr<Aabb>> buckets;
-
-	//fill the buckets:
-
-
-	//easy version:
-	for (size_t i = 0; i < bucketCount - 1; i++)
-	{
-		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * i, primitiveBegin + (size / bucketCount) * (i + 1)));
-	}
-	buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + (size / bucketCount) * (bucketCount - 1), primitiveEnd));
-
-	/*
-	//"better" spacial version: (it likes to produce extremly uneven splits because the primitives often have clusters)
-	//cut at sortAxis
-	int lastCutIndex = 0;
-	int bestCutIndex = 0;
-	for (size_t i = 1; i < bucketCount; i++)
-	{
-		auto cut = centerMin[sortAxis] + ((centerMax[sortAxis] - centerMin[sortAxis]) / bucketCount) * i;
-		//lazy version: faster would be some kind of binary search
-		for (int j = lastCutIndex; j < size; j++)
-		{
-			//check if prim is right from cut:
-			if (cut >= (*(primitiveBegin + j))->getCenter()[sortAxis])
-			{
-				bestCutIndex = j;
-			}
-		}
-		if (bestCutIndex != lastCutIndex)
-		{
-			buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + lastCutIndex, primitiveBegin + bestCutIndex));
-			lastCutIndex = bestCutIndex;
-		}
-
-	}
-	if (size != bestCutIndex)
-	{
-		buckets.push_back(std::make_unique<Aabb>(0.f, primitiveBegin + bestCutIndex, primitiveEnd));
-	}
-	bucketCount = buckets.size();
-	*/
-
-	std::vector<float> metric(bucketCount - 1);
-
-	//iterate trough buckets
-	Aabb node(0.f, primitiveBegin, primitiveBegin);
-	for (size_t i = 0; i < bucketCount - 1; i++)
-	{
-		//use all but the first bucket
-		node.sweepRight((buckets[i + 1]).get());
-		metric[i] = node.sah(invSurfaceArea, leafTarget);
-	}
-	node = Aabb(0.f, primitiveEnd, primitiveEnd);
-	for (int i = bucketCount - 2; i >= 0; i--)
-	{
-		//use all but the last bucket
-		node.sweepLeft((buckets[i]).get());
-		metric[i] += node.sah(invSurfaceArea, leafTarget);
-	}
-
-	//make the split with the best metric:
-	auto bestElement = std::min_element(metric.begin(), metric.end());
-
-	//return best cut position:
-	return buckets[std::distance(metric.begin(), bestElement)]->primitiveEnd;
-
-}
-void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount, const bool sortEachSplit)
+void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount, const bool sortEachSplit, const bool smallLeafs)
 {
 	std::vector<std::array<int8_t, 3>> sortAxisEachSplit;
 	allPrimitiveBegin = primitiveBegin;
 	allPrimitiveEnd = primitiveEnd;
 	//check primitive count. if less than x primitives, this node is finished. (pbrt would continue of leafcost is larger than split cost !!!)
-	if (getPrimCount() <= leafTarget)
+
+	size_t nodePrimCount = getPrimCount();
+
+	if (nodePrimCount <= leafTarget && !smallLeafs)
 	{
 		return;
 	}
@@ -184,108 +110,77 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 		{
 			break;
 		}
-		primPointVector::iterator bestSplit;
-		if (bucketCount <= 0 || workIntervall[bestI].getPrimCount() < bucketCount * 5)
-		{
-			//compute all possible splits
-			if (sortEachSplit)
-			{
-				int8_t newSortAxis;
-				bestSplit = workIntervall[bestI].computerBestSplitSort(invSurfaceArea, leafTarget, newSortAxis);
-				//fill sort axis vector correctly: bestI is the id
-				int8_t left = 0;
-				int8_t right = 0;
-
-				//find the id for left (right = left -1)
-				if (!sortAxisEachSplit.empty())
-				{
-					//need to seach for the entry in sortAxisEachSplit where it points to -(bestI+1)
-					//this value is left, right is left -1)
-					//and replace it with sortAxisEachSPlit.size()
-					int8_t tmpId = 0;
-					int8_t tmpSide = 0;
-					for (size_t i = 0; i < sortAxisEachSplit.size(); i++)
-					{
-						if (sortAxisEachSplit[i][1] == -(bestI + 1))
-						{
-							tmpId = i;
-							tmpSide = 1;
-							left = sortAxisEachSplit[i][1];
-							break;
-						}
-						if (sortAxisEachSplit[i][2] == -(bestI + 1))
-						{
-							tmpId = i;
-							tmpSide = 2;
-							left = sortAxisEachSplit[i][2];
-							break;
-						}
-					}
-					if (tmpSide == 0)
-					{
-						std::cerr << "unexpected per axis sorting error?" << std::endl;
-					}
-					sortAxisEachSplit[tmpId][tmpSide] = sortAxisEachSplit.size();
-					right = left - 1;
-					//then increment every id that is smaller than left, so it is in the right order
-					for (auto& i : sortAxisEachSplit)
-					{
-						if (i[1] < 0 && i[1] <= left)
-						{
-							i[1] = i[1] - 1;
-						}
-						if (i[2] < 0 && i[2] <= left)
-						{
-							i[2] = i[2] - 1;
-						}
-					}
-
-				}
-				else
-				{
-					left = -1;
-					right = -2;
-				}
-				//add new split axis
-				sortAxisEachSplit.push_back({ newSortAxis, left, right });
-			}
-			else
-			{
-				//all splits slong the same common axis
-				bestSplit = workIntervall[bestI].computerBestSplit(invSurfaceArea, leafTarget);
-			}
-
-		}
-		else
-		{
-			if (sortEachSplit)
-			{
-				std::cerr << "Not implemented bucket version of sorting for each split" << std::endl;
-				throw 322;
-			}
-			//compute bucketed split
-			//This part is for spacial version: compute bounds of centers
-			glm::vec3 min = glm::vec3(222222.0f);
-			glm::vec3 max = glm::vec3(-222222.0f);
-			glm::vec3 centerDistance;
-			std::for_each(std::execution::seq, workIntervall[bestI].primitiveBegin, workIntervall[bestI].primitiveEnd,
-				[&](auto& p)
-				{
-					centerDistance = p->getCenter();
-					min = glm::min(min, centerDistance);
-					max = glm::max(max, centerDistance);
-				});
-			bestSplit = workIntervall[bestI].computerBestSplit(invSurfaceArea, leafTarget, bucketCount,
-				min, max, sortAxis);
-		}
-
+		float splitCost;
+		primPointVector::iterator bestSplit = getSplitIntervall(bucketCount, workIntervall, bestI, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
 
 		//split at bestSplit of best intervall:
 		PrimIntervall p1(workIntervall[bestI].primitiveBegin, bestSplit);
 		PrimIntervall p2(bestSplit, workIntervall[bestI].primitiveEnd);
+
+		//apply split to workintervall
 		workIntervall[bestI] = p1;
 		workIntervall.insert(workIntervall.begin() + bestI + 1, p2);
 	}
+
+	//if node count not full: do second loop over all current childs and look which of those nodes could be split to smaller leafs
+	for (size_t b = workIntervall.size() - 1; b < branchingFactor - 1; b++)
+	{
+		//try all nodes and split them. Choose the one with the best sah improvement
+		float bestSahImprovement = 0;
+		int bestSahImprovementId = -1;
+		primPointVector::iterator bestSahImprovementSplit;
+
+		for (size_t i = 0; i < workIntervall.size(); i++)
+		{
+			//Leaf cost is always 1 and node intersection is the factor
+			int intervallNodeCount = workIntervall[i].getPrimCount();
+			if (intervallNodeCount == 1)
+			{
+				continue;
+			}
+			float leafCost = intervallNodeCount;
+			float splitCost = 0.f;
+			//try split:
+			primPointVector::iterator bestSplit = getSplitIntervall(bucketCount, workIntervall, i, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, false);
+
+			//the cost factor for nodes. (according to pbgt book its +
+			splitCost += 0.6f;
+			if (leafCost - splitCost > bestSahImprovement)
+			{
+				bestSahImprovement = leafCost - splitCost;
+				bestSahImprovementId = i;
+				bestSahImprovementSplit = bestSplit;
+			}
+		}
+
+		if (bestSahImprovement == 0)
+		{
+			//no improvement possible
+			break;
+		}
+		else
+		{
+			//apply split and continue with loop
+
+			//do split again to apply sort axis change
+			float splitCost = 0.f;
+			primPointVector::iterator bestSplit = getSplitIntervall(bucketCount, workIntervall, bestSahImprovementId, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
+
+			//split at bestSplit of best intervall:
+			PrimIntervall p1(workIntervall[bestSahImprovementId].primitiveBegin, bestSahImprovementSplit);
+			PrimIntervall p2(bestSahImprovementSplit, workIntervall[bestSahImprovementId].primitiveEnd);
+
+			//apply split to workintervall
+			workIntervall[bestSahImprovementId] = p1;
+			workIntervall.insert(workIntervall.begin() + bestSahImprovementId + 1, p2);
+		}
+	}
+
+	if (workIntervall.size() == 1)
+	{
+		return;
+	}
+
 	//create childNodes of every workIntervall;
 	//Order has to be sorted!
 	for (auto& i : workIntervall)
@@ -308,5 +203,84 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 	primitiveBegin = primitiveEnd;
 
 	//constructs bvh of all children:
-	Node::recursiveBvh(branchingFactor, leafTarget, bucketCount, sortEachSplit);
+	Node::recursiveBvh(branchingFactor, leafTarget, bucketCount, sortEachSplit, smallLeafs);
+}
+
+primPointVector::iterator Aabb::getSplitIntervall(const int& bucketCount, std::vector<Aabb::PrimIntervall>& workIntervall,	int bestI,
+	const bool& sortEachSplit, float invSurfaceArea, const unsigned int& leafTarget, std::vector<std::array<int8_t, 3Ui64>>& sortAxisEachSplit,
+	float& sahSplitCost, bool applySortAxisChange)
+{
+	primPointVector::iterator resultValue;
+	//compute all possible splits
+	if (sortEachSplit)
+	{
+		int8_t newSortAxis;
+		resultValue = workIntervall[bestI].computerBestSplitSort(invSurfaceArea, leafTarget, newSortAxis, sahSplitCost);
+
+		if (applySortAxisChange)
+		{
+			//fill sort axis vector correctly: bestI is the id
+			int8_t left = 0;
+			int8_t right = 0;
+
+			//find the id for left (right = left -1)
+			if (!sortAxisEachSplit.empty())
+			{
+				//need to seach for the entry in sortAxisEachSplit where it points to -(bestI+1)
+				//this value is left, right is left -1)
+				//and replace it with sortAxisEachSPlit.size()
+				int8_t tmpId = 0;
+				int8_t tmpSide = 0;
+				for (size_t i = 0; i < sortAxisEachSplit.size(); i++)
+				{
+					if (sortAxisEachSplit[i][1] == -(bestI + 1))
+					{
+						tmpId = i;
+						tmpSide = 1;
+						left = sortAxisEachSplit[i][1];
+						break;
+					}
+					if (sortAxisEachSplit[i][2] == -(bestI + 1))
+					{
+						tmpId = i;
+						tmpSide = 2;
+						left = sortAxisEachSplit[i][2];
+						break;
+					}
+				}
+				if (tmpSide == 0)
+				{
+					std::cerr << "unexpected per axis sorting error?" << std::endl;
+					throw(322);
+				}
+				sortAxisEachSplit[tmpId][tmpSide] = sortAxisEachSplit.size();
+				right = left - 1;
+				//then increment every id that is smaller than left, so it is in the right order
+				for (auto& i : sortAxisEachSplit)
+				{
+					if (i[1] < 0 && i[1] <= left)
+					{
+						i[1] = i[1] - 1;
+					}
+					if (i[2] < 0 && i[2] <= left)
+					{
+						i[2] = i[2] - 1;
+					}
+				}
+			}
+			else
+			{
+				left = -1;
+				right = -2;
+			}
+			//add new split axis
+			sortAxisEachSplit.push_back({ newSortAxis, left, right });
+		}
+	}
+	else
+	{
+		//all splits along the same common axis
+		resultValue = workIntervall[bestI].computerBestSplit(invSurfaceArea, leafTarget, sahSplitCost);
+	}
+	return resultValue;
 }

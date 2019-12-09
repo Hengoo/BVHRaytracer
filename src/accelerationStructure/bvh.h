@@ -21,28 +21,11 @@ public:
 	uint32_t totalLeafCount;
 	uint32_t totalTriCount;
 	bool sortEachSplit;
+	bool smallLeafs;
 	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
 
-	Bvh()
-	{
-		//root = std::make_shared<Aabb>(0);
-
-		//randomFillBvh();
-
-
-		//naive idea: make a node with "everything" then iteratively split it up in the middle
-
-		//Put everything inside the primitive vector, and split it with each iteration
-
-		//DONT forget to call shrink_to_fit or to clear the primitive vector afterwards
-	}
-
-	Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit);
-
-	~Bvh()
-	{
-	}
+	Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit, bool smallLeafs);
 
 	inline Node* getRoot()
 	{

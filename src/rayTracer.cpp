@@ -540,7 +540,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 	auto timeBeginBvhBuild = getTime();
 
 	//bvh of loaded model:
-	Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit);
+	Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit, smallLeafs);
 	bvh.recursiveOctree(bucketCount);
 
 	float ambientDistance = cbrt(bvh.getRoot()->getVolume()) / 10.f;
@@ -879,6 +879,18 @@ void RayTracer::readConfig()
 					else
 					{
 						std::cerr << "doWorkGroupAnalysis value written wrong -> default = false" << std::endl;
+					}
+				}
+				res = line.find("smallLeafs ", 0);
+				if (res != std::string::npos)
+				{
+					res = line.find("true", 0);
+					res2 = line.find("false", 0);
+					if (res != std::string::npos)smallLeafs = true;
+					else if (res2 != std::string::npos)smallLeafs = false;
+					else
+					{
+						std::cerr << "smallLeafs  value written wrong -> default = false" << std::endl;
 					}
 				}
 			}

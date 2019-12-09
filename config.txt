@@ -1,26 +1,26 @@
 #Config file for raytracer.
 
 #Leafsize and Branching Factor to test:
-minLeafSize = 4
+minLeafSize = 1
 maxLeafSize = 4
-leafStep = 4
+leafStep = 1
 
-minBranch = 4
+minBranch = 2
 maxBranch = 4
-branchStep = 4
+branchStep = 1
 
-workGroupSize = 32
+workGroupSize = 8
 
 #What analysis to do:
-renderAnalysisImage = true
+renderAnalysisImage = false
 saveDepthDetailedImage = false
 bvhAnalysis = false
 saveBvhImage = false
 saveImage = true
-doWorkGroupAnalysis = true
+doWorkGroupAnalysis = false
 
 #Do performance Analysis: (this disables parallel execution)
-doPerformanceTest = false
+doPerformanceTest = true
 doLeafMemoryTests = false
 doNodeMemoryTests = false
 
@@ -36,6 +36,9 @@ castShadows = false
 
 #sortEachSplit : true -> take new axis and sort for each split. False -> only do it once in the beginning
 sortEachSplit = true
+
+#SmallLeafs: true if a leafnode can be split if the resulting nodes have a better sah
+smallLeafs = true
 
 #Render type: 	
 #	0 = normal bvh tree traversal
@@ -65,9 +68,6 @@ renderType = 3
 #When rendering a single scene with more than one leaf/branch combination they are started in parallel batches of 4
 #scenario = 7,8,9,10,11,12
 scenario = 9
-
-#Bucket count of bvh builder (0 = no buckets)
-bucketCount = 0
 
 #Node order:
 #	0 = custom order (mix of level and depth first. childs are always next to each other)

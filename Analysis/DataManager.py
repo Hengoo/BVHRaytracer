@@ -46,7 +46,7 @@ class everything:
 	def __init__(self):
 		#the folder all the scene folders are in: (leave empty if no folder)
 		#self.folder = "SavesSortedEarlyStop/"
-		self.folder = "Results/"
+		self.folder = "ResultsStorage/"
 		self.outputFolder = "Summary/"
 
 		#names of the sceneFolders
@@ -77,7 +77,7 @@ class everything:
 		self.subdivisionCount = self.subdivisionRange[1] - self.subdivisionRange[0] + 1
 
 		# 0 = avx, sse = 1
-		self.gangType = 0
+		self.gangType = 1
 		self.gangName = ["Avx", "Sse"]
 
 		#temprary cost function. needs replacement
@@ -161,9 +161,9 @@ class everything:
 
 		#folder to the performance files. For now its the laptop per files
 		if(self.subdivisionRange[1] == 0):
-			self.perfFolder = "Results/"
+			self.perfFolder = "ResultsStorage/"
 		else:
-			self.perfFolder = "Results/"
+			self.perfFolder = "ResultsStorage/"
 
 		self.listVariableCount = [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)]
 

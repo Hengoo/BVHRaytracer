@@ -42,7 +42,7 @@ static inline uint8_t chooseAxisAndSort(primPointVector::iterator primitiveBegin
 	//version to sort each intervall itself -> mixed result, (without implementing correct traversal)
 	glm::vec3 min = glm::vec3(222222.0f);
 	glm::vec3 max = glm::vec3(-222222.0f);
-	
+
 
 	glm::vec3 centerDistance;
 	std::for_each(std::execution::seq, primitiveBegin, primitiveEnd,
@@ -83,17 +83,18 @@ class Aabb : public Node
 		}
 
 		//compute sah of every possible split and
-		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget);
-		primPointVector::iterator computerBestSplitSort(float invSurfaceArea, int leafTarget, int8_t& sortAxis);
-		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget,
-			int bucketCount, glm::vec3& boundMin, glm::vec3& boundMax, uint16_t sortAxis);
-
+		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget, float& sahSplitCost);
+		primPointVector::iterator computerBestSplitSort(float invSurfaceArea, int leafTarget, int8_t& sortAxis, float& sahSplitCost);
 
 		inline size_t getPrimCount()
 		{
 			return std::distance(primitiveBegin, primitiveEnd);
 		}
 	};
+
+	primPointVector::iterator getSplitIntervall(const int& bucketCount, std::vector<Aabb::PrimIntervall>& workIntervall, int bestI, const bool& sortEachSplit,
+		float invSurfaceArea, const unsigned int& leafTarget, std::vector<std::array<int8_t, 3Ui64>>& sortAxisEachSplit, float& sahSplitCost, bool applySortAxisChange);
+
 protected:
 public:
 	//edge with smallest value in each dimension
@@ -109,7 +110,7 @@ public:
 
 	//bool sortBy(Primitive& p1, Primitive& p2, int& axis)
 
-	inline void calculateBounds()
+	void calculateBounds()
 	{
 		//calculate bounds based on the primitives:
 		glm::vec3 min(222222.0f), max(-222222.0f);
@@ -138,8 +139,7 @@ public:
 		return d.x * d.y * d.z;
 	}
 
-	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount,const bool sortEachSplit);
-
+	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount, const bool sortEachSplit, const bool smallLeafs);
 
 	inline virtual bool intersectNode(Ray& ray, float& distance) override
 	{

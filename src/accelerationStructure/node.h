@@ -41,7 +41,7 @@ public:
 	virtual void recursiveOctree(const unsigned leafSize);
 
 	//unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount
-	virtual  void recursiveBvh(const unsigned branchingFactor, const unsigned leafSize, int bucketCount, bool sortEachSplit);
+	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafSize, int bucketCount, bool sortEachSplit, const bool smallLeafs);
 
 	virtual size_t getChildCount();
 	virtual size_t getPrimCount();
@@ -62,7 +62,7 @@ public:
 	//using sah approach from pbrt http://www.pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies.html
 	//TODO: what is this cost factor sometimes used? either + const or * constant or both
 	//		since we search for the min value it doesnt change anything????
-	inline float sah(const float invArea, const int leafSize)
+	inline float sah(const float invArea, const int leafTarget)
 	{
 		//inv area is 1/area of root node
 
@@ -89,10 +89,10 @@ public:
 			//return (getPrimCount() * getSurfaceArea()) * invArea;
 
 			//b: half step, half linear
-			//return ((((getPrimCount() - 1) / leafSize) + 1) * leafSize / 2.f + getPrimCount() / 2.f) * getSurfaceArea() * invArea;
+			//return ((((getPrimCount() - 1) / leafTarget) + 1) * leafTarget / 2.f + getPrimCount() / 2.f) * getSurfaceArea() * invArea;
 
 			//c: step function: Mostly produces full leafs 
-			return (((getPrimCount() - 1) / leafSize) + 1) * getSurfaceArea() * invArea;
+			return (((getPrimCount() - 1) / leafTarget) + 1) * getSurfaceArea() * invArea * leafTarget;
 		}
 		else
 		{
