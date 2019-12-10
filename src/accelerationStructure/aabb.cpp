@@ -68,7 +68,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSu
 	return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
 }
 
-void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount, const bool sortEachSplit, const bool smallLeafs)
+void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const bool smallLeafs)
 {
 	std::vector<std::array<int8_t, 3>> sortAxisEachSplit;
 	allPrimitiveBegin = primitiveBegin;
@@ -111,7 +111,7 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 			break;
 		}
 		float splitCost;
-		primPointVector::iterator bestSplit = getSplitIntervall(bucketCount, workIntervall, bestI, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
+		primPointVector::iterator bestSplit = getSplitIntervall(workIntervall, bestI, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
 
 		//split at bestSplit of best intervall:
 		PrimIntervall p1(workIntervall[bestI].primitiveBegin, bestSplit);
@@ -141,7 +141,7 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 			float leafCost = intervallNodeCount;
 			float splitCost = 0.f;
 			//try split:
-			primPointVector::iterator bestSplit = getSplitIntervall(bucketCount, workIntervall, i, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, false);
+			primPointVector::iterator bestSplit = getSplitIntervall(workIntervall, i, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, false);
 
 			//the cost factor for nodes. (according to pbgt book its +
 			splitCost += 0.6f;
@@ -164,7 +164,7 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 
 			//do split again to apply sort axis change
 			float splitCost = 0.f;
-			primPointVector::iterator bestSplit = getSplitIntervall(bucketCount, workIntervall, bestSahImprovementId, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
+			primPointVector::iterator bestSplit = getSplitIntervall( workIntervall, bestSahImprovementId, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
 
 			//split at bestSplit of best intervall:
 			PrimIntervall p1(workIntervall[bestSahImprovementId].primitiveBegin, bestSahImprovementSplit);
@@ -203,10 +203,10 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 	primitiveBegin = primitiveEnd;
 
 	//constructs bvh of all children:
-	Node::recursiveBvh(branchingFactor, leafTarget, bucketCount, sortEachSplit, smallLeafs);
+	Node::recursiveBvh(branchingFactor, leafTarget, sortEachSplit, smallLeafs);
 }
 
-primPointVector::iterator Aabb::getSplitIntervall(const int& bucketCount, std::vector<Aabb::PrimIntervall>& workIntervall,	int bestI,
+primPointVector::iterator Aabb::getSplitIntervall(std::vector<Aabb::PrimIntervall>& workIntervall,	int bestI,
 	const bool& sortEachSplit, float invSurfaceArea, const unsigned int& leafTarget, std::vector<std::array<int8_t, 3Ui64>>& sortAxisEachSplit,
 	float& sahSplitCost, bool applySortAxisChange)
 {

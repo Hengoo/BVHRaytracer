@@ -92,7 +92,7 @@ class Aabb : public Node
 		}
 	};
 
-	primPointVector::iterator getSplitIntervall(const int& bucketCount, std::vector<Aabb::PrimIntervall>& workIntervall, int bestI, const bool& sortEachSplit,
+	primPointVector::iterator getSplitIntervall(std::vector<Aabb::PrimIntervall>& workIntervall, int bestI, const bool& sortEachSplit,
 		float invSurfaceArea, const unsigned int& leafTarget, std::vector<std::array<int8_t, 3Ui64>>& sortAxisEachSplit, float& sahSplitCost, bool applySortAxisChange);
 
 protected:
@@ -139,7 +139,7 @@ public:
 		return d.x * d.y * d.z;
 	}
 
-	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const int bucketCount, const bool sortEachSplit, const bool smallLeafs);
+	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const bool smallLeafs);
 
 	inline virtual bool intersectNode(Ray& ray, float& distance) override
 	{

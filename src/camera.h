@@ -38,7 +38,7 @@ public:
 	size_t height;
 	size_t width;
 
-	//a bit dump, but for most parts i dont need template workGroup size.
+	//not optimal, but for most parts i dont need template workGroup size.
 	int nonTemplateWorkGroupSize;
 
 	//1.37f for 40 degree, 0.866f for 60 degree (horizontal fov)

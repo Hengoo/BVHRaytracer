@@ -127,7 +127,6 @@ void RayTracer::run()
 	{
 		std::cout << "scenario: " << s << std::endl;
 	}
-	std::cout << "Bvh Sah bucket count: " << bucketCount << std::endl;
 	std::cout << "compact Node order: " << compactNodeOrder << std::endl;
 	//std::cout << "Sah Node cost factor: " << nodeCostFactor << std::endl;
 	//std::cout << "Sah Triangle cost factor: " << triangleCostFactor << std::endl;
@@ -541,7 +540,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 	//bvh of loaded model:
 	Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit, smallLeafs);
-	bvh.recursiveOctree(bucketCount);
+	bvh.recursiveOctree();
 
 	float ambientDistance = cbrt(bvh.getRoot()->getVolume()) / 10.f;
 	//std::cout << ambientDistance << std::endl;
@@ -688,11 +687,6 @@ void RayTracer::readConfig()
 						s.erase(0, pos + delimiter.length());
 					}
 					scenarios.push_back(std::stoi(s));
-				}
-				res = line.find("bucketCount", 0);
-				if (res != std::string::npos)
-				{
-					bucketCount = std::stoi(line.substr(line.find("=") + 1));
 				}
 				res = line.find("compactNodeOrder", 0);
 				if (res != std::string::npos)

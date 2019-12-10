@@ -45,7 +45,7 @@ public:
 	// copy assignment -> called when an already existing object is used to create a new object
 	//Bvh& operator=(const Bvh& other) = delete;
 
-	void recursiveOctree(int bucketCount);
+	void recursiveOctree();
 
 	//collapses the next collapeCount child hierarchies to this node
 	void collapseChilds(int collapeCount);

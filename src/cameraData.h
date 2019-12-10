@@ -386,18 +386,59 @@ public:
 
 		if (doWorkGroupAnalysis)
 		{
+			//matthaeus wants wisker plot. -> need min, max, median , 25% and 75% "quatile"
+
 			//lets look at average work group depth, variance (and standart deviation? )
-			std::ofstream fileWorkGroup(path + "/" + name + problem + "_WorkGroupDepthInfo.txt");
-			if (fileWorkGroup.is_open())
+			std::ofstream fileWorkGroup0(path + "/" + name + problem + "_WorkGroupDepthInfo.txt");
+			std::ofstream fileWorkGroup1(path + "/" + name + problem + "_NodeWorkGroupWiskerPlot.txt");
+			std::ofstream fileWorkGroup2(path + "/" + name + problem + "_LeafWorkGroupWiskerPlot.txt");
+
+
+
+			struct StorageStruct
+			{
+				int median;
+				int min;
+				int max;
+				float lowerSd;
+				float upperSd;
+				StorageStruct()
+				{
+				}
+				StorageStruct(int median, int min, int max, float lowerSd, float upperSd)
+					:median(median), min(min), max(max), lowerSd(lowerSd), upperSd(upperSd)
+				{
+				}
+
+				bool operator< (const StorageStruct& rhs) const
+				{
+					return median < rhs.median;
+				}
+			};
+
+			//later sorted by median
+			std::vector<StorageStruct> nodeStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
+			std::vector<StorageStruct> leafStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
+
+			if (fileWorkGroup0.is_open())
 			{
 				//output will be a table
-				fileWorkGroup << "nodeAverage, nodeMax, nodeVariance, nodeStandardDeviation, leafAverage, leafMax, leafVariance, leafStandardDeviation" << std::endl;
+				fileWorkGroup0 << "nodeAverage, nodeMax, nodeVariance, nodeStandardDeviation, leafAverage, leafMax, leafVariance, leafStandardDeviation" << std::endl;
+
+
+				std::vector<int> nodeIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+				std::vector<int> leafIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+				int medianId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.5f;
+				//int lowerQuartileId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.25f;
+				//int upperQuartileId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.75f;
 				for (int i = 0; i < (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize); i++)
 				{
 					int nodeMax = 0;
 					int nodeSum = 0;
 					int leafMax = 0;
 					int leafSum = 0;
+
+
 					//take sum and max of node and leaf intersections
 					for (int j = 0; j < nonTemplateWorkGroupSize * nonTemplateWorkGroupSize; j++)
 					{
@@ -411,6 +452,8 @@ public:
 						leafSum += leafInter;
 						nodeMax = std::max(nodeMax, nodeInter);
 						leafMax = std::max(leafMax, leafInter);
+						nodeIntersections[j] = nodeInter;
+						leafIntersections[j] = leafInter;
 					}
 					float nodeAverage = nodeSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 					float leafAverage = leafSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
@@ -437,15 +480,44 @@ public:
 					leafSd = sqrt(leafVariance);
 					nodeSd = sqrt(nodeVariance);
 
-					fileWorkGroup << nodeAverage << ", " << nodeMax << ", " << nodeVariance << ", " << nodeSd << ", "
-						<< leafAverage << ", " << leafMax << ", " << leafVariance << ", " << leafSd << std::endl;
+					//median and quartile: 
+					std::sort(nodeIntersections.begin(), nodeIntersections.end());
+					std::sort(leafIntersections.begin(), leafIntersections.end());
 
-					//std::cerr << nodeMax << " " << nodeSum << " " << nodeAverage << " " << leafMax << " " << leafSum << " " << leafAverage << std::endl;
-					//std::cerr << nodeSd << " " << nodeVariance << " " << leafSd << " " << leafVariance << std::endl;
-					//std::cerr << "---------------------------------" << std::endl;
+					fileWorkGroup0 << nodeAverage << ", " << nodeMax << ", " << nodeVariance << ", " << nodeSd << ", "
+						<< leafAverage << ", " << leafMax << ", " << leafVariance << ", " << leafSd << std::endl;
+					StorageStruct nodeStore(nodeIntersections[medianId], nodeIntersections[0],
+						nodeIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1], nodeAverage - nodeSd, nodeAverage + nodeSd);
+					StorageStruct leafStore(leafIntersections[medianId], leafIntersections[0],
+						leafIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1], leafAverage - leafSd, leafAverage + leafSd);
+					nodeStorage[i] = nodeStore;
+					leafStorage[i] = leafStore;
 				}
 			}
 			else std::cerr << "Unable to open file for work group analysis" << std::endl;
+			std::sort(nodeStorage.begin(), nodeStorage.end());
+			std::sort(leafStorage.begin(), leafStorage.end());
+			fileWorkGroup1 << "id, median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+			fileWorkGroup2 << "id, median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+
+			for (int i = 0; i < (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize); i++)
+			{
+				//to lazy to do it fancier
+				fileWorkGroup1 << i << ", ";
+				fileWorkGroup1 << nodeStorage[i].median << ", ";
+				fileWorkGroup1 << nodeStorage[i].min << ", ";
+				fileWorkGroup1 << nodeStorage[i].max << ", ";
+				fileWorkGroup1 << nodeStorage[i].lowerSd << ", ";
+				fileWorkGroup1 << nodeStorage[i].upperSd << std::endl;
+
+				fileWorkGroup2 << i << ", ";
+				fileWorkGroup2 << leafStorage[i].median << ", ";
+				fileWorkGroup2 << leafStorage[i].min << ", ";
+				fileWorkGroup2 << leafStorage[i].max << ", ";
+				fileWorkGroup2 << leafStorage[i].lowerSd << ", ";
+				fileWorkGroup2 << leafStorage[i].upperSd << std::endl;
+			}
+
 		}
 
 		if (saveImage)

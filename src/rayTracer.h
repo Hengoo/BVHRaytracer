@@ -39,7 +39,6 @@ class RayTracer
 	//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 	unsigned renderType;
 	std::vector<unsigned> scenarios;
-	unsigned bucketCount;
 
 	//0 = custom order, 1 = level, 2 = depth first,
 	unsigned compactNodeOrder;
