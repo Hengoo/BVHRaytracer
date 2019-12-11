@@ -395,7 +395,7 @@ public:
 			std::ofstream fileWorkGroup3(path + "/" + name + problem + "_CombinedWorkGroupWiskerPlot.txt");
 
 
-
+			//struct to store the per workgroup information so we can later sort it correctly
 			struct StorageStruct
 			{
 				int median;
@@ -411,9 +411,17 @@ public:
 				{
 				}
 
-				bool operator< (const StorageStruct& rhs) const
+				bool operator< (const StorageStruct& other) const
 				{
-					return median < rhs.median;
+					if (median == other.median)
+					{
+						return max < other.max;
+					}
+					else
+					{
+						return median < other.median;
+					}
+
 				}
 			};
 
@@ -506,28 +514,25 @@ public:
 			std::sort(nodeStorage.begin(), nodeStorage.end());
 			std::sort(leafStorage.begin(), leafStorage.end());
 			std::sort(combinedStorage.begin(), combinedStorage.end());
-			fileWorkGroup1 << "id, median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
-			fileWorkGroup2 << "id, median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
-			fileWorkGroup3 << "id, median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+			fileWorkGroup1 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+			fileWorkGroup2 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+			fileWorkGroup3 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
 
 			for (int i = 0; i < (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize); i++)
 			{
 				//to lazy to do it fancier
-				fileWorkGroup1 << i << ", ";
 				fileWorkGroup1 << nodeStorage[i].median << ", ";
 				fileWorkGroup1 << nodeStorage[i].min << ", ";
 				fileWorkGroup1 << nodeStorage[i].max << ", ";
 				fileWorkGroup1 << nodeStorage[i].lowerSd << ", ";
 				fileWorkGroup1 << nodeStorage[i].upperSd << std::endl;
 
-				fileWorkGroup2 << i << ", ";
 				fileWorkGroup2 << leafStorage[i].median << ", ";
 				fileWorkGroup2 << leafStorage[i].min << ", ";
 				fileWorkGroup2 << leafStorage[i].max << ", ";
 				fileWorkGroup2 << leafStorage[i].lowerSd << ", ";
 				fileWorkGroup2 << leafStorage[i].upperSd << std::endl;
 
-				fileWorkGroup3 << i << ", ";
 				fileWorkGroup3 << combinedStorage[i].median << ", ";
 				fileWorkGroup3 << combinedStorage[i].min << ", ";
 				fileWorkGroup3 << combinedStorage[i].max << ", ";
