@@ -54,6 +54,37 @@ Wisker plot. Blue area is the average plus and minus the standard deviation. Mid
 \end{minipage}
 \fi
 
+\begin{minipage}[t]{1.1\textwidth}
+	\begin{tikzpicture}
+	\begin{axis}
+	[
+	%view={90}{0} for x, view={0}{0} for y restriction
+	view={0}{0},
+	xlabel = N4L4 combined intersections,
+	%	ylabel = standard deviation,
+	smooth,
+	enlarge x limits=false,
+	xmajorticks=false,
+	no markers
+	]
+	\addplot+ [color = black, thick] table[x = id, y = median, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = blue, opacity = 0.3, name path=test1] table[x = id, y = lowerStdDeviation, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = blue, opacity = 0.3, name path=test2] table[x = id, y = upperStdDeviation, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = black, opacity = 0.5] table[x = id, y = min, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = black, opacity = 0.5] table[x = id, y = max, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_CombinedWorkGroupWiskerPlot.txt};
+	
+	\addplot [
+	fill=blue, 
+	fill opacity=0.5
+	]
+	fill between[
+	of=test1 and test2,
+	];
+	
+	%	\legend{L4, L8, L12, L16}
+	\end{axis}
+	\end{tikzpicture}
+\end{minipage}
 
 
 \begin{minipage}[t]{1.1\textwidth}
@@ -106,6 +137,38 @@ Wisker plot. Blue area is the average plus and minus the standard deviation. Mid
 	\addplot+ [color = blue, opacity = 0.3, name path=test2] table[x = id, y = upperStdDeviation, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_LeafWorkGroupWiskerPlot.txt};
 	\addplot+ [color = black, opacity = 0.5] table[x = id, y = min, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_LeafWorkGroupWiskerPlot.txt};
 	\addplot+ [color = black, opacity = 0.5] table[x = id, y = max, col sep=comma]{Data/amazonLumberyardInterior_b4_l4_LeafWorkGroupWiskerPlot.txt};
+	
+	\addplot [
+	fill=blue, 
+	fill opacity=0.5
+	]
+	fill between[
+	of=test1 and test2,
+	];
+	
+	%	\legend{L4, L8, L12, L16}
+	\end{axis}
+	\end{tikzpicture}
+\end{minipage}
+
+\begin{minipage}[t]{1.1\textwidth}
+	\begin{tikzpicture}
+	\begin{axis}
+	[
+	%view={90}{0} for x, view={0}{0} for y restriction
+	view={0}{0},
+	xlabel = N8L8 combined intersections,
+	%	ylabel = standard deviation,
+	smooth,
+	enlarge x limits=false,
+	xmajorticks=false,
+	no markers
+	]
+	\addplot+ [color = black, thick] table[x = id, y = median, col sep=comma]{Data/amazonLumberyardInterior_b8_l8_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = blue, opacity = 0.3, name path=test1] table[x = id, y = lowerStdDeviation, col sep=comma]{Data/amazonLumberyardInterior_b8_l8_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = blue, opacity = 0.3, name path=test2] table[x = id, y = upperStdDeviation, col sep=comma]{Data/amazonLumberyardInterior_b8_l8_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = black, opacity = 0.5] table[x = id, y = min, col sep=comma]{Data/amazonLumberyardInterior_b8_l8_CombinedWorkGroupWiskerPlot.txt};
+	\addplot+ [color = black, opacity = 0.5] table[x = id, y = max, col sep=comma]{Data/amazonLumberyardInterior_b8_l8_CombinedWorkGroupWiskerPlot.txt};
 	
 	\addplot [
 	fill=blue, 
