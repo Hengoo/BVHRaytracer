@@ -386,13 +386,18 @@ public:
 
 		if (doWorkGroupAnalysis)
 		{
-			//matthaeus wants wisker plot. -> need min, max, median , 25% and 75% "quatile"
+			//some parts of this are kinda obsolete. (separated node and leafs, since only the combined one is intresting)
+
+			//matthaeus wants wisker plot. -> need min, max, median , and standard deviation
 
 			//lets look at average work group depth, variance (and standart deviation? )
-			std::ofstream fileWorkGroup0(path + "/" + name + problem + "_WorkGroupDepthInfo.txt");
-			std::ofstream fileWorkGroup1(path + "/" + name + problem + "_NodeWorkGroupWiskerPlot.txt");
-			std::ofstream fileWorkGroup2(path + "/" + name + problem + "_LeafWorkGroupWiskerPlot.txt");
-			std::ofstream fileWorkGroup3(path + "/" + name + problem + "_CombinedWorkGroupWiskerPlot.txt");
+			//std::ofstream fileWorkGroup0(path + "/" + name + problem + "_WorkGroupDepthInfo.txt");
+			//std::ofstream fileWorkGroup1(path + "/" + name + problem + "_NodeWorkGroupWiskerPlot.txt");
+			//std::ofstream fileWorkGroup2(path + "/" + name + problem + "_LeafWorkGroupWiskerPlot.txt");
+			//std::ofstream fileWorkGroup3(path + "/" + name + problem + "_CombinedWorkGroupWiskerPlot.txt");
+
+			std::ofstream fileWorkGroup0(path + "/" + name + problem + "_PrimaryWorkGroupWiskerPlot.txt");
+			std::ofstream fileWorkGroup1(path + "/" + name + problem + "_SecondaryWorkGroupWiskerPlot.txt");
 
 
 			//struct to store the per workgroup information so we can later sort it correctly
@@ -421,7 +426,6 @@ public:
 					{
 						return median < other.median;
 					}
-
 				}
 			};
 
@@ -429,16 +433,16 @@ public:
 			std::vector<StorageStruct> nodeStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
 			std::vector<StorageStruct> leafStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
 			std::vector<StorageStruct> combinedStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
+			std::vector<StorageStruct> secondaryCombinedStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
 
 			if (fileWorkGroup0.is_open())
 			{
 				//output will be a table
-				fileWorkGroup0 << "nodeAverage, nodeMax, nodeVariance, nodeStandardDeviation, leafAverage, leafMax, leafVariance, leafStandardDeviation" << std::endl;
-
 
 				std::vector<int> nodeIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 				std::vector<int> leafIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 				std::vector<int> combinedIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+				std::vector<int> secondaryCombinedIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 				int medianId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.5f;
 				//int lowerQuartileId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.25f;
 				//int upperQuartileId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.75f;
@@ -455,15 +459,20 @@ public:
 						int index2 = w + h * width;
 						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
 						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
+						int secondaryNodeInter = std::accumulate(shadowNodeIntersectionPerPixelCount[index2].begin(), shadowNodeIntersectionPerPixelCount[index2].end(), 0);
+						int secondaryLeafInter = std::accumulate(shadowLeafIntersectionPerPixelCount[index2].begin(), shadowLeafIntersectionPerPixelCount[index2].end(), 0);
 						nodeSum += nodeInter;
 						leafSum += leafInter;
 						nodeIntersections[j] = nodeInter;
 						leafIntersections[j] = leafInter;
 						combinedIntersections[j] = nodeInter + leafInter;
+						secondaryCombinedIntersections[j] = secondaryNodeInter + secondaryLeafInter;
 					}
 					float nodeAverage = nodeSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 					float leafAverage = leafSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 					float combinedAverage = nodeAverage + leafAverage;
+					float secondaryCombinedAverage = std::accumulate(secondaryCombinedIntersections.begin(),
+						secondaryCombinedIntersections.end(), 0) / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
 
 					float leafVariance = 0;
 					float leafSd = 0;
@@ -471,6 +480,9 @@ public:
 					float nodeSd = 0;
 					float combinedVariance = 0;
 					float combinedSd = 0;
+
+					float secondaryCombinedVariance = 0;
+					float secondaryCombinedSd = 0;
 					//second loop for standard deviation and variance
 					for (int j = 0; j < nonTemplateWorkGroupSize * nonTemplateWorkGroupSize; j++)
 					{
@@ -480,64 +492,66 @@ public:
 						int index2 = w + h * width;
 						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
 						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
+						int secondaryNodeInter = std::accumulate(shadowNodeIntersectionPerPixelCount[index2].begin(), shadowNodeIntersectionPerPixelCount[index2].end(), 0);
+						int secondaryLeafInter = std::accumulate(shadowLeafIntersectionPerPixelCount[index2].begin(), shadowLeafIntersectionPerPixelCount[index2].end(), 0);
 						leafVariance += pow(leafInter - leafAverage, 2);
 						nodeVariance += pow(nodeInter - nodeAverage, 2);
 						combinedVariance += pow((leafInter + nodeInter) - combinedAverage, 2);
+						secondaryCombinedVariance += pow((secondaryNodeInter + secondaryLeafInter) - secondaryCombinedAverage, 2);
 					}
-					leafVariance = leafVariance / (nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
-					nodeVariance = nodeVariance / (nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
-					combinedVariance = combinedVariance / (nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+					leafVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
+					nodeVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
+					combinedVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
+					secondaryCombinedVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
 					leafSd = sqrt(leafVariance);
 					nodeSd = sqrt(nodeVariance);
 					combinedSd = sqrt(combinedVariance);
+					secondaryCombinedSd = sqrt(secondaryCombinedVariance);
 
 					//median and quartile: 
 					std::sort(nodeIntersections.begin(), nodeIntersections.end());
 					std::sort(leafIntersections.begin(), leafIntersections.end());
 					std::sort(combinedIntersections.begin(), combinedIntersections.end());
+					std::sort(secondaryCombinedIntersections.begin(), secondaryCombinedIntersections.end());
 
 					int leafMax = leafIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
 					int nodeMax = nodeIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
 					int combinedMax = combinedIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
+					int secondaryCombinedMax = secondaryCombinedIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
 
-					fileWorkGroup0 << nodeAverage << ", " << nodeMax << ", " << nodeVariance << ", " << nodeSd << ", "
-						<< leafAverage << ", " << leafMax << ", " << leafVariance << ", " << leafSd << std::endl;
 					nodeStorage[i] = StorageStruct(nodeIntersections[medianId], nodeIntersections[0],
 						nodeMax, nodeAverage - nodeSd, nodeAverage + nodeSd);
 					leafStorage[i] = StorageStruct(leafIntersections[medianId], leafIntersections[0],
 						leafMax, leafAverage - leafSd, leafAverage + leafSd);
 					combinedStorage[i] = StorageStruct(combinedIntersections[medianId], combinedIntersections[0],
 						combinedMax, combinedAverage - combinedSd, combinedAverage + combinedSd);
+					secondaryCombinedStorage[i] = StorageStruct(secondaryCombinedIntersections[medianId], secondaryCombinedIntersections[0],
+						secondaryCombinedMax, secondaryCombinedAverage - secondaryCombinedSd, secondaryCombinedAverage + secondaryCombinedSd);
 				}
 			}
 			else std::cerr << "Unable to open file for work group analysis" << std::endl;
 			std::sort(nodeStorage.begin(), nodeStorage.end());
 			std::sort(leafStorage.begin(), leafStorage.end());
 			std::sort(combinedStorage.begin(), combinedStorage.end());
+			std::sort(secondaryCombinedStorage.begin(), secondaryCombinedStorage.end());
+
+			fileWorkGroup0 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
 			fileWorkGroup1 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
-			fileWorkGroup2 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
-			fileWorkGroup3 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
 
 			for (int i = 0; i < (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize); i++)
 			{
-				//to lazy to do it fancier
-				fileWorkGroup1 << nodeStorage[i].median << ", ";
-				fileWorkGroup1 << nodeStorage[i].min << ", ";
-				fileWorkGroup1 << nodeStorage[i].max << ", ";
-				fileWorkGroup1 << nodeStorage[i].lowerSd << ", ";
-				fileWorkGroup1 << nodeStorage[i].upperSd << std::endl;
+				fileWorkGroup0 << combinedStorage[i].median << ", ";
+				fileWorkGroup0 << combinedStorage[i].min << ", ";
+				fileWorkGroup0 << combinedStorage[i].max << ", ";
+				fileWorkGroup0 << combinedStorage[i].lowerSd << ", ";
+				fileWorkGroup0 << combinedStorage[i].upperSd << std::endl;
 
-				fileWorkGroup2 << leafStorage[i].median << ", ";
-				fileWorkGroup2 << leafStorage[i].min << ", ";
-				fileWorkGroup2 << leafStorage[i].max << ", ";
-				fileWorkGroup2 << leafStorage[i].lowerSd << ", ";
-				fileWorkGroup2 << leafStorage[i].upperSd << std::endl;
+				fileWorkGroup1 << secondaryCombinedStorage[i].median << ", ";
+				fileWorkGroup1 << secondaryCombinedStorage[i].min << ", ";
+				fileWorkGroup1 << secondaryCombinedStorage[i].max << ", ";
+				fileWorkGroup1 << secondaryCombinedStorage[i].lowerSd << ", ";
+				fileWorkGroup1 << secondaryCombinedStorage[i].upperSd << std::endl;
 
-				fileWorkGroup3 << combinedStorage[i].median << ", ";
-				fileWorkGroup3 << combinedStorage[i].min << ", ";
-				fileWorkGroup3 << combinedStorage[i].max << ", ";
-				fileWorkGroup3 << combinedStorage[i].lowerSd << ", ";
-				fileWorkGroup3 << combinedStorage[i].upperSd << std::endl;
 			}
 
 		}

@@ -53,6 +53,9 @@
 *.cb
 *.cb2
 
+#For the matPlotLib includes:
+*.pgf
+
 ## Intermediate documents:
 *.dvi
 *-converted-to.*
