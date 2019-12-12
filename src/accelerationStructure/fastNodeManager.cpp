@@ -53,7 +53,7 @@ macro5(gS, 64, wGS)
 macro1()
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
-bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
+bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
 	std::array<std::tuple<uint32_t, float>, 32> queueArray;
@@ -124,6 +124,83 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 							if (aabbDistances[cId] != -100000)
 							{
 								queueArray[queueIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
+								aabbDistances[cId] = -100000;
+							}
+						});
+				}
+			}
+		}
+	}
+	return result;
+}
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
+{
+	//ids of ndodes that we still need to test:
+	std::array<uint32_t, 32> queueArray;
+	queueArray[0] = 0;
+	uint8_t queueIndex = 1;
+
+	bool result = false;
+
+	std::array<float, nodeMemory> aabbDistances;
+	aabbDistances.fill(-100000);
+
+	while (queueIndex != 0)
+	{
+		//get current id (most recently added because we do depth first)
+		const FastNode<nodeMemory>* node = &compactNodes[queueArray[--queueIndex]];
+
+		if (!node->hasChildren)
+		{
+			auto timeBeforeTriangleTest = getTime();
+
+			int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize);
+			//it returns the hit id -> -1 = no hit
+			if (resultIndex != -1)
+			{
+				result = true;
+				leafIndex = node->primIdBegin;
+				triIndex = resultIndex;
+			}
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+		}
+		else
+		{
+			//child tests: 
+			//ispc version:
+
+			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
+
+			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
+			{
+				int8_t code = 0;
+				code = code | (ray.direction[0] <= 0);
+				code = code | ((ray.direction[1] <= 0) << 1);
+				bool reverse = ray.direction[2] <= 0;
+				if (reverse)
+				{
+					code = code ^ 3;
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						[&](auto& cId)
+						{
+							if (aabbDistances[cId] != -100000)
+							{
+								queueArray[queueIndex++] = node->childIdBegin + cId;
+								aabbDistances[cId] = -100000;
+							}
+						});
+				}
+				else
+				{
+					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+						[&](auto& cId)
+						{
+							if (aabbDistances[cId] != -100000)
+							{
+								queueArray[queueIndex++] = node->childIdBegin + cId;
 								aabbDistances[cId] = -100000;
 							}
 						});

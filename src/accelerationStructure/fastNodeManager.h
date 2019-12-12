@@ -108,6 +108,7 @@ public:
 	int leafSize;
 	int leafMemory;
 	int branchingFactor;
+	bool intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const;
 	bool intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const;
 	bool intersectSecondary(FastRay& ray, double& timeTriangleTest) const;
 	//bool intersectWide(std::array<FastRay, 8 * 8>& rays, std::array<uint32_t, 8 * 8>& leafIndex, std::array<uint8_t, 8 * 8>& triIndex, double& timeTriangleTest) const;

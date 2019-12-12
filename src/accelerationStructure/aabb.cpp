@@ -68,7 +68,7 @@ primPointVector::iterator Aabb::PrimIntervall::computerBestSplitSort(float invSu
 	return primitiveBegin + std::distance(metric.begin(), bestElement) + 1;
 }
 
-void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const bool smallLeafs)
+void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const int leafSplitOption)
 {
 	std::vector<std::array<int8_t, 3>> sortAxisEachSplit;
 	allPrimitiveBegin = primitiveBegin;
@@ -77,7 +77,7 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 
 	size_t nodePrimCount = getPrimCount();
 
-	if (nodePrimCount <= leafTarget && !smallLeafs)
+	if (nodePrimCount <= leafTarget && (leafSplitOption == 0 || leafSplitOption == 2))
 	{
 		return;
 	}
@@ -121,58 +121,60 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 		workIntervall[bestI] = p1;
 		workIntervall.insert(workIntervall.begin() + bestI + 1, p2);
 	}
-
-	//if node count not full: do second loop over all current childs and look which of those nodes could be split to smaller leafs
-	for (size_t b = workIntervall.size() - 1; b < branchingFactor - 1; b++)
+	if (leafSplitOption == 1 || leafSplitOption == 2)
 	{
-		//try all nodes and split them. Choose the one with the best sah improvement
-		float bestSahImprovement = 0;
-		int bestSahImprovementId = -1;
-		primPointVector::iterator bestSahImprovementSplit;
-
-		for (size_t i = 0; i < workIntervall.size(); i++)
+		//if node count not full: do second loop over all current childs and look which of those nodes could be split to smaller leafs
+		for (size_t b = workIntervall.size() - 1; b < branchingFactor - 1; b++)
 		{
-			//Leaf cost is always 1 and node intersection is the factor
-			int intervallNodeCount = workIntervall[i].getPrimCount();
-			if (intervallNodeCount == 1)
+			//try all nodes and split them. Choose the one with the best sah improvement
+			float bestSahImprovement = 0;
+			int bestSahImprovementId = -1;
+			primPointVector::iterator bestSahImprovementSplit;
+
+			for (size_t i = 0; i < workIntervall.size(); i++)
 			{
-				continue;
-			}
-			float leafCost = intervallNodeCount;
-			float splitCost = 0.f;
-			//try split:
-			primPointVector::iterator bestSplit = getSplitIntervall(workIntervall, i, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, false);
+				//Leaf cost is always 1 and node intersection is the factor
+				int intervallNodeCount = workIntervall[i].getPrimCount();
+				if (intervallNodeCount == 1)
+				{
+					continue;
+				}
+				float leafCost = intervallNodeCount;
+				float splitCost = 0.f;
+				//try split:
+				primPointVector::iterator bestSplit = getSplitIntervall(workIntervall, i, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, false);
 
-			//the cost factor for nodes. (according to pbgt book its +
-			splitCost += 0.6f;
-			if (leafCost - splitCost > bestSahImprovement)
+				//the cost factor for nodes. (according to pbgt book its +
+				splitCost += 0.6f;
+				if (leafCost - splitCost > bestSahImprovement)
+				{
+					bestSahImprovement = leafCost - splitCost;
+					bestSahImprovementId = i;
+					bestSahImprovementSplit = bestSplit;
+				}
+			}
+
+			if (bestSahImprovement == 0)
 			{
-				bestSahImprovement = leafCost - splitCost;
-				bestSahImprovementId = i;
-				bestSahImprovementSplit = bestSplit;
+				//no improvement possible
+				break;
 			}
-		}
+			else
+			{
+				//apply split and continue with loop
 
-		if (bestSahImprovement == 0)
-		{
-			//no improvement possible
-			break;
-		}
-		else
-		{
-			//apply split and continue with loop
+				//do split again to apply sort axis change
+				float splitCost = 0.f;
+				primPointVector::iterator bestSplit = getSplitIntervall(workIntervall, bestSahImprovementId, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
 
-			//do split again to apply sort axis change
-			float splitCost = 0.f;
-			primPointVector::iterator bestSplit = getSplitIntervall( workIntervall, bestSahImprovementId, sortEachSplit, invSurfaceArea, leafTarget, sortAxisEachSplit, splitCost, true);
+				//split at bestSplit of best intervall:
+				PrimIntervall p1(workIntervall[bestSahImprovementId].primitiveBegin, bestSahImprovementSplit);
+				PrimIntervall p2(bestSahImprovementSplit, workIntervall[bestSahImprovementId].primitiveEnd);
 
-			//split at bestSplit of best intervall:
-			PrimIntervall p1(workIntervall[bestSahImprovementId].primitiveBegin, bestSahImprovementSplit);
-			PrimIntervall p2(bestSahImprovementSplit, workIntervall[bestSahImprovementId].primitiveEnd);
-
-			//apply split to workintervall
-			workIntervall[bestSahImprovementId] = p1;
-			workIntervall.insert(workIntervall.begin() + bestSahImprovementId + 1, p2);
+				//apply split to workintervall
+				workIntervall[bestSahImprovementId] = p1;
+				workIntervall.insert(workIntervall.begin() + bestSahImprovementId + 1, p2);
+			}
 		}
 	}
 
@@ -203,10 +205,10 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 	primitiveBegin = primitiveEnd;
 
 	//constructs bvh of all children:
-	Node::recursiveBvh(branchingFactor, leafTarget, sortEachSplit, smallLeafs);
+	Node::recursiveBvh(branchingFactor, leafTarget, sortEachSplit, leafSplitOption);
 }
 
-primPointVector::iterator Aabb::getSplitIntervall(std::vector<Aabb::PrimIntervall>& workIntervall,	int bestI,
+primPointVector::iterator Aabb::getSplitIntervall(std::vector<Aabb::PrimIntervall>& workIntervall, int bestI,
 	const bool& sortEachSplit, float invSurfaceArea, const unsigned int& leafTarget, std::vector<std::array<int8_t, 3Ui64>>& sortAxisEachSplit,
 	float& sahSplitCost, bool applySortAxisChange)
 {

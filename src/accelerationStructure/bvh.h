@@ -21,11 +21,11 @@ public:
 	uint32_t totalLeafCount;
 	uint32_t totalTriCount;
 	bool sortEachSplit;
-	bool smallLeafs;
+	int leafSplitOption;
 	int bvhDepth;
 	std::shared_ptr<primPointVector> primitives;
 
-	Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit, bool smallLeafs);
+	Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit, int leafSplitOption);
 
 	inline Node* getRoot()
 	{

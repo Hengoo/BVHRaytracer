@@ -59,18 +59,18 @@ template void CameraFast::renderImages(const bool saveImage, const FastNodeManag
 //template class FastNodeManager<4, 4, 8>;
 macro1()
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, glm::vec3 position, glm::vec3 lookCenter
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, glm::vec3 position, glm::vec3 lookCenter
 	, glm::vec3 upward, float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, nonTemplateWorkGroupSize, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance)
 {
 	image.resize(height * width * 4);
 	timesRay.resize(height * width);
 	timesTriangles.resize(height * width);
 }
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, glm::mat4 transform,
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, glm::mat4 transform,
 	float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, nonTemplateWorkGroupSize, transform, focalLength, height, width), problemPrefix(problemPrefix)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, transform, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance)
 {
 	image.resize(height * width * 4);
 	timesRay.resize(height * width);
@@ -190,7 +190,15 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			uint32_t leafIndex = 0;
 			uint8_t triIndex = 0;
 			//shoot primary ray.
-			bool result = nodeManager.intersect(ray, leafIndex, triIndex, timeTriangleTest);
+			bool result;
+			if (saveDistance)
+			{
+				result = nodeManager.intersectSaveDistance(ray, leafIndex, triIndex, timeTriangleTest);
+			}
+			else
+			{
+				result = nodeManager.intersect(ray, leafIndex, triIndex, timeTriangleTest);
+			}
 
 			if (result)
 			{

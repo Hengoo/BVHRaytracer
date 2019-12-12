@@ -70,7 +70,7 @@ if constexpr (gangS == 4)												\
 #define startPerfRender5(gangS, branchMem, workGroupS) 	{												\
 	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
 	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory);								\
-	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, cameraPos, cameraTarget);			\
+	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, cameraPos, cameraTarget);			\
 	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);						\
 }
 
@@ -539,7 +539,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 	auto timeBeginBvhBuild = getTime();
 
 	//bvh of loaded model:
-	Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit, smallLeafs);
+	Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit, leafSplitOption);
 	bvh.recursiveOctree();
 
 	float ambientDistance = cbrt(bvh.getRoot()->getVolume()) / 10.f;
@@ -564,24 +564,20 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 	if (doPerformanceTest)
 	{
-		int dataPoints = 4;
-		for (int i = 0; i < perfLoopCount; i++)
+		//calculte the leaf and node memory (multiples of gangsize (4 or 8)
+		int minLeafMemory = ceil(leafSize / (float)gangSize) * gangSize;
+		int minBranchMemory = ceil(branchingFactor / (float)gangSize) * gangSize;
+		int maxLeafMemory = minLeafMemory + gangSize * 3;
+
+		if (!doLeafMemoryTest)
 		{
-			//with avx i currently do steps of 8 for leafs and nodes memory
-			int minLeafMemory = ceil(leafSize / (float)gangSize) * gangSize;
-			int minBranchMemory = ceil(branchingFactor / (float)gangSize) * gangSize;
-			int maxLeafMemory = minLeafMemory + gangSize * 3;
+			maxLeafMemory = minLeafMemory;
+		}
 
-			if (!doLeafMemoryTest)
-			{
-				maxLeafMemory = minLeafMemory;
-			}
-
-			for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
-			{
-				//macro that manages the calling of the right renderer (thx templates...)
-				startPerfRender(gangSize, minBranchMemory, workGroupSize);
-			}
+		for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
+		{
+			//macro that manages the calling of the right renderer (thx templates...)
+			startPerfRender(gangSize, minBranchMemory, workGroupSize);
 		}
 	}
 
@@ -645,36 +641,29 @@ void RayTracer::readConfig()
 
 			if (!line.empty() && line[0] != '#')
 			{
-				auto res = line.find("minLeafSize", 0);
-				auto res2 = res;
-
 				//integers:
-				if (res != std::string::npos)
-				{
-					minLeafSize = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("maxLeafSize", 0);
-				if (res != std::string::npos)
-				{
-					maxLeafSize = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("minBranch", 0);
-				if (res != std::string::npos)
-				{
-					minBranch = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("maxBranch", 0);
-				if (res != std::string::npos)
-				{
-					maxBranch = std::stoi(line.substr(line.find("=") + 1));
-				}
+				std::optional<int> result;
+				readInt(line, "minLeafSize", minLeafSize);
 
-				res = line.find("renderType", 0);
-				if (res != std::string::npos)
-				{
-					renderType = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("scenario", 0);
+				readInt(line, "maxLeafSize", maxLeafSize);
+				readInt(line, "leafStep", leafStep);
+
+				readInt(line, "minBranch", minBranch);
+				readInt(line, "maxBranch", maxBranch);
+				readInt(line, "branchStep", branchStep);
+
+				readInt(line, "subdivisionStart", subdivisionStart);
+				readInt(line, "subdivisionEnd", subdivisionEnd);
+				readInt(line, "subdivisionStep", subdivisionStep);
+
+				readInt(line, "renderType", renderType);
+				readInt(line, "ambientSampleCount", ambientSampleCount);
+
+				readInt(line, "workGroupSize", workGroupSize);
+				readInt(line, "leafSplitOption", leafSplitOption);
+
+				//scenario has an int for each scenario.
+				auto res = line.find("scenario", 0);
 				if (res != std::string::npos)
 				{
 					std::string s = line.substr(line.find("=") + 1);
@@ -688,205 +677,23 @@ void RayTracer::readConfig()
 					}
 					scenarios.push_back(std::stoi(s));
 				}
-				res = line.find("compactNodeOrder", 0);
-				if (res != std::string::npos)
-				{
-					compactNodeOrder = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("ambientSampleCount", 0);
-				if (res != std::string::npos)
-				{
-					ambientSampleCount = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("leafStep", 0);
-				if (res != std::string::npos)
-				{
-					leafStep = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("branchStep", 0);
-				if (res != std::string::npos)
-				{
-					branchStep = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("subdivisionStart", 0);
-				if (res != std::string::npos)
-				{
-					subdivisionStart = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("subdivisionEnd", 0);
-				if (res != std::string::npos)
-				{
-					subdivisionEnd = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("subdivisionStep", 0);
-				if (res != std::string::npos)
-				{
-					subdivisionStep = std::stoi(line.substr(line.find("=") + 1));
-				}
-				res = line.find("workGroupSize", 0);
-				if (res != std::string::npos)
-				{
-					workGroupSize = std::stoi(line.substr(line.find("=") + 1));
-				}
 
 				//floats:
-				/*
-				res = line.find("nodeCostFactor", 0);
-				if (res != std::string::npos)
-				{
-					nodeCostFactor = std::stof(line.substr(line.find("=") + 1));
-				}
-				res = line.find("triangleCostFactor", 0);
-				if (res != std::string::npos)
-				{
-					triangleCostFactor = std::stof(line.substr(line.find("=") + 1));
-				}*/
+				//currently nothing method is readFloat
 
 				//booleans:
-				res = line.find("saveImage", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)saveImage = true;
-					else if (res2 != std::string::npos)saveImage = false;
-					else
-					{
-						std::cerr << "saveImage value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("saveDepthDetailedImage ", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)saveDepthDetailedImage = true;
-					else if (res2 != std::string::npos)saveDepthDetailedImage = false;
-					else
-					{
-						std::cerr << "saveDepthDetailedImage value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("bvhAnalysis", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)bvhAnalysis = true;
-					else if (res2 != std::string::npos)bvhAnalysis = false;
-					else
-					{
-						std::cerr << "bvhAnalysis value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("saveBvhImage", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)saveBvhImage = true;
-					else if (res2 != std::string::npos)saveBvhImage = false;
-					else
-					{
-						std::cerr << "saveBvhImage value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("sortEachSplit", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)sortEachSplit = true;
-					else if (res2 != std::string::npos)sortEachSplit = false;
-					else
-					{
-						std::cerr << "sortEachSplit value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("renderAnalysisImage", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)renderAnalysisImage = true;
-					else if (res2 != std::string::npos)renderAnalysisImage = false;
-					else
-					{
-						std::cerr << "renderAnalysisImage value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("castShadows", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)castShadows = true;
-					else if (res2 != std::string::npos)castShadows = false;
-					else
-					{
-						std::cerr << "castShadows value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("doPerformanceTest", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)doPerformanceTest = true;
-					else if (res2 != std::string::npos)doPerformanceTest = false;
-					else
-					{
-						std::cerr << "doPerformanceTest value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("doNodeMemoryTest", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)doNodeMemoryTest = true;
-					else if (res2 != std::string::npos)doNodeMemoryTest = false;
-					else
-					{
-						std::cerr << "doNodeMemoryTest value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("doLeafMemoryTest", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)doLeafMemoryTest = true;
-					else if (res2 != std::string::npos)doLeafMemoryTest = false;
-					else
-					{
-						std::cerr << "doLeafMemoryTest value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("doWorkGroupAnalysis", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)doWorkGroupAnalysis = true;
-					else if (res2 != std::string::npos)doWorkGroupAnalysis = false;
-					else
-					{
-						std::cerr << "doWorkGroupAnalysis value written wrong -> default = false" << std::endl;
-					}
-				}
-				res = line.find("smallLeafs ", 0);
-				if (res != std::string::npos)
-				{
-					res = line.find("true", 0);
-					res2 = line.find("false", 0);
-					if (res != std::string::npos)smallLeafs = true;
-					else if (res2 != std::string::npos)smallLeafs = false;
-					else
-					{
-						std::cerr << "smallLeafs  value written wrong -> default = false" << std::endl;
-					}
-				}
+				readBool(line, "saveImage", saveImage);
+				readBool(line, "saveDepthDetailedImage", saveDepthDetailedImage);
+				readBool(line, "bvhAnalysis", bvhAnalysis);
+				readBool(line, "saveBvhImage", saveBvhImage);
+				readBool(line, "sortEachSplit", sortEachSplit);
+				readBool(line, "renderAnalysisImage", renderAnalysisImage);
+				readBool(line, "castShadows", castShadows);
+				readBool(line, "doPerformanceTest", doPerformanceTest);
+				readBool(line, "doNodeMemoryTest", doNodeMemoryTest);
+				readBool(line, "doLeafMemoryTest", doLeafMemoryTest);
+				readBool(line, "doWorkGroupAnalysis", doWorkGroupAnalysis);
+				readBool(line, "saveDistance", saveDistance);
 			}
 		}
 	}

@@ -139,7 +139,7 @@ public:
 		return d.x * d.y * d.z;
 	}
 
-	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const bool smallLeafs);
+	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const int  leafSplitOption);
 
 	inline virtual bool intersectNode(Ray& ray, float& distance) override
 	{

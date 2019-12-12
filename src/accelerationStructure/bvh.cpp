@@ -25,8 +25,8 @@
 
 #include "..\timing.h"
 
-Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit, bool smallLeafs)
-	:branchingFactor(branchingFactor), leafSize(leafSize), sortEachSplit(sortEachSplit), smallLeafs(smallLeafs)
+Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const unsigned int leafSize, bool sortEachSplit, int leafSplitOption)
+	:branchingFactor(branchingFactor), leafSize(leafSize), sortEachSplit(sortEachSplit), leafSplitOption(leafSplitOption)
 {
 	//copy primitives (needed so we dont need to recompute for each branching factor and leafsize)
 	this->primitives = std::make_shared<primPointVector>(primitives);
@@ -36,7 +36,7 @@ Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const u
 void Bvh::recursiveOctree()
 {
 	//root->recursiveOctree(leafCount);
-	root->recursiveBvh(branchingFactor, leafSize, sortEachSplit, smallLeafs);
+	root->recursiveBvh(branchingFactor, leafSize, sortEachSplit, leafSplitOption);
 }
 
 void Bvh::collapseChilds(int collapeCount)

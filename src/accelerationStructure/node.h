@@ -41,7 +41,7 @@ public:
 	virtual void recursiveOctree(const unsigned leafSize);
 
 	//unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount
-	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafSize, bool sortEachSplit, const bool smallLeafs);
+	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafSize, bool sortEachSplit, const int leafSplitOption);
 
 	virtual size_t getChildCount();
 	virtual size_t getPrimCount();

@@ -1,20 +1,20 @@
 #Config file for raytracer.
 
 #Leafsize and Branching Factor to test:
-minLeafSize = 1
+minLeafSize = 4
 maxLeafSize = 4
-leafStep = 1
+leafStep = 4
 
-minBranch = 2
+minBranch = 4
 maxBranch = 4
-branchStep = 1
+branchStep = 4
 
 workGroupSize = 8
 
 #What analysis to do:
-renderAnalysisImage = false
+renderAnalysisImage = true
 saveDepthDetailedImage = false
-bvhAnalysis = false
+bvhAnalysis = true
 saveBvhImage = false
 saveImage = true
 doWorkGroupAnalysis = false
@@ -27,27 +27,31 @@ doNodeMemoryTests = false
 #Number of samples for ambient occlusion
 ambientSampleCount = 1
 
+
+castShadows = false
+
+#Bvh settings:
+#sortEachSplit : true -> take new axis and sort for each split. False -> only do it once in the beginning (false does nor work with perf render)
+sortEachSplit = true
+
+#SmallLeafs: 0 = no split of leafnodes. 1 = split of all leafnodes if sah improves. 2 = split of leafnodes that doesnt generate new nodes if sah improves.
+leafSplitOption = 1
+
 #Number of extra triangles per triangle
 subdivisionStart = 0
 subdivisionEnd = 0
 subdivisionStep = 1
 
-castShadows = false
 
-#sortEachSplit : true -> take new axis and sort for each split. False -> only do it once in the beginning
-sortEachSplit = true
-
-#SmallLeafs: true if a leafnode can be split if the resulting nodes have a better sah
-smallLeafs = true
-
-#Render type: 	
+#Render type for data render:	
 #	0 = normal bvh tree traversal
 #	1 = compact node
 #	2 = compact node immediate <- tests all childNodes at once
 #	3 = compact node immediate SaveDistance<- tests all childNodes at once but saves the distance to trough nodes away
 renderType = 3
 
-
+#Settings for performance render:
+saveDistance = false
 
 #Scenes:
 #	0 = lizard
