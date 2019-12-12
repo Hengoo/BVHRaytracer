@@ -18,6 +18,13 @@ allNames =[
 	"gallery",
 ]
 
+
+def fixNone(value):
+	#this converts None to 0 (only used for output)
+	if (value == None):
+		return 0
+	return value
+
 class sceneContainer:
 	def __init__(self):
 		self.sceneNameId = 0
@@ -56,7 +63,7 @@ class everything:
 		
 		#prefixTo the folderNames
 		#self.prefix = "Long" #< was for sponza long
-		self.prefix = ""
+		self.prefix = "_4To16"
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = ""
 
@@ -182,7 +189,7 @@ class everything:
 			firstLine += ", " + name
 		for name in self.variableNodeCachelinesOutputNames:
 			firstLine += ", " + name
-		firstLine += ", totalTime, nodeTime, leafTime, perNodeCost, perLeafCost, sahNodeFactor"
+		firstLine += ", totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor"
 
 		for loopId, nameId in enumerate(self.names):
 			self.storage[loopId] = sceneContainer()
@@ -251,19 +258,14 @@ class everything:
 
 			#output file:
 			if(self.subdivisionRange[1] == 0):
-				fResult = open(self.outputFolder + name + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
-				fResult2 = open(self.outputFolder + name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				fResult = open(self.outputFolder + name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
 			else:
-				fResult = open(self.outputFolder + name + "Sub" + self.prefix + "TableWithSpace" + self.outputPrefix + ".txt", "w+")
-				fResult2 = open(self.outputFolder + name + "Sub" + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				fResult = open(self.outputFolder + name + "Sub" + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
 			fResult.write(firstLine + "\n")
-			fResult2.write(firstLine + "\n")
 			lastBranch = -1
 			for subId, sub in enumerate(scenes.subdivisions):
 				for configStorage in sub:
 					#empty line for table with space if branching factor changes
-					if lastBranch != configStorage.branch:
-						fResult.write("\n")
 					lastBranch = configStorage.branch
 
 					#write results
@@ -277,10 +279,10 @@ class everything:
 						nodeCost = configStorage.nodeTime / (configStorage.variableValues[0] + configStorage.variableValues[2])
 						leafCost = configStorage.leafTime / (configStorage.variableValues[1] + configStorage.variableValues[3])
 						sahNodeFactor = nodeCost / leafCost
-					line += ", " + self.makeLine([configStorage.totalTime, configStorage.nodeTime, configStorage.leafTime, nodeCost, leafCost, sahNodeFactor])
+
+					line += ", " + self.makeLine([fixNone(configStorage.totalTime), fixNone(configStorage.nodeTime), fixNone(configStorage.leafTime), fixNone(nodeCost), fixNone(leafCost), fixNone(sahNodeFactor)])
 
 					fResult.write(line + "\n")
-					fResult2.write(line + "\n")
 
 		#one for each subdivision and one for each branc / leafsize combination
 		#the more im thinking about it, average isnt that usefull
@@ -293,7 +295,6 @@ class everything:
 
 
 
-				
 
 	def makeLine(self, array):
 		line = "" + str(array[0])
@@ -339,7 +340,7 @@ class everything:
 		anyHit = False
 		file.seek(0)
 		for line in file:
-			hit, value = self.gatherVariable("Time for all rays (SUM):", line)
+			hit, value = self.gatherVariable("Raytracer total time:", line)
 			if hit:
 				if anyHit:
 					print("ERROR: total time was found twice")
