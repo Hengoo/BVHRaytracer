@@ -413,7 +413,7 @@ void RayTracer::run()
 				//gameObjects.shrink_to_fit();
 				//meshBins.shrink_to_fit();
 
-				std::cout << std::endl << "Model loading took " << getTimeSpan(timeModelLoadBegin) << " seconds." << std::endl;
+				std::cout << std::endl << "Model loading took " << getTimeFloat(timeModelLoadBegin) << " seconds." << std::endl;
 
 				if (subdivisionEnd != 0)
 				{
@@ -520,7 +520,7 @@ void RayTracer::run()
 		std::cout.clear();
 	}
 	std::cout << std::endl;
-	std::cout << "Everything took " << getTimeSpan(timeProgrammBegin) << " seconds." << std::endl;
+	std::cout << "Everything took " << getTimeFloat(timeProgrammBegin) << " seconds." << std::endl;
 }
 
 void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigned gangSize, primPointVector& primitives,
@@ -559,7 +559,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 	//gather some bvh stats: node count, average branching factor, average leaf size, tree depth
 	//This also duplicates the node system. the copy is used for the compact nodes
 	bvh.bvhAnalysis(path, bvhAnalysis, doPerformanceTest, saveBvhImage, name, problem, triangleCostFactor, nodeCostFactor, mute);
-	std::cout << std::endl << "BVH building and bvh Analysis took " << getTimeSpan(timeBeginBvhBuild) << " seconds." << std::endl;
+	std::cout << std::endl << "BVH building and bvh Analysis took " << getTimeFloat(timeBeginBvhBuild) << " seconds." << std::endl;
 	auto timeBeginRendering = getTime();
 
 	if (doPerformanceTest)
@@ -616,7 +616,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 		}
 	}
-	std::cout << "All to do with rendering took " << getTimeSpan(timeBeginRendering) << " seconds." << std::endl;
+	std::cout << "All to do with rendering took " << getTimeFloat(timeBeginRendering) << " seconds." << std::endl;
 }
 
 void RayTracer::preparePrimitives(primPointVector& primitives, GameObject& root, int subdivision)

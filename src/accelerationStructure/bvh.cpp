@@ -331,7 +331,7 @@ void Bvh::calcEndPointOverlap(float& nodeEpo, float& leafEpo)
 	nodeEpo = nodeEpoSum / (float)totalSum;
 	leafEpo = leafEpoSum / (float)totalSum;
 
-	std::cout << "Epo took " << getTimeSpan(timeBeginEpo) << " seconds." << std::endl;
+	std::cout << "Epo took " << getTimeFloat(timeBeginEpo) << " seconds." << std::endl;
 }
 
 void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanceTest, bool saveBvhImage, std::string name,

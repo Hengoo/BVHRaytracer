@@ -1,6 +1,7 @@
 #pragma once
 #include "camera.h"
 #include "glmInclude.h"
+#include "timing.h"
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize >
 class FastNodeManager;
@@ -9,8 +10,8 @@ class FastNodeManager;
 class CameraFast : public Camera
 {
 private:
-	std::vector<double> timesRay;
-	std::vector<double> timesTriangles;
+	std::vector<std::chrono::nanoseconds> timesRay;
+	std::vector<std::chrono::nanoseconds> timesTriangles;
 	std::string problemPrefix;
 	bool saveDistance;
 public:

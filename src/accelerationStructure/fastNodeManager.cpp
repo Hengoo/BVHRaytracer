@@ -53,7 +53,7 @@ macro5(gS, 64, wGS)
 macro1()
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
-bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
+bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
 	std::array<std::tuple<uint32_t, float>, 32> queueArray;
@@ -64,6 +64,14 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 
 	std::array<float, nodeMemory> aabbDistances;
 	aabbDistances.fill(-100000);
+
+	//precalculate the code for node traversal.
+	int8_t code = 0;
+	code = code | (ray.direction[0] <= 0);
+	code = code | ((ray.direction[1] <= 0) << 1);
+	bool reverse = ray.direction[2] <= 0;
+	if (reverse)
+		code = code ^ 3;
 
 	while (queueIndex != 0)
 	{
@@ -99,13 +107,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 
 			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 			{
-				int8_t code = 0;
-				code = code | (ray.direction[0] <= 0);
-				code = code | ((ray.direction[1] <= 0) << 1);
-				bool reverse = ray.direction[2] <= 0;
 				if (reverse)
 				{
-					code = code ^ 3;
 					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
 						[&](auto& cId)
 						{
@@ -135,7 +138,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 }
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
-bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, double& timeTriangleTest) const
+bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
 	std::array<uint32_t, 32> queueArray;
@@ -184,7 +187,6 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 
 			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 			{
-
 				if (reverse)
 				{
 					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
@@ -217,7 +219,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
-bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(FastRay& ray, double& timeTriangleTest) const
+bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(FastRay& ray, nanoSec& timeTriangleTest) const
 {
 	//bvh intersection for secondary hits. -> anyhit
 	//differences: no return for triangles. No aabb distance stop (no saving of distance of aabb intersections since we stop after first hit)

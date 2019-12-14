@@ -182,7 +182,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				i * workGroupSize * workGroupSize + j);
 
 			auto timeBeforeRay = getTime();
-			double timeTriangleTest = 0;
+			nanoSec timeTriangleTest(0);
 			glm::vec3 pos = getRayTargetPosition(info);
 			FastRay ray(position, pos - position);
 
@@ -252,9 +252,9 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
 		}
 	}
-	double totalTime = getTimeSpan(timeBeginRaytracer);
-	double timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), 0.0);
-	double timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), 0.0);
+	nanoSec totalTime = getTimeSpan(timeBeginRaytracer);
+	nanoSec timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), nanoSec(0));
+	nanoSec timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), nanoSec(0));
 
 	if (saveImage)
 	{
@@ -276,5 +276,5 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			}
 		encodeTwoSteps(path + "/" + name + "_Perf.png", imageCorrect, width, height);
 	}
-	return std::make_tuple(totalTime, timeRaySum, timeTrianglesSum);
+	return std::make_tuple(getTimeFloat(totalTime), getTimeFloat(timeRaySum), getTimeFloat(timeTrianglesSum));
 }

@@ -3,18 +3,18 @@
 #Leafsize and Branching Factor to test:
 minLeafSize = 4
 maxLeafSize = 4
-leafStep = 4
+leafStep = 1
 
 minBranch = 4
 maxBranch = 4
-branchStep = 4
+branchStep = 1
 
 workGroupSize = 8
 
 #What analysis to do:
-renderAnalysisImage = true
+renderAnalysisImage = false
 saveDepthDetailedImage = false
-bvhAnalysis = true
+bvhAnalysis = false
 saveBvhImage = false
 saveImage = true
 doWorkGroupAnalysis = false
