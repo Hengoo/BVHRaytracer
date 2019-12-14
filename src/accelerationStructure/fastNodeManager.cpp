@@ -147,6 +147,14 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 	std::array<float, nodeMemory> aabbDistances;
 	aabbDistances.fill(-100000);
 
+	//precalculate the code for node traversal.
+	int8_t code = 0;
+	code = code | (ray.direction[0] <= 0);
+	code = code | ((ray.direction[1] <= 0) << 1);
+	bool reverse = ray.direction[2] <= 0;
+	if (reverse)
+		code = code ^ 3;
+
 	while (queueIndex != 0)
 	{
 		//get current id (most recently added because we do depth first)
@@ -176,13 +184,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 
 			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 			{
-				int8_t code = 0;
-				code = code | (ray.direction[0] <= 0);
-				code = code | ((ray.direction[1] <= 0) << 1);
-				bool reverse = ray.direction[2] <= 0;
+
 				if (reverse)
 				{
-					code = code ^ 3;
 					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
 						[&](auto& cId)
 						{
