@@ -18,12 +18,12 @@ void Camera::fillRenderInfo()
 	}
 }
 
-glm::vec3 Camera::getAmbientDirection(const RenderInfo& info, const glm::vec3& surfaceNormal, const int i)
+glm::vec3 Camera::getAmbientDirection(const int index, const glm::vec3& surfaceNormal, const int i)
 {
 	//i need two deterministic random values. Currently pixel index but could also be intersect position
 	auto hashFunction = std::hash<size_t>();
-	float u = hashFunction(info.index * 599 + i * 223) / (float)(std::numeric_limits<size_t>::max());
-	float v = hashFunction(info.index * 181 + i * 691) / (float)(std::numeric_limits<size_t>::max());
+	float u = hashFunction(index * 599 + i * 223) / (float)(std::numeric_limits<size_t>::max());
+	float v = hashFunction(index * 181 + i * 691) / (float)(std::numeric_limits<size_t>::max());
 
 	auto direction = sampleHemisphere(surfaceNormal, u, v);
 	return direction;
@@ -49,13 +49,4 @@ glm::vec3 Camera::sampleHemisphere(const glm::vec3& normal, const float u, const
 	}
 	//return result + normal * 0.2f;
 	return result;
-}
-
-glm::vec3 Camera::getRayTargetPosition(const RenderInfo& info)
-{
-	glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
-	//next line to get perfect forward ray
-	//centerOffset = glm::vec4(0, 0, -1, 0);
-	glm::vec3 pos = position + glm::vec3(transform * centerOffset);
-	return pos;
 }

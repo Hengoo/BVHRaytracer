@@ -70,7 +70,7 @@ if constexpr (gangS == 4)												\
 #define startPerfRender5(gangS, branchMem, workGroupS) 	{												\
 	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
 	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory);								\
-	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, cameraPos, cameraTarget);			\
+	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, wideRender, cameraPos, cameraTarget);			\
 	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);						\
 }
 
@@ -694,6 +694,7 @@ void RayTracer::readConfig()
 				readBool(line, "doLeafMemoryTest", doLeafMemoryTest);
 				readBool(line, "doWorkGroupAnalysis", doWorkGroupAnalysis);
 				readBool(line, "saveDistance", saveDistance);
+				readBool(line, "wideRender", wideRender);
 			}
 		}
 	}

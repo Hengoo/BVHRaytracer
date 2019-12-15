@@ -20,5 +20,9 @@ public:
 	glm::vec3 invDirection;
 	glm::vec3 direction;
 
+	void updateDirection(glm::vec3& newDirection);
+
 	FastRay(const glm::vec3& pos, const glm::vec3& direction, float maxDistance = 222222.f);
+	FastRay()
+	{};
 };

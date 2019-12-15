@@ -3,11 +3,15 @@
 #include <algorithm>
 #include <vector>
 #include <numeric>
+#include <bitset>
 
 #include "bvh.h"
 #include "../timing.h"
 
+
 class FastRay;
+
+#define workGroupSquare workGroupSize * workGroupSize
 
 template  <unsigned nodeMemory>
 struct alignas(32) FastNode
@@ -31,11 +35,13 @@ struct alignas(32) FastNode
 	//could put this bool inside something ?
 	bool hasChildren;
 
+	//0 = leaf, 1 = node
+	std::bitset<nodeMemory> childType;
 
 
 	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount, std::array<float, nodeMemory * 6> bounds
-		, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis)
-		: bounds(bounds)
+		, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis, std::bitset<nodeMemory> childType)
+		: bounds(bounds), childType(childType)
 	{
 		if (childCount != 0)
 		{
@@ -112,8 +118,10 @@ public:
 	bool intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const;
 	bool intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const;
 	bool intersectSecondary(FastRay& ray, nanoSec& timeTriangleTest) const;
-	//bool intersectWide(std::array<FastRay, 8 * 8>& rays, std::array<uint32_t, 8 * 8>& leafIndex, std::array<uint8_t, 8 * 8>& triIndex, nanoSec& timeTriangleTest) const;
-	//bool intersectSecondaryWide(FastRay& ray, nanoSec& timeTriangleTest) const;
+	std::array<bool, workGroupSquare> intersectWide(std::array< std::tuple<FastRay, int8_t, bool >, workGroupSquare >& rays,
+		std::array<uint32_t, workGroupSquare>& leafIndex, std::array<uint8_t, workGroupSquare>& triIndex,
+		nanoSec& timeTriangleTest) const;
+	void  intersectSecondaryWide(std::array< std::tuple<FastRay, int8_t, bool >, workGroupSquare >& rays, std::array<uint8_t,workGroupSquare>& result, nanoSec& timeTriangleTest) const;
 
 	float averageBvhDepth;
 	uint32_t triangleCount;

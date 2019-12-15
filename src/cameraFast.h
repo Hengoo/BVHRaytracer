@@ -14,13 +14,14 @@ private:
 	std::vector<std::chrono::nanoseconds> timesTriangles;
 	std::string problemPrefix;
 	bool saveDistance;
+	bool wideRender;
 public:
 	//only black and white image for now ->  image is only height * width and not height * width * 4
 
-	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, glm::vec3 position, glm::vec3 lookCenter
+	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, bool wideRender, glm::vec3 position, glm::vec3 lookCenter
 		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920);
 
-	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, glm::mat4 transform,
+	CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, bool wideRender, glm::mat4 transform,
 		float focalLength = 0.866f, size_t height = 1088, size_t width = 1920);
 
 	//renders 6 images, We take median of the last 5 renders

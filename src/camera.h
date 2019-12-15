@@ -6,11 +6,11 @@
 
 struct RenderInfo
 {
-	float w;
-	float h;
+	int w;
+	int h;
 	size_t index;
 
-	RenderInfo(float w, float h, size_t index) : w(w), h(h), index(index)
+	RenderInfo(int w, int h, size_t index) : w(w), h(h), index(index)
 	{
 	}
 	RenderInfo() : w(0), h(0), index(0)
@@ -67,9 +67,25 @@ protected:
 
 
 	//deterministic random direction for ambient occlusion. i is the number of the current ambient ray.
-	glm::vec3 getAmbientDirection(const RenderInfo& info, const glm::vec3& surfaceNormal, const int i);
+	glm::vec3 getAmbientDirection(const int index, const glm::vec3& surfaceNormal, const int i);
 
 	glm::vec3 sampleHemisphere(const glm::vec3& normal, const float u, const float v);
 
-	glm::vec3 getRayTargetPosition(const RenderInfo& info);
+	inline glm::vec3 getRayTargetPosition(const RenderInfo& info)
+	{
+		glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)info.h + glm::vec4(1, 0, 0, 0) * (float)info.w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
+		//next line to get perfect forward ray
+		//centerOffset = glm::vec4(0, 0, -1, 0);
+		glm::vec3 pos = position + glm::vec3(transform * centerOffset);
+		return pos;
+	}
+
+	inline glm::vec3 getRayTargetPosition(const int h, const int w)
+	{
+		glm::vec4 centerOffset = (glm::vec4(0, 1, 0, 0) * (float)h + glm::vec4(1, 0, 0, 0) * (float)w) * (1.0f / width) + glm::vec4(0, 0, -focalLength, 0);
+		//next line to get perfect forward ray
+		//centerOffset = glm::vec4(0, 0, -1, 0);
+		glm::vec3 pos = position + glm::vec3(transform * centerOffset);
+		return pos;
+	}
 };

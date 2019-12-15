@@ -40,6 +40,7 @@ class RayTracer
 
 	//this is for the performance renderer
 	bool saveDistance;
+	bool wideRender;
 
 	//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 	unsigned renderType;

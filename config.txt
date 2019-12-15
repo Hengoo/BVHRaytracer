@@ -9,7 +9,7 @@ minBranch = 4
 maxBranch = 4
 branchStep = 1
 
-workGroupSize = 8
+workGroupSize = 16
 
 #What analysis to do:
 renderAnalysisImage = false
@@ -49,6 +49,9 @@ subdivisionStep = 1
 #	2 = compact node immediate <- tests all childNodes at once
 #	3 = compact node immediate SaveDistance<- tests all childNodes at once but saves the distance to trough nodes away
 renderType = 3
+
+#Render type for performance Render:
+wideRender = true
 
 #Settings for performance render:
 saveDistance = false

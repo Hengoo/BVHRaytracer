@@ -59,22 +59,40 @@ template void CameraFast::renderImages(const bool saveImage, const FastNodeManag
 //template class FastNodeManager<4, 4, 8>;
 macro1()
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, glm::vec3 position, glm::vec3 lookCenter
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, bool wideRender, glm::vec3 position, glm::vec3 lookCenter
 	, glm::vec3 upward, float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, nonTemplateWorkGroupSize, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, position, lookCenter, upward, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance), wideRender(wideRender)
 {
 	image.resize(height * width * 4);
-	timesRay.resize(height * width);
-	timesTriangles.resize(height * width);
+	if (wideRender)
+	{
+		int timeSize = (height / nonTemplateWorkGroupSize) * (width / nonTemplateWorkGroupSize);
+		timesRay.resize(timeSize);
+		timesTriangles.resize(timeSize);
+	}
+	else
+	{
+		timesRay.resize(height * width);
+		timesTriangles.resize(height * width);
+	}
 }
 
-CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, glm::mat4 transform,
+CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize, bool saveDistance, bool wideRender, glm::mat4 transform,
 	float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, nonTemplateWorkGroupSize, transform, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, transform, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance), wideRender(wideRender)
 {
 	image.resize(height * width * 4);
-	timesRay.resize(height * width);
-	timesTriangles.resize(height * width);
+	if (wideRender)
+	{
+		int timeSize = (height / nonTemplateWorkGroupSize) * (width / nonTemplateWorkGroupSize);
+		timesRay.resize(timeSize);
+		timesTriangles.resize(timeSize);
+	}
+	else
+	{
+		timesRay.resize(height * width);
+		timesTriangles.resize(height * width);
+	}
 }
 
 //renders 6 images, We take median of the last 5 renders
@@ -171,85 +189,196 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 	//This result is good because dynamic is the shedule that is most suited for for out problem since every ray can take differently long
 //#pragma omp parallel for schedule(dynamic, 4)
 
-#pragma omp parallel for schedule(dynamic, 4)
-	for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+	if (!wideRender)
 	{
-		for (int j = 0; j < workGroupSize * workGroupSize; j++)
+#pragma omp parallel for schedule(dynamic, 4)
+		for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 		{
-			RenderInfo info(
-				((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
-				-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
-				i * workGroupSize * workGroupSize + j);
-
-			auto timeBeforeRay = getTime();
-			nanoSec timeTriangleTest(0);
-			glm::vec3 pos = getRayTargetPosition(info);
-			FastRay ray(position, pos - position);
-
-			uint8_t imageResult = 0;
-			uint32_t leafIndex = 0;
-			uint8_t triIndex = 0;
-			//shoot primary ray.
-			bool result;
-			if (saveDistance)
+			for (int j = 0; j < workGroupSquare; j++)
 			{
-				result = nodeManager.intersectSaveDistance(ray, leafIndex, triIndex, timeTriangleTest);
-			}
-			else
-			{
-				result = nodeManager.intersect(ray, leafIndex, triIndex, timeTriangleTest);
-			}
+				RenderInfo info(
+					((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
+					-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
+					i * workGroupSquare + j);
 
-			if (result)
-			{
-				//shoot secondary ray:
-				unsigned ambientResult = 0;
+				auto timeBeforeRay = getTime();
+				nanoSec timeTriangleTest(0);
+				glm::vec3 pos = getRayTargetPosition(info);
+				FastRay ray(position, pos - position);
 
-				//get surface normal and position from triangle index info.
-				glm::vec3 surfaceNormal(0);
-				glm::vec3 surfacePosition(0);
-				nodeManager.getSurfaceNormalPosition(ray, surfaceNormal, surfacePosition, leafIndex, triIndex);
-				//glm::vec3 surfacePosition = ray.pos + ray.direction * (ray.tMax);
-				//nodeManager.getSurfaceNormalTri(ray, surfaceNormal);
-				for (size_t i = 0; i < ambientSampleCount; i++)
+				uint8_t imageResult = 0;
+				uint32_t leafIndex = 0;
+				uint8_t triIndex = 0;
+				//shoot primary ray.
+				bool result;
+				if (saveDistance)
 				{
-					//deterministic random direction
-					auto direction = getAmbientDirection(info, surfaceNormal, i);
-					ray = FastRay(surfacePosition + surfaceNormal * 0.001f, direction, ambientDistance);
+					result = nodeManager.intersectSaveDistance(ray, leafIndex, triIndex, timeTriangleTest);
+				}
+				else
+				{
+					result = nodeManager.intersect(ray, leafIndex, triIndex, timeTriangleTest);
+				}
 
-					//shoot secondary ray
-					if (nodeManager.intersectSecondary(ray, timeTriangleTest))
+				if (result)
+				{
+					//shoot secondary ray:
+					unsigned ambientResult = 0;
+
+					//get surface normal and position from triangle index info.
+					glm::vec3 surfaceNormal(0);
+					glm::vec3 surfacePosition(0);
+					nodeManager.getSurfaceNormalPosition(ray, surfaceNormal, surfacePosition, leafIndex, triIndex);
+					//glm::vec3 surfacePosition = ray.pos + ray.direction * (ray.tMax);
+					//nodeManager.getSurfaceNormalTri(ray, surfaceNormal);
+					for (size_t i = 0; i < ambientSampleCount; i++)
 					{
-						ambientResult++;
+						//deterministic random direction
+						auto direction = getAmbientDirection(info.index, surfaceNormal, i);
+						ray = FastRay(surfacePosition + surfaceNormal * 0.001f, direction, ambientDistance);
+
+						//shoot secondary ray
+						if (nodeManager.intersectSecondary(ray, timeTriangleTest))
+						{
+							ambientResult++;
+						}
+					}
+
+					float factor = 1 - (ambientResult / (float)ambientSampleCount);
+					//factor = (factor + 1) / 2.f;
+					imageResult = (uint8_t)(factor * 255);
+				}
+				//important to override previous data since we do more than one run.
+				timesTriangles[info.index] = timeTriangleTest;
+				timesRay[info.index] = getTimeSpan(timeBeforeRay);
+				//distance render version (for large scenes)
+				//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
+				//imageResult = (uint8_t)(distanceToCamera / 50.f);
+
+				image[info.index * 4 + 0] = imageResult;
+				image[info.index * 4 + 1] = imageResult;
+				image[info.index * 4 + 2] = imageResult;
+				image[info.index * 4 + 3] = 255;
+
+				//render ambient sum average:
+				//ambientSum = glm::normalize(ambientSum);
+				//image[info.index * 4 + 0] = (uint8_t)(ambientSum.x * 127 + 127);
+				//image[info.index * 4 + 1] = (uint8_t)(ambientSum.y * 127 + 127);
+				//image[info.index * 4 + 2] = (uint8_t)(ambientSum.z * 127 + 127);
+
+				//surface normal render version:
+				//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
+				//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
+				//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+			}
+		}
+	}
+	else
+	{
+		//ultra wide version
+#pragma omp parallel for schedule(dynamic, 4)
+		for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+		{
+			auto timeBeforeRay = getTime();
+
+			//prepare primary ray
+			std::array<std::tuple<FastRay, int8_t, bool >, workGroupSquare > rays;
+			//initialization doesnt matter since we get bool result;
+			std::array<uint32_t, workGroupSquare> leafIndex;
+			//leafIndex.fill(0);
+			std::array<uint8_t, workGroupSquare> triIndex;
+			//triIndex.fill(0);
+			nanoSec timeTriangleTest(0);
+
+			for (int j = 0; j < workGroupSquare; j++)
+			{
+				glm::vec3 pos = getRayTargetPosition(
+					-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
+					((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize));
+				glm::vec3 direction = pos - position;
+
+				//precalculate the code for node traversal.
+				int8_t code = 0;
+				code = code | (direction[0] <= 0);
+				code = code | ((direction[1] <= 0) << 1);
+				bool reverse = direction[2] <= 0;
+				if (reverse)
+					code = code ^ 3;
+
+				rays[j] = std::make_tuple(FastRay(position, direction), code, reverse);
+			}
+
+			//shoot primary ray
+			auto result = nodeManager.intersectWide(rays, leafIndex, triIndex, timeTriangleTest);
+
+
+			//prepare secondary rays:
+			std::array<uint8_t, workGroupSquare> ambientResult;
+			ambientResult.fill(0);
+			std::array<glm::vec3, workGroupSquare> surfaceNormal;
+			//surfaceNormal.fill(glm::vec3(0));
+
+			for (int j = 0; j < workGroupSquare; j++)
+			{
+				int index = i * workGroupSquare + j;
+				if (result[j])
+				{
+					//get surface normal and position from triangle index info.
+					glm::vec3 surfacePosition(0);
+					nodeManager.getSurfaceNormalPosition(std::get<0>(rays[j]), surfaceNormal[j], surfacePosition, leafIndex[j], triIndex[j]);
+					//this way of "fixing" the position allows us to keep it for different ambient rays
+					std::get<0>(rays[j]).pos = surfacePosition + surfaceNormal[j] * 0.001f;
+				}
+				else
+				{
+					//do what if no primary hit?
+				}
+			}
+
+			for (int a = 0; a < ambientSampleCount; a++)
+			{
+				//final prepare of rays
+				for (int j = 0; j < workGroupSquare; j++)
+				{
+					int index = i * workGroupSquare + j;
+					if (result[j])
+					{
+						//get surface normal and position from triangle index info.
+						//looks cool if wrong
+						//auto direction = getAmbientDirection(index, surfaceNormal[j], i);
+						auto direction = getAmbientDirection(index, surfaceNormal[j], a);
+						std::get<0>(rays[j]).updateDirection(direction);
+						std::get<0>(rays[j]).tMax = ambientDistance;
+					}
+					else
+					{
+						//what to do if no primary hit?
 					}
 				}
 
-				float factor = 1 - (ambientResult / (float)ambientSampleCount);
-				//factor = (factor + 1) / 2.f;
-				imageResult = (uint8_t)(factor * 255);
+				//shoot secondary ray:
+				nodeManager.intersectSecondaryWide(rays, ambientResult, timeTriangleTest);
 			}
-			//important to override previous data since we do more than one run.
-			timesTriangles[info.index] = timeTriangleTest;
-			timesRay[info.index] = getTimeSpan(timeBeforeRay);
-			//distance render version (for large scenes)
-			//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
-			//imageResult = (uint8_t)(distanceToCamera / 50.f);
+			for (int j = 0; j < workGroupSquare; j++)
+			{
+				int index = i * workGroupSquare + j;
 
-			image[info.index * 4 + 0] = imageResult;
-			image[info.index * 4 + 1] = imageResult;
-			image[info.index * 4 + 2] = imageResult;
-			image[info.index * 4 + 3] = 255;
+				//if(ambientResult[j] > 1)
+				//{
+				//	std::cout << "what" << std::endl;
+				//}
+				float factor = 1 - (ambientResult[j] / (float)ambientSampleCount);
+				//factor = (factor + 1) / 2.f;
+				uint8_t imageResult = (uint8_t)(factor * 255);
+				image[index * 4 + 0] = imageResult;
+				image[index * 4 + 1] = imageResult;
+				image[index * 4 + 2] = imageResult;
+				image[index * 4 + 3] = 255;
+			}
 
-			//render ambient sum average:
-			//ambientSum = glm::normalize(ambientSum);
-			//image[info.index * 4 + 0] = (uint8_t)(ambientSum.x * 127 + 127);
-			//image[info.index * 4 + 1] = (uint8_t)(ambientSum.y * 127 + 127);
-			//image[info.index * 4 + 2] = (uint8_t)(ambientSum.z * 127 + 127);
-
-			//surface normal render version:
-			//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
-			//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
-			//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+			//time for rays:
+			timesRay[i] = getTimeSpan(timeBeforeRay);
+			timesTriangles[i] = timeTriangleTest;
 		}
 	}
 	nanoSec totalTime = getTimeSpan(timeBeginRaytracer);
@@ -266,7 +395,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			for (int w = 0; w < width; w++)
 			{
 				//one line of smallsize
-				int id = (w / workGroupSize) * workGroupSize * workGroupSize + w % workGroupSize + (h % workGroupSize) * workGroupSize;
+				int id = (w / workGroupSize) * workGroupSquare + w % workGroupSize + (h % workGroupSize) * workGroupSize;
 				id += (h / workGroupSize) * width * workGroupSize;
 				int idOrig = w + h * width;
 				imageCorrect[idOrig * 4 + 0] = image[id * 4 + 0];
