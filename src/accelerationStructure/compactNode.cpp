@@ -290,6 +290,9 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 				code = code | (ray.direction[0] <= 0);
 				code = code | ((ray.direction[1] <= 0) << 1);
 				bool reverse = ray.direction[2] <= 0;
+
+				//int code = maxAbsDimension(ray.direction);
+				//bool reverse = ray.direction[code] <= 0;
 				if (reverse)
 				{
 					code = code ^ 3;

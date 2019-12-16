@@ -1,8 +1,8 @@
 #include "fastRay.h"
 
 
-FastRay::FastRay(const glm::vec3& pos, const glm::vec3& direction, float maxDistance)
-	: pos(pos), direction(direction), tMax(maxDistance)
+FastRay::FastRay(const glm::vec3& pos, const glm::vec3& targetPosition, float maxDistance)
+	: pos(pos), direction(targetPosition - pos), tMax(maxDistance)
 {
 	//fix infinite because 0 / 0 is NaN
 	invDirection = 1.0f / (this->direction);

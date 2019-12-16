@@ -139,6 +139,12 @@ public:
 		return d.x * d.y * d.z;
 	}
 
+	inline glm::vec3 getCenter() override
+	{
+		auto d = (boundMax + boundMin) + 0.5f;
+		return d;
+	}
+
 	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const int  leafSplitOption);
 
 	inline virtual bool intersectNode(Ray& ray, float& distance) override

@@ -35,8 +35,8 @@ public:
 	//contains all info needed to spawn the ray for the specific pixel. Only needed because i dont know how to get the loop index into the unsequenced for_each
 	std::vector<RenderInfo> renderInfos;
 
-	size_t height;
-	size_t width;
+	int height;
+	int width;
 
 	//not optimal, but for most parts i dont need template workGroup size.
 	int nonTemplateWorkGroupSize;

@@ -52,13 +52,12 @@ macro5(gS, 64, wGS)
 macro1()
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
-std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::array< std::tuple<FastRay, int8_t, bool >, workGroupSquare >& rays,
-	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<uint8_t, workGroupSquare>& triIndex,
+void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::array<FastRay, workGroupSquare>& rays,
+	std::array<uint32_t, workGroupSquare>& leafIndex,
+	std::array<int8_t, workGroupSquare>& triIndex,
 	nanoSec& timeTriangleTest) const
 {
-	//overall memory that is needed:
-	//memory for all ray info (with code + reverse bool) (is given)
-	//todo stack for each ray
+	//stack for each ray. 32 is current max stack size
 	std::vector< std::array<int32_t, workGroupSquare>> stack(32);
 	std::array< uint8_t, workGroupSquare>stackIndex;
 	for (int i = 0; i < workGroupSquare; i++)
@@ -66,10 +65,19 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 		stack[0][i] = 0;
 		stackIndex[i] = 1;
 	}
-	//ray id list to keep track of what rays to do next (and what rays do nodetests or leaftests)
+
+	//choose type depending on workGroup max size
+#if workGroupSquare < 256
+	//ray id list to keep track of what rays we need to do.
+	std::array<uint8_t, workGroupSquare> nodeWork;
+	std::iota(nodeWork.begin(), nodeWork.end(), 0);
+	std::array<uint8_t, workGroupSquare> leafWork;
+#else
+	//ray id list to keep track of what rays we need to do.
 	std::array<uint16_t, workGroupSquare> nodeWork;
 	std::iota(nodeWork.begin(), nodeWork.end(), 0);
 	std::array<uint16_t, workGroupSquare> leafWork;
+#endif
 
 	//number of noderays and leafrays so we know what ids to read.
 	uint16_t nodeRays = workGroupSquare;
@@ -77,10 +85,6 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 
 	uint16_t nodeRaysNext = 0;
 	uint16_t leafRaysNext = 0;
-
-	//result array
-	std::array<bool, workGroupSquare> result;
-	result.fill(false);
 
 	//memory for aabb result
 	std::array<float, nodeMemory> aabbDistances;
@@ -100,11 +104,19 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
-				if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&std::get<0>(ray)), nodeMemory, branchingFactor))
+				if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 				{
-					if (std::get<2>(ray))
+					//int code = maxAbsDimension(ray.direction);
+					//bool reverse = ray.direction[code] <= 0;
+					int code = 0;
+					code = code | (ray.direction[0] <= 0);
+					code = code | ((ray.direction[1] <= 0) << 1);
+					bool reverse = ray.direction[2] <= 0;
+
+					if (reverse)
 					{
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[std::get<1>(ray)].begin(), node->traverseOrderEachAxis[std::get<1>(ray)].end(),
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code ^ 3].begin(), node->traverseOrderEachAxis[code ^ 3].end(),
+						//std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
 							[&](auto& cId)
 							{
 								if (aabbDistances[cId] != -100000)
@@ -112,7 +124,7 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 									if (node->childType[cId])
 									{
 										//next is node
-										stack[stackIndex[rayId]++][rayId] = node->childIdBegin + cId;
+										stack[stackIndex[rayId]++][rayId] = (int32_t)node->childIdBegin + cId;
 									}
 									else
 									{
@@ -126,7 +138,7 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 					else
 					{
 						//reverse order
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[std::get<1>(ray)].rbegin(), node->traverseOrderEachAxis[std::get<1>(ray)].rend(),
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
 							[&](auto& cId)
 							{
 								if (aabbDistances[cId] != -100000)
@@ -167,7 +179,7 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 
 		//loop over triangles
 		if (leafRays != 0)
-		//if (leafRays >= 8 || nodeRays <= 8)
+			//if (leafRays >= 8 || nodeRays <= 8)
 		{
 			auto timeBeforeTriangleTest = getTime();
 
@@ -180,11 +192,10 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
-				int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&std::get<0>(ray)), leafMemory, leafSize);
+				int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize);
 				//it returns the hit id -> -1 = no hit
 				if (resultIndex != -1)
 				{
-					result[rayId] = true;
 					leafIndex[rayId] = node->primIdBegin;
 					triIndex[rayId] = resultIndex;
 				}
@@ -208,34 +219,38 @@ std::array<bool, workGroupSquare> FastNodeManager<gangSize, nodeMemory, workGrou
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
 		}
-
 	}
-	return result;
 }
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWide(
-	std::array< std::tuple<FastRay, int8_t, bool >, workGroupSquare >& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest) const
+	std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest) const
 {
-	//overall memory that is needed:
-	//memory for all ray info (with code + reverse bool) (is given)
-	//todo stack for each ray
+	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
 	std::vector< std::array<int32_t, workGroupSquare>> stack(32);
+	stack[0].fill(0);
+	//id of the current element in the stack we have to work on. 0 means we are finished
 	std::array< uint8_t, workGroupSquare>stackIndex;
-	for (int i = 0; i < workGroupSquare; i++)
-	{
-		stack[0][i] = 0;
-		stackIndex[i] = 1;
-	}
-	//ray id list to keep track of what rays to do next (and what rays do nodetests or leaftests)
+	stackIndex.fill(1);
+
+	//choose type depending on workGroup max size
+#if workGroupSquare < 256
+	//ray id list to keep track of what rays we need to do.
+	std::array<uint8_t, workGroupSquare> nodeWork;
+	std::iota(nodeWork.begin(), nodeWork.end(), 0);
+	std::array<uint8_t, workGroupSquare> leafWork;
+#else
+	//ray id list to keep track of what rays we need to do.
 	std::array<uint16_t, workGroupSquare> nodeWork;
 	std::iota(nodeWork.begin(), nodeWork.end(), 0);
 	std::array<uint16_t, workGroupSquare> leafWork;
+#endif
 
-	//number of noderays and leafrays so we know what ids to read.
+	//number of noderays and leafrays so we how much to read in nodeWork and leafWork
 	uint16_t nodeRays = workGroupSquare;
 	uint16_t leafRays = 0;
 
+	//same as above but for the next iteration.
 	uint16_t nodeRaysNext = 0;
 	uint16_t leafRaysNext = 0;
 
@@ -257,9 +272,10 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
-				if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&std::get<0>(ray)), nodeMemory, branchingFactor))
+				if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 				{
-					for (int cId = 0; cId < branchingFactor; cId++)
+					//this loop is faster with constant (nodememory) than with branching factor for N4L4.
+					for (int cId = 0; cId < nodeMemory; cId++)
 					{
 						if (aabbDistances[cId] != -100000)
 						{
@@ -297,7 +313,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 		}
 		//loop over triangles
 		if (leafRays != 0)
-		//if (leafRays >= 8 || nodeRays <= 8)
+			//if (leafRays >= 8 || nodeRays <= 8)
 		{
 			auto timeBeforeTriangleTest = getTime();
 
@@ -310,7 +326,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
-				int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&std::get<0>(ray)), leafMemory, leafSize);
+				int resultIndex = triIntersect(trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafMemory, leafSize);
 				//it returns the hit id -> -1 = no hit
 				if (resultIndex != -1)
 				{

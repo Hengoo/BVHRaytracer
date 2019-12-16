@@ -203,8 +203,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 
 				auto timeBeforeRay = getTime();
 				nanoSec timeTriangleTest(0);
-				glm::vec3 pos = getRayTargetPosition(info);
-				FastRay ray(position, pos - position);
+				FastRay ray(position, getRayTargetPosition(info));
 
 				uint8_t imageResult = 0;
 				uint32_t leafIndex = 0;
@@ -282,35 +281,27 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			auto timeBeforeRay = getTime();
 
 			//prepare primary ray
-			std::array<std::tuple<FastRay, int8_t, bool >, workGroupSquare > rays;
+			std::array<FastRay, workGroupSquare > rays;
 			//initialization doesnt matter since we get bool result;
 			std::array<uint32_t, workGroupSquare> leafIndex;
 			//leafIndex.fill(0);
-			std::array<uint8_t, workGroupSquare> triIndex;
-			//triIndex.fill(0);
+			//hit is encoded in triIndex (when its not -1)
+			std::array<int8_t, workGroupSquare> triIndex;
+			triIndex.fill(-1);
 			nanoSec timeTriangleTest(0);
 
+			int tmp0 = ((i * workGroupSize) / width) * workGroupSize - height / 2;
+			int tmp1 = ((i * workGroupSize) % width - width / 2);
 			for (int j = 0; j < workGroupSquare; j++)
 			{
-				glm::vec3 pos = getRayTargetPosition(
-					-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
-					((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize));
-				glm::vec3 direction = pos - position;
-
-				//precalculate the code for node traversal.
-				int8_t code = 0;
-				code = code | (direction[0] <= 0);
-				code = code | ((direction[1] <= 0) << 1);
-				bool reverse = direction[2] <= 0;
-				if (reverse)
-					code = code ^ 3;
-
-				rays[j] = std::make_tuple(FastRay(position, direction), code, reverse);
+				glm::vec3 targetPos = getRayTargetPosition(
+					(-tmp0 - (j / workGroupSize)),
+					(tmp1 + (j % workGroupSize)));
+				rays[j] = FastRay(position, targetPos);
 			}
 
 			//shoot primary ray
-			auto result = nodeManager.intersectWide(rays, leafIndex, triIndex, timeTriangleTest);
-
+			nodeManager.intersectWide(rays, leafIndex, triIndex, timeTriangleTest);
 
 			//prepare secondary rays:
 			std::array<uint8_t, workGroupSquare> ambientResult;
@@ -320,18 +311,20 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 
 			for (int j = 0; j < workGroupSquare; j++)
 			{
-				int index = i * workGroupSquare + j;
-				if (result[j])
+				if (triIndex[j] != -1)
 				{
 					//get surface normal and position from triangle index info.
 					glm::vec3 surfacePosition(0);
-					nodeManager.getSurfaceNormalPosition(std::get<0>(rays[j]), surfaceNormal[j], surfacePosition, leafIndex[j], triIndex[j]);
+					nodeManager.getSurfaceNormalPosition(rays[j], surfaceNormal[j], surfacePosition, leafIndex[j], triIndex[j]);
 					//this way of "fixing" the position allows us to keep it for different ambient rays
-					std::get<0>(rays[j]).pos = surfacePosition + surfaceNormal[j] * 0.001f;
+					rays[j].pos = surfacePosition + surfaceNormal[j] * 0.001f;
 				}
 				else
 				{
-					//do what if no primary hit?
+					//no primary hit -> in the end it will spawn a ray with
+					//spawn position is outside of what i would expect as a scene so it never hits anything
+					rays[j].pos = glm::vec3(1000000000.f);
+					surfaceNormal[j] = glm::vec3(1.f);
 				}
 			}
 
@@ -341,19 +334,12 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				for (int j = 0; j < workGroupSquare; j++)
 				{
 					int index = i * workGroupSquare + j;
-					if (result[j])
-					{
-						//get surface normal and position from triangle index info.
-						//looks cool if wrong
-						//auto direction = getAmbientDirection(index, surfaceNormal[j], i);
-						auto direction = getAmbientDirection(index, surfaceNormal[j], a);
-						std::get<0>(rays[j]).updateDirection(direction);
-						std::get<0>(rays[j]).tMax = ambientDistance;
-					}
-					else
-					{
-						//what to do if no primary hit?
-					}
+					//get surface normal and position from triangle index info.
+					//looks cool if wrong
+					//auto direction = getAmbientDirection(index, surfaceNormal[j], i);
+					auto direction = getAmbientDirection(index, surfaceNormal[j], a);
+					rays[j].updateDirection(direction);
+					rays[j].tMax = ambientDistance;
 				}
 
 				//shoot secondary ray:
@@ -363,10 +349,6 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			{
 				int index = i * workGroupSquare + j;
 
-				//if(ambientResult[j] > 1)
-				//{
-				//	std::cout << "what" << std::endl;
-				//}
 				float factor = 1 - (ambientResult[j] / (float)ambientSampleCount);
 				//factor = (factor + 1) / 2.f;
 				uint8_t imageResult = (uint8_t)(factor * 255);

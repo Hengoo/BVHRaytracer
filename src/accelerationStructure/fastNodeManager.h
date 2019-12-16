@@ -30,8 +30,6 @@ struct alignas(32) FastNode
 		uint32_t primIdBegin;
 	};
 
-
-
 	//could put this bool inside something ?
 	bool hasChildren;
 
@@ -118,10 +116,11 @@ public:
 	bool intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const;
 	bool intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const;
 	bool intersectSecondary(FastRay& ray, nanoSec& timeTriangleTest) const;
-	std::array<bool, workGroupSquare> intersectWide(std::array< std::tuple<FastRay, int8_t, bool >, workGroupSquare >& rays,
-		std::array<uint32_t, workGroupSquare>& leafIndex, std::array<uint8_t, workGroupSquare>& triIndex,
+	void intersectWide(std::array<FastRay, workGroupSquare>& rays,
+		std::array<uint32_t, workGroupSquare>& leafIndex,
+		std::array<int8_t, workGroupSquare>& triIndex,
 		nanoSec& timeTriangleTest) const;
-	void  intersectSecondaryWide(std::array< std::tuple<FastRay, int8_t, bool >, workGroupSquare >& rays, std::array<uint8_t,workGroupSquare>& result, nanoSec& timeTriangleTest) const;
+	void  intersectSecondaryWide(std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest) const;
 
 	float averageBvhDepth;
 	uint32_t triangleCount;
