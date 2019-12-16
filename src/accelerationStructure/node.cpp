@@ -8,6 +8,7 @@
 #include "node.h"
 #include "../primitives/primitive.h"
 #include "../ray.h"
+#include "../glmUtil.h"
 
 void Node::addNode(std::shared_ptr<Node> n)
 {
@@ -191,15 +192,10 @@ bool Node::intersect(Ray& ray)
 		else
 		{
 			//traverse nodes with children that can have arbitrary sorting
-
-			//new version that saves traverse order
-			uint8_t code = 0;
-			code = code | (ray.direction[0] <= 0);
-			code = code | ((ray.direction[1] <= 0) << 1);
-			bool reverse = ray.direction[2] <= 0;
+			int code = maxAbsDimension(ray.direction);
+			bool reverse = ray.direction[code] <= 0;
 			if (reverse)
 			{
-				code = code ^ 3;
 				for (int i = traverseOrderEachAxis[code].size() - 1; i >= 0; i--)
 				{
 					uint8_t cid = traverseOrderEachAxis[code][i];
@@ -259,88 +255,25 @@ size_t Node::getPrimCount()
 	return std::distance(primitiveBegin, primitiveEnd);
 }
 
-void Node::calculateTraverseOrderEachAxis(unsigned int branchingFactor, std::vector<std::array<int8_t, 3>>& sortAxisEachSplit)
+void Node::calculateTraverseOrderEachAxis(unsigned int branchingFactor)
 {
-	if (true)
+	std::array < std::vector < std::tuple<float, int>>, 3> distanceIdTuple;
+	//second version that goes by faces (major ray axis). Ordering is done by box center
+
+	for (int cId = 0; cId < getChildCount(); cId++)
 	{
-		std::vector<std::pair<int8_t, bool>> smallQueue;
-		std::vector<uint8_t>childIds;
-		childIds.reserve(branchingFactor);
-		smallQueue.reserve(branchingFactor);
-		for (int code = 0; code < 4; code++)
-		{
-			traverseOrderEachAxis[code].reserve(branchingFactor);
-
-			smallQueue.push_back({ 0, false });
-			while (!smallQueue.empty())
-			{
-				auto current = smallQueue.back();
-				smallQueue.pop_back();
-
-				//faster to copy than to do reference or pointer
-				auto a = sortAxisEachSplit[current.first];
-				//side. true = left, false = right
-				uint8_t tmp = (code >> a[0]);
-				bool side = tmp & 1;
-				//bool side = ray.direction[a[0]] > 0;
-				if (current.second)
-				{
-					side = !side;
-				}
-
-				int8_t id = 0;
-				if (side)
-				{
-					id = a[1];
-				}
-				else
-				{
-					id = a[2];
-				}
-				//add second part to queue
-				if (!current.second)
-				{
-					smallQueue.push_back({ current.first,true });
-				}
-				if (id < 0)
-				{
-					childIds.push_back(abs(id) - 1);
-				}
-				else
-				{
-					smallQueue.push_back({ id, false });
-				}
-			}
-			std::for_each(std::execution::seq, childIds.rbegin(), childIds.rend(),
-				[&](auto& cId)
-				{
-					traverseOrderEachAxis[code].push_back(cId);
-				});
-			childIds.clear();
-			smallQueue.clear();
-		}
-	}
-	else
-	{
-		std::array < std::vector < std::tuple<float, int>>, 3> distanceIdTuple;
-		//second version that goes by faces (major ray axis). Ordering is done by box center
-
-		for (int cId = 0; cId < getChildCount(); cId++)
-		{
-			auto center = children[cId]->getCenter();
-			for (int face = 0; face < 3; face++)
-			{
-				distanceIdTuple[face].push_back(std::make_tuple(center[face], cId));
-			}
-		}
+		auto center = children[cId]->getCenter();
 		for (int face = 0; face < 3; face++)
 		{
-			std::sort(distanceIdTuple[face].begin(), distanceIdTuple[face].end());
-			for (auto& tup : distanceIdTuple[face])
-			{
-				traverseOrderEachAxis[face].push_back(std::get<1>(tup));
-			}
+			distanceIdTuple[face].push_back(std::make_tuple(center[face], cId));
 		}
-
+	}
+	for (int face = 0; face < 3; face++)
+	{
+		std::sort(distanceIdTuple[face].begin(), distanceIdTuple[face].end());
+		for (auto& tup : distanceIdTuple[face])
+		{
+			traverseOrderEachAxis[face].push_back(std::get<1>(tup));
+		}
 	}
 }

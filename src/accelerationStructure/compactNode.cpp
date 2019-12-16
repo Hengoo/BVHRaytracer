@@ -285,17 +285,10 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 			else if (std::is_same<T, CompactNodeV3>::value)
 			{
 				//traverse nodes with children that can have arbitrary sorting
-				//new version that saves traverse order
-				uint8_t code = 0;
-				code = code | (ray.direction[0] <= 0);
-				code = code | ((ray.direction[1] <= 0) << 1);
-				bool reverse = ray.direction[2] <= 0;
-
-				//int code = maxAbsDimension(ray.direction);
-				//bool reverse = ray.direction[code] <= 0;
+				int code = maxAbsDimension(ray.direction);
+				bool reverse = ray.direction[code] <= 0;
 				if (reverse)
 				{
-					code = code ^ 3;
 					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
 						[&](auto& cId)
 						{
@@ -454,13 +447,10 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 				//traverse nodes with children that can have arbitrary sorting
 
 				//new version that saves traverse order
-				uint8_t code = 0;
-				code = code | (ray.direction[0] <= 0);
-				code = code | ((ray.direction[1] <= 0) << 1);
-				bool reverse = ray.direction[2] <= 0;
+				int code = maxAbsDimension(ray.direction);
+				bool reverse = ray.direction[code] <= 0;
 				if (reverse)
 				{
-					code = code ^ 3;
 					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
 						[&](auto& cId)
 						{

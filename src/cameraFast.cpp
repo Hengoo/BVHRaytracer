@@ -228,14 +228,15 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					glm::vec3 surfaceNormal(0);
 					glm::vec3 surfacePosition(0);
 					nodeManager.getSurfaceNormalPosition(ray, surfaceNormal, surfacePosition, leafIndex, triIndex);
+					ray.pos = surfacePosition + surfaceNormal * 0.001f;
 					//glm::vec3 surfacePosition = ray.pos + ray.direction * (ray.tMax);
 					//nodeManager.getSurfaceNormalTri(ray, surfaceNormal);
 					for (size_t i = 0; i < ambientSampleCount; i++)
 					{
 						//deterministic random direction
 						auto direction = getAmbientDirection(info.index, surfaceNormal, i);
-						ray = FastRay(surfacePosition + surfaceNormal * 0.001f, direction, ambientDistance);
-
+						ray.updateDirection(direction);
+						ray.tMax = ambientDistance;
 						//shoot secondary ray
 						if (nodeManager.intersectSecondary(ray, timeTriangleTest))
 						{
@@ -244,7 +245,6 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					}
 
 					float factor = 1 - (ambientResult / (float)ambientSampleCount);
-					//factor = (factor + 1) / 2.f;
 					imageResult = (uint8_t)(factor * 255);
 				}
 				//important to override previous data since we do more than one run.

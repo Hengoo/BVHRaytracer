@@ -84,7 +84,7 @@ class Aabb : public Node
 
 		//compute sah of every possible split and
 		primPointVector::iterator computerBestSplit(float invSurfaceArea, int leafTarget, float& sahSplitCost);
-		primPointVector::iterator computerBestSplitSort(float invSurfaceArea, int leafTarget, int8_t& sortAxis, float& sahSplitCost);
+		primPointVector::iterator computerBestSplitSort(float invSurfaceArea, int leafTarget, float& sahSplitCost);
 
 		inline size_t getPrimCount()
 		{
@@ -92,8 +92,8 @@ class Aabb : public Node
 		}
 	};
 
-	primPointVector::iterator getSplitIntervall(std::vector<Aabb::PrimIntervall>& workIntervall, int bestI, const bool& sortEachSplit,
-		float invSurfaceArea, const unsigned int& leafTarget, std::vector<std::array<int8_t, 3Ui64>>& sortAxisEachSplit, float& sahSplitCost, bool applySortAxisChange);
+	primPointVector::iterator getSplitIntervall(std::vector<Aabb::PrimIntervall>& workIntervall, int bestI, const bool sortEachSplit,
+		float invSurfaceArea, const unsigned int leafTarget, float& sahSplitCost);
 
 protected:
 public:

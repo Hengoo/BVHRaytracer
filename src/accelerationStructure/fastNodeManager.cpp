@@ -106,17 +106,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 
 				if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 				{
-					//int code = maxAbsDimension(ray.direction);
-					//bool reverse = ray.direction[code] <= 0;
-					int code = 0;
-					code = code | (ray.direction[0] <= 0);
-					code = code | ((ray.direction[1] <= 0) << 1);
-					bool reverse = ray.direction[2] <= 0;
-
+					int code = maxAbsDimension(ray.direction);
+					bool reverse = ray.direction[code] <= 0;
 					if (reverse)
 					{
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code ^ 3].begin(), node->traverseOrderEachAxis[code ^ 3].end(),
-						//std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
 							[&](auto& cId)
 							{
 								if (aabbDistances[cId] != -100000)
@@ -371,12 +365,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 	aabbDistances.fill(-100000);
 
 	//precalculate the code for node traversal.
-	int8_t code = 0;
-	code = code | (ray.direction[0] <= 0);
-	code = code | ((ray.direction[1] <= 0) << 1);
-	bool reverse = ray.direction[2] <= 0;
-	if (reverse)
-		code = code ^ 3;
+	int code = maxAbsDimension(ray.direction);
+	bool reverse = ray.direction[code] <= 0;
 
 	while (stackIndex != 0)
 	{
@@ -456,12 +446,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 	aabbDistances.fill(-100000);
 
 	//precalculate the code for node traversal.
-	int8_t code = 0;
-	code = code | (ray.direction[0] <= 0);
-	code = code | ((ray.direction[1] <= 0) << 1);
-	bool reverse = ray.direction[2] <= 0;
-	if (reverse)
-		code = code ^ 3;
+	int code = maxAbsDimension(ray.direction);
+	bool reverse = ray.direction[code] <= 0;
 
 	while (stackIndex != 0)
 	{
@@ -567,7 +553,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 
 			if (aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, branchingFactor))
 			{
-				for (int i = 0; i < branchingFactor; i++)
+				for (int i = 0; i < nodeMemory; i++)
 				{
 					if (aabbDistances[i] != -100000)
 					{

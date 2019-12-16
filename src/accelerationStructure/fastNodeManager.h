@@ -21,7 +21,7 @@ struct alignas(32) FastNode
 	std::array<float, nodeMemory * 6> bounds;
 
 	//sorting
-	std::array<std::array<int8_t, nodeMemory>, 4> traverseOrderEachAxis;
+	std::array<std::array<int8_t, nodeMemory>, 3> traverseOrderEachAxis;
 
 	//TODO padding and size improvements
 	union
@@ -38,7 +38,7 @@ struct alignas(32) FastNode
 
 
 	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount, std::array<float, nodeMemory * 6> bounds
-		, std::array<std::vector<int8_t>, 4> traverseOrderEachAxis, std::bitset<nodeMemory> childType)
+		, std::array<std::vector<int8_t>, 3> traverseOrderEachAxis, std::bitset<nodeMemory> childType)
 		: bounds(bounds), childType(childType)
 	{
 		if (childCount != 0)
@@ -56,7 +56,7 @@ struct alignas(32) FastNode
 			std::cerr << "ERROR assigning both child and prim to fast compact node" << std::endl;
 		}
 
-		for (int j = 0; j < 4; j++)
+		for (int j = 0; j < 3; j++)
 		{
 			for (int i = 0; i < this->traverseOrderEachAxis[0].size(); i++)
 			{

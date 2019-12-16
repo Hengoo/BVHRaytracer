@@ -23,9 +23,8 @@ public:
 
 	//std::vector<std::array<int8_t, 3>>& sortAxisEachSplit;
 
-	//one order for each permutation is needed There are 8, but the second 4 are mirrors of the first ones.(so we dont save them)
-	//in theory i need 4 Bit for each number (0 to 15) to represent the child id
-	std::array<std::vector<int8_t>,4> traverseOrderEachAxis;
+	//3 faces (could sort by x axis and therefore reduce to 2 for compact representation.
+	std::array<std::vector<int8_t>,3> traverseOrderEachAxis;
 
 	virtual void addNode(std::shared_ptr<Node> n);
 
@@ -116,6 +115,6 @@ public:
 	primPointVector::iterator allPrimitiveBegin;
 	primPointVector::iterator allPrimitiveEnd;
 protected:
-	void calculateTraverseOrderEachAxis(unsigned int branchingFactor, std::vector<std::array<int8_t, 3>>& sortAxisEachSplit);
+	void calculateTraverseOrderEachAxis(unsigned int branchingFactor);
 private:
 };
