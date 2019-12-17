@@ -146,9 +146,6 @@
     <ClInclude Include="src\accelerationStructure\compactNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ISPC\ISPCBuild\test_ISPC.h">
-      <Filter>ISPC Header</Filter>
-    </ClInclude>
     <ClInclude Include="src\cameraData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -183,9 +180,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Object Include="src\ISPC\ISPCBuild\test.obj">
-      <Filter>Resource Files</Filter>
-    </Object>
     <Object Include="src\ISPC\ISPCBuild\rayTracer.obj">
       <Filter>Resource Files</Filter>
     </Object>

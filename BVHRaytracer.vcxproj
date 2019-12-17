@@ -49,7 +49,6 @@
     <ClInclude Include="src\glmInclude.h" />
     <ClInclude Include="src\glmUtil.h" />
     <ClInclude Include="src\ISPC\ISPCBuild\rayTracer_ISPC.h" />
-    <ClInclude Include="src\ISPC\ISPCBuild\test_ISPC.h" />
     <ClInclude Include="src\lights\directionalLight.h" />
     <ClInclude Include="src\lights\light.h" />
     <ClInclude Include="src\lights\pointLight.h" />
@@ -78,7 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <Object Include="src\ISPC\ISPCBuild\rayTracer.obj" />
-    <Object Include="src\ISPC\ISPCBuild\test.obj" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -229,10 +227,10 @@
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test.obj;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\test.ispc;$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

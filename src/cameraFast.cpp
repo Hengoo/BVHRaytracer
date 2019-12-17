@@ -30,28 +30,28 @@
 macro5(gS, 8, wGS)\
 macro5(gS, 12, wGS)\
 macro5(gS, 16, wGS)\
-macro5(gS, 20, wGS)\
-macro5(gS, 24, wGS)\
-macro5(gS, 28, wGS)\
-macro5(gS, 32, wGS)\
-macro5(gS, 36, wGS)\
-macro5(gS, 40, wGS)\
-macro5(gS, 44, wGS)\
-macro5(gS, 48, wGS)\
-macro5(gS, 52, wGS)\
-macro5(gS, 56, wGS)\
-macro5(gS, 60, wGS)\
-macro5(gS, 64, wGS)\
+//macro5(gS, 20, wGS)\
+//macro5(gS, 24, wGS)\
+//macro5(gS, 28, wGS)\
+//macro5(gS, 32, wGS)\
+//macro5(gS, 36, wGS)\
+//macro5(gS, 40, wGS)\
+//macro5(gS, 44, wGS)\
+//macro5(gS, 48, wGS)\
+//macro5(gS, 52, wGS)\
+//macro5(gS, 56, wGS)\
+//macro5(gS, 60, wGS)\
+//macro5(gS, 64, wGS)\
 
 //macro4 does gangsize 8
 #define macro4(gS, wGS) macro5(gS, 8, wGS)\
 macro5(gS, 16, wGS)\
-macro5(gS, 24, wGS)\
-macro5(gS, 32, wGS)\
-macro5(gS, 40, wGS)\
-macro5(gS, 48, wGS)\
-macro5(gS, 56, wGS)\
-macro5(gS, 64, wGS)
+//macro5(gS, 24, wGS)\
+//macro5(gS, 32, wGS)\
+//macro5(gS, 40, wGS)\
+//macro5(gS, 48, wGS)\
+//macro5(gS, 56, wGS)\
+//macro5(gS, 64, wGS)
 
 #define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance);\
 template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
@@ -107,7 +107,10 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	}
 
 	//"first" render to load everything in cache
-	renderImage(false, nodeManager, ambientSampleCount, ambientDistance);
+	for (int i = 0; i < 1; i++)
+	{
+		renderImage(false, nodeManager, ambientSampleCount, ambientDistance);
+	}
 
 	//has to be an odd number for correct median
 	int sampleCount = 5;

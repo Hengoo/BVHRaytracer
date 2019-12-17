@@ -17,6 +17,10 @@
 #include "lights/pointLight.h"
 #include "lights/directionalLight.h"
 
+// Include the header file that the ispc compiler generates
+#include "ISPC/ISPCBuild/rayTracer_ISPC.h"
+using namespace::ispc;
+
 
 //macros to start the template render stuff ... yeay (i think i still prefer it over rekursive template)
 //what it does: convert the 3 numbers we read from a file to compile time values so we can use them in templates
@@ -46,6 +50,18 @@ if(workGroupS == 32) startPerfRender3(gangS, branchMem, 32);			\
 	}																	\
 }
 
+//short version
+#define startPerfRender4(gangS, branchMem, workGroupS){					\
+	if(branchMem == 8 ) startPerfRender5(gangS, 8, workGroupS);			\
+	if(branchMem == 16 ) startPerfRender5(gangS, 16, workGroupS);		\
+if constexpr (gangS == 4)												\
+{																		\
+	if(branchMem == 4 ) startPerfRender5(gangS, 4, workGroupS);			\
+	if(branchMem == 12 ) startPerfRender5(gangS, 12, workGroupS);		\
+}}
+
+//long version
+/*
 #define startPerfRender4(gangS, branchMem, workGroupS){					\
 	if(branchMem == 8 ) startPerfRender5(gangS, 8, workGroupS);			\
 	if(branchMem == 16 ) startPerfRender5(gangS, 16, workGroupS);		\
@@ -66,6 +82,7 @@ if constexpr (gangS == 4)												\
 	if(branchMem == 52 ) startPerfRender5(gangS, 52, workGroupS);		\
 	if(branchMem == 60 ) startPerfRender5(gangS, 60, workGroupS);		\
 }}
+*/
 
 #define startPerfRender5(gangS, branchMem, workGroupS) 	{												\
 	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
@@ -75,10 +92,6 @@ if constexpr (gangS == 4)												\
 }
 
 
-
-// Include the header file that the ispc compiler generates
-#include "ISPC/ISPCBuild/rayTracer_ISPC.h"
-using namespace::ispc;
 void RayTracer::run()
 {
 	auto timeProgrammBegin = getTime();
