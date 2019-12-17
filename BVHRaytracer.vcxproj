@@ -155,8 +155,8 @@
     </Link>
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
-      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test.obj;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\test.ispc;$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -173,8 +173,8 @@
     </Link>
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
-      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test.obj;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\test.ispc;$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -198,10 +198,10 @@
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\test.obj;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
+      <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\test.ispc;$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -84,7 +84,7 @@ static inline float3 computeNormal(const float3& p0,const float3& p1,const float
 //input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tMax -> is our output
 //storage is needed for varing leafsize -> seems like i have to copy paste it once for 4, 8, and 12 to not have it
 {% for leafMemory in leafNumbers%}
-export uniform int triIntersect{{leafMemory}}(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo, uniform unsigned int leafSize)
+export uniform int triIntersect{{leafMemory}}(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo)
 {
 	//large value so reduce_min never gets masked variables
 	varying float tStore = 1000000;
@@ -98,13 +98,6 @@ export uniform int triIntersect{{leafMemory}}(const uniform float tri[], uniform
 		float3 p0 = { tri[triId + index                     ], tri[triId + index + {{leafMemory}}    ], tri[triId + index + {{leafMemory}} * 2] };
 		float3 p1 = { tri[triId + index + {{leafMemory}} * 3], tri[triId + index + {{leafMemory}} * 4], tri[triId + index + {{leafMemory}} * 5] };
 		float3 p2 = { tri[triId + index + {{leafMemory}} * 6], tri[triId + index + {{leafMemory}} * 7], tri[triId + index + {{leafMemory}} * 8] };
-			
-		//now we have loaded it: if index > leafMemory: or it with something to make sure its loaded and then stop
-		//cif since leafmemory and leafsize should be a multiple of the gangsize.
-		if(index > leafSize)
-		{
-			continue;
-		}
 		
 		//print positions:
 		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
@@ -177,7 +170,7 @@ export uniform int triIntersect{{leafMemory}}(const uniform float tri[], uniform
 
 //Same as triIntersect but for shadow rays. (no output besides bool)
 {% for leafMemory in leafNumbers%}
-export uniform bool triAnyHit{{leafMemory}}(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo, uniform unsigned int leafSize)
+export uniform bool triAnyHit{{leafMemory}}(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo)
 {
 	//large value so reduce_min never gets masked variables
 	uniform bool result = false;
@@ -188,13 +181,6 @@ export uniform bool triAnyHit{{leafMemory}}(const uniform float tri[], uniform u
 		float3 p0 = { tri[triId + index                     ], tri[triId + index + {{leafMemory}}    ], tri[triId + index + {{leafMemory}} * 2] };
 		float3 p1 = { tri[triId + index + {{leafMemory}} * 3], tri[triId + index + {{leafMemory}} * 4], tri[triId + index + {{leafMemory}} * 5] };
 		float3 p2 = { tri[triId + index + {{leafMemory}} * 6], tri[triId + index + {{leafMemory}} * 7], tri[triId + index + {{leafMemory}} * 8] };
-
-		//now we have loaded it: if index > leafMemory: or it with something to make sure its loaded and then stop
-		//cif since leafmemory and leafsize should be a multiple of the gangsize.
-		if(index > leafSize)
-		{
-			continue;
-		}
 		
 		//print positions:
 		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);

@@ -59,6 +59,7 @@ if constexpr (memoryName == 8 ) {ispcResult = functionName##8 (__VA_ARGS__);}		\
 if constexpr (memoryName == 12) {ispcResult = functionName##12(__VA_ARGS__);}		\
 if constexpr (memoryName == 16) {ispcResult = functionName##16(__VA_ARGS__);}		\
 
+//switch might be better?
 //calls the function with a number behind, depending on the memoryName.
 #define callIspcTemplateNotConst(functionName, memoryName, ...)			\
 if (memoryName == 4 ) {ispcResult = functionName##4 (__VA_ARGS__);}		\
@@ -207,7 +208,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				//test ray against NodeId and write result in correct array
 
 				int ispcResult;
-				callIspcTemplateNotConst(triIntersect, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafSize);
+				callIspcTemplateNotConst(triIntersect, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult != -1)
 				{
@@ -344,7 +345,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				callIspcTemplateNotConst(triAnyHit, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafSize);
+				callIspcTemplateNotConst(triAnyHit, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult)
 				{
@@ -407,7 +408,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 			auto timeBeforeTriangleTest = getTime();
 
 			int ispcResult;
-			callIspcTemplateNotConst(triIntersect, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafSize);
+			callIspcTemplateNotConst(triIntersect, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
 			//it returns the hit id -> -1 = no hit
 			if (ispcResult != -1)
 			{
@@ -485,7 +486,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 			auto timeBeforeTriangleTest = getTime();
 
 			int ispcResult;
-			callIspcTemplateNotConst(triIntersect, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafSize);
+			callIspcTemplateNotConst(triIntersect, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
 			//it returns the hit id -> -1 = no hit
 			if (ispcResult != -1)
 			{
@@ -564,7 +565,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 		{
 			auto timeBeforeTriangleTest = getTime();
 			bool ispcResult;
-			callIspcTemplateNotConst(triAnyHit, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray), leafSize);
+			callIspcTemplateNotConst(triAnyHit, leafMemory, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
 			//it returns the hit id -> -1 = no hit
 			if (ispcResult)
 			{
