@@ -97,3 +97,5 @@ Analysis/*
 
 #ignore all ispc build results (also the build header)
 src/ISPC/ISPCBuild
+src/ISPC/rayTracer.ispc
+src/ISPC/IspcTests/ISPCBuild
