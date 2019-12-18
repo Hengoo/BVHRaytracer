@@ -53,7 +53,7 @@ macro5(gS, 16, wGS)\
 //current approach would be to generate some const exp if to call the correct method
 
 //calls the function with a number behind, depending on the memoryName.
-#define callIspcTemplate(functionName, memoryName, ...)			\
+#define callIspcTemplate(functionName, memoryName, ...)								\
 if constexpr (memoryName == 4 ) {ispcResult = functionName##4 (__VA_ARGS__);}		\
 if constexpr (memoryName == 8 ) {ispcResult = functionName##8 (__VA_ARGS__);}		\
 if constexpr (memoryName == 12) {ispcResult = functionName##12(__VA_ARGS__);}		\
@@ -85,18 +85,12 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 		stackIndex[i] = 1;
 	}
 
-	//choose type depending on workGroup max size
-#if workGroupSquare < 256
 	//ray id list to keep track of what rays we need to do.
-	std::array<uint8_t, workGroupSquare> nodeWork;
-	std::iota(nodeWork.begin(), nodeWork.end(), 0);
-	std::array<uint8_t, workGroupSquare> leafWork;
-#else
-	//ray id list to keep track of what rays we need to do.
+	//TODO this could be uint8 for workGroupSize of 16 and smaller
 	std::array<uint16_t, workGroupSquare> nodeWork;
 	std::iota(nodeWork.begin(), nodeWork.end(), 0);
 	std::array<uint16_t, workGroupSquare> leafWork;
-#endif
+
 
 	//number of noderays and leafrays so we know what ids to read.
 	uint16_t nodeRays = workGroupSquare;
@@ -249,18 +243,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 	std::array< uint8_t, workGroupSquare>stackIndex;
 	stackIndex.fill(1);
 
-	//choose type depending on workGroup max size
-#if workGroupSquare < 256
 	//ray id list to keep track of what rays we need to do.
-	std::array<uint8_t, workGroupSquare> nodeWork;
-	std::iota(nodeWork.begin(), nodeWork.end(), 0);
-	std::array<uint8_t, workGroupSquare> leafWork;
-#else
-	//ray id list to keep track of what rays we need to do.
+	//TODO this could be uint8 for workGroupSize of 16 and smaller
 	std::array<uint16_t, workGroupSquare> nodeWork;
 	std::iota(nodeWork.begin(), nodeWork.end(), 0);
 	std::array<uint16_t, workGroupSquare> leafWork;
-#endif
 
 	//number of noderays and leafrays so we how much to read in nodeWork and leafWork
 	uint16_t nodeRays = workGroupSquare;

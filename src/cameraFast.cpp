@@ -285,7 +285,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 
 			//prepare primary ray
 			std::array<FastRay, workGroupSquare > rays;
-			//initialization doesnt matter since we get bool result;
+			//initialization doesnt matter since we get hit result from triIndex
 			std::array<uint32_t, workGroupSquare> leafIndex;
 			//leafIndex.fill(0);
 			//hit is encoded in triIndex (when its not -1)
@@ -324,8 +324,9 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				}
 				else
 				{
-					//no primary hit -> in the end it will spawn a ray with
-					//spawn position is outside of what i would expect as a scene so it never hits anything
+					//no primary hit -> in the end it will spawn a ray with a spawn position that 
+					//is outside of what i would expect as a scene so it never hits anything.
+					//and i also dont expect no primary hits to happen often.
 					rays[j].pos = glm::vec3(1000000000.f);
 					surfaceNormal[j] = glm::vec3(1.f);
 				}
@@ -338,8 +339,6 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				{
 					int index = i * workGroupSquare + j;
 					//get surface normal and position from triangle index info.
-					//looks cool if wrong
-					//auto direction = getAmbientDirection(index, surfaceNormal[j], i);
 					auto direction = getAmbientDirection(index, surfaceNormal[j], a);
 					rays[j].updateDirection(direction);
 					rays[j].tMax = ambientDistance;
@@ -355,6 +354,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				float factor = 1 - (ambientResult[j] / (float)ambientSampleCount);
 				//factor = (factor + 1) / 2.f;
 				uint8_t imageResult = (uint8_t)(factor * 255);
+				//imageResult = i;
 				image[index * 4 + 0] = imageResult;
 				image[index * 4 + 1] = imageResult;
 				image[index * 4 + 2] = imageResult;

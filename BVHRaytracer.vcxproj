@@ -152,6 +152,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <StackReserveSize>2097152</StackReserveSize>
     </Link>
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
@@ -170,6 +171,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <StackReserveSize>2097152</StackReserveSize>
     </Link>
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
@@ -193,6 +195,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <StackReserveSize>2097152</StackReserveSize>
     </Link>
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
@@ -222,6 +225,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <StackReserveSize>2097152</StackReserveSize>
     </Link>
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>

@@ -64,7 +64,6 @@ class RayTracer
 
 	int workGroupSize;
 
-
 public:
 	void run();
 
