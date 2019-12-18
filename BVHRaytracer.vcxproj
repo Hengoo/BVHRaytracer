@@ -157,7 +157,7 @@
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
       <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracerTemplate.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -176,7 +176,7 @@
     <CustomBuildStep>
       <Command>call $(MSBuildProjectDirectory)\compileISPC.cmd</Command>
       <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracerTemplate.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -204,7 +204,7 @@
       <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracerTemplate.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -234,7 +234,7 @@
       <Outputs>$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer_ISPC.h;$(MSBuildProjectDirectory)\src\ISPC\ISPCBuild\rayTracer.obj;%(Outputs)</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracer.ispc;%(Inputs)</Inputs>
+      <Inputs>$(MSBuildProjectDirectory)\src\ISPC\rayTracerTemplate.ispc;%(Inputs)</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
