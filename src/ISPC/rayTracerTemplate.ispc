@@ -1,8 +1,5 @@
 //strongly inspired / taken from ISPC raytracer example https://github.com/ispc/ispc/blob/master/examples/rt/rt.ispc
 
-//#define bool int
-
-
 export uniform int getGangSize()
 {
 	return programCount;
@@ -236,8 +233,18 @@ export uniform bool aabbIntersect{{nodeMemory}}(const uniform float bounds[], un
 
 	foreach(index = 0 ... {{nodeMemory}})
 	{
-		//load bounds:
+		//test if first one is a NaN
+		//this has minimal overhead so it would be good to explude it for N4 and L4
+		//result is worse than without this "optimization" so i think i have to determine the
+		//loop size before ispc and then call the correct loop.
+		//if(isnan(bounds[index]))
+		//{
+		//	unmasked{
+		//		continue;
+		//	}
+		//}
 
+		//load bounds:
 		float3 boundMin = { bounds[index                     ], bounds[index + {{nodeMemory}}    ], bounds[index + {{nodeMemory}} * 2] };
 		float3 boundMax = { bounds[index + {{nodeMemory}} * 3], bounds[index + {{nodeMemory}} * 4], bounds[index + {{nodeMemory}} * 5] };
 
