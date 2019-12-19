@@ -84,7 +84,7 @@ static inline float3 computeNormal(const float3& p0,const float3& p1,const float
 //input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tMax -> is our output
 //storage is needed for varing leafsize -> seems like i have to copy paste it once for 4, 8, and 12 to not have it
 export uniform int triIntersect(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo,
- uniform unsigned int leafMemory, uniform unsigned int leafSize)
+ uniform unsigned int leafMemory, uniform int loopCount)
 {
 	//large value so reduce_min never gets masked variables
 	varying float tStore = 1000000;
@@ -92,19 +92,12 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 	varying int origIndex = -1;
 	uniform bool result = false;
 
-	foreach(index = 0 ... leafMemory)
+	foreach(index = 0 ... loopCount * programCount)
 	{
 		//fast read:
 		float3 p0 = { tri[triId + index                 ], tri[triId + index + leafMemory    ], tri[triId + index + leafMemory * 2] };
 		float3 p1 = { tri[triId + index + leafMemory * 3], tri[triId + index + leafMemory * 4], tri[triId + index + leafMemory * 5] };
 		float3 p2 = { tri[triId + index + leafMemory * 6], tri[triId + index + leafMemory * 7], tri[triId + index + leafMemory * 8] };
-			
-		//now we have loaded it: if index > leafMemory: or it with something to make sure its loaded and then stop
-		//cif since leafmemory and leafsize should be a multiple of the gangsize.
-		if(index > leafSize)
-		{
-			continue;
-		}
 		
 		//print positions:
 		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
@@ -175,24 +168,18 @@ export uniform int triIntersect(const uniform float tri[], uniform unsigned int 
 }
 
 //Same as triIntersect but for shadow rays. (no output besides bool)
-export uniform bool triAnyHit(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo, uniform unsigned int leafMemory, uniform unsigned int leafSize)
+export uniform bool triAnyHit(const uniform float tri[], uniform unsigned int triId, uniform float* uniform rayInfo, uniform unsigned int leafMemory, uniform int loopCount)
 {
 	//large value so reduce_min never gets masked variables
 	uniform bool result = false;
 
-	foreach(index = 0 ... leafMemory)
+	foreach(index = 0 ... loopCount * programCount)
 	{
 		//fast read:
 		float3 p0 = { tri[triId + index                 ], tri[triId + index + leafMemory    ], tri[triId + index + leafMemory * 2] };
 		float3 p1 = { tri[triId + index + leafMemory * 3], tri[triId + index + leafMemory * 4], tri[triId + index + leafMemory * 5] };
 		float3 p2 = { tri[triId + index + leafMemory * 6], tri[triId + index + leafMemory * 7], tri[triId + index + leafMemory * 8] };
 
-		//now we have loaded it: if index > leafMemory: or it with something to make sure its loaded and then stop
-		//cif since leafmemory and leafsize should be a multiple of the gangsize.
-		if(index > leafSize)
-		{
-			continue;
-		}
 		
 		//print positions:
 		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
@@ -239,25 +226,18 @@ export uniform bool triAnyHit(const uniform float tri[], uniform unsigned int tr
 	return result;
 }
 
-export uniform bool aabbIntersect(const uniform float bounds[], uniform float distances[], uniform float* uniform rayInfo, uniform int nodeMemory, uniform int nodeSize)
+export uniform bool aabbIntersect(const uniform float bounds[], uniform float distances[], uniform float* uniform rayInfo, uniform int nodeMemory, uniform int loopCount)
 {
 	//its faster to return if we had one positive hit
 	uniform bool result = false;
 
-	foreach(index = 0 ... nodeMemory)
+	foreach(index = 0 ... loopCount * programCount)
 	{
 		//load bounds:
 
 		float3 boundMin = { bounds[index                 ], bounds[index + nodeMemory    ], bounds[index + nodeMemory * 2] };
 		float3 boundMax = { bounds[index + nodeMemory * 3], bounds[index + nodeMemory * 4], bounds[index + nodeMemory * 5] };
 
-		//its faster to just compute trough it with 0,0,0 and 0,0,0 ...
-		//if(index >= nodeSize)
-		//{
-		//	//boundMax += boundMin;
-		//	//boundMin += boundMax;
-		//	continue;
-		//}
 
 		uniform float dist = rayInfo[0];
 		uniform float3 origin = { rayInfo[1], rayInfo[2], rayInfo[3]};

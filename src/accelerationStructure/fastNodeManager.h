@@ -20,18 +20,14 @@ struct alignas(32) FastNode
 	//aabbs
 	std::array<float, nodeMemory * 6> bounds;
 
-	//sorting
-	std::array<std::array<int8_t, nodeMemory>, 3> traverseOrderEachAxis;
-
-	//TODO padding and size improvements
 	union
 	{
 		uint32_t childIdBegin;
 		uint32_t primIdBegin;
 	};
 
-	//could put this bool inside something ?
-	bool hasChildren;
+	//sorting
+	std::array<std::array<int8_t, nodeMemory>, 3> traverseOrderEachAxis;
 
 	//0 = leaf, 1 = node
 	std::bitset<nodeMemory> childType;
@@ -44,12 +40,10 @@ struct alignas(32) FastNode
 		if (childCount != 0)
 		{
 			this->childIdBegin = childIdBegin;
-			hasChildren = true;
 		}
 		else if (primCount != 0)
 		{
 			this->primIdBegin = primIdBegin;
-			hasChildren = false;
 		}
 		else
 		{
@@ -69,7 +63,6 @@ struct alignas(32) FastNode
 					//no childs anymore so fill with 0
 					this->traverseOrderEachAxis[j][i] = 0;
 				}
-
 			}
 		}
 	}
@@ -99,16 +92,6 @@ class FastNodeManager
 	//(SoA order) -> first p0.x p0.y p0.z -> p1.x ....   (this for each triangle so its lieafsize * p0.x)
 	std::vector<float> trianglePoints;
 
-	//padto is the number of elements to pad to
-	inline void pad(int padTo, std::vector<float>& vector)
-	{
-		//lazy, could be faster but doesnt matter
-		while (vector.size() % padTo != 0)
-		{
-			vector.push_back(0);
-		}
-	}
-
 public:
 	int leafSize;
 	int leafMemory;
@@ -137,4 +120,26 @@ public:
 
 	//calculates the surface normal and position
 	inline void getSurfaceNormalPosition(const FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition, const uint32_t leafIndex, const uint8_t triIndex) const;
+
+	inline int getLeafLoopCount(const uint32_t leafIndex) const
+	{
+		//return leafMemory
+		int loopCount = leafMemory;
+		if (isnan(trianglePoints[leafIndex + leafMemory * 9 - 1]))
+		{
+			loopCount = trianglePoints[leafIndex + leafMemory * 9 - 2];
+		}
+		return loopCount;
+	}
+
+	inline int getNodeLoopCount(const std::array<float, nodeMemory * 6>& bounds) const
+	{
+		//return nodeMemory;
+		int loopCount = nodeMemory;
+		if (isnan(bounds[nodeMemory * 6 - 1]))
+		{
+			loopCount = bounds[nodeMemory * 6 - 2];
+		}
+		return loopCount;
+	}
 };

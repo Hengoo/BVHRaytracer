@@ -233,17 +233,6 @@ export uniform bool aabbIntersect{{nodeMemory}}(const uniform float bounds[], un
 
 	foreach(index = 0 ... {{nodeMemory}})
 	{
-		//test if first one is a NaN
-		//this has minimal overhead so it would be good to explude it for N4 and L4
-		//result is worse than without this "optimization" so i think i have to determine the
-		//loop size before ispc and then call the correct loop.
-		//if(isnan(bounds[index]))
-		//{
-		//	unmasked{
-		//		continue;
-		//	}
-		//}
-
 		//load bounds:
 		float3 boundMin = { bounds[index                     ], bounds[index + {{nodeMemory}}    ], bounds[index + {{nodeMemory}} * 2] };
 		float3 boundMax = { bounds[index + {{nodeMemory}} * 3], bounds[index + {{nodeMemory}} * 4], bounds[index + {{nodeMemory}} * 5] };
@@ -260,7 +249,7 @@ export uniform bool aabbIntersect{{nodeMemory}}(const uniform float bounds[], un
 		uniform float3 origin = { rayInfo[1], rayInfo[2], rayInfo[3]};
 		uniform float3 invDir = { rayInfo[4], rayInfo[5], rayInfo[6]};
 		//get ray data:
-		float t0 = 0, t1 =dist;
+		float t0 = 0, t1 = dist;
 	
 		float3 tNear = (boundMin - origin) * invDir;
 		float3 tFar = (boundMax - origin) * invDir;
@@ -296,7 +285,7 @@ export uniform bool aabbIntersect{{nodeMemory}}(const uniform float bounds[], un
 			//print("% \n", t0);
 			result = true;
 			distances[index] = t0;
-		}		
+		}
 	}
 	return result;
 }
