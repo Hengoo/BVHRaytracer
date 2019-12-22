@@ -67,7 +67,7 @@ if constexpr (memoryName == 16) {ispcResult = functionName##16(__VA_ARGS__);}		\
 if (memoryName == 4 ) {ispcResult = functionName##4 (__VA_ARGS__);}				\
 else if (memoryName == 8 ) {ispcResult = functionName##8 (__VA_ARGS__);}		\
 else if (memoryName == 12) {ispcResult = functionName##12(__VA_ARGS__);}		\
-else (memoryName == 16) {ispcResult = functionName##16(__VA_ARGS__);}			\
+else {ispcResult = functionName##16(__VA_ARGS__);}			\
 
 
 
