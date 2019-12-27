@@ -119,7 +119,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 
 				bool ispcResult;
 				int loopCount = getNodeLoopCount(node->bounds);
-				callIspcTemplateNotConst(aabbIntersect, loopCount, (float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
 					int code = maxAbsDimension(ray.direction);
@@ -279,8 +279,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 
 				bool ispcResult;
 				int loopCount = getNodeLoopCount(node->bounds);
-				callIspcTemplateNotConst(aabbIntersect, loopCount, (float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray));
-				//ispcResult = aabbIntersect((float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray), nodeMemory, loopCount);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
 					//this loop is faster with constant (nodememory) than with branching factor for N4L4.
@@ -420,7 +419,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 			bool ispcResult;
 			int loopCount = getNodeLoopCount(node->bounds);
-			callIspcTemplateNotConst(aabbIntersect, loopCount, (float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray));
+			callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 			{
 				if (reverse)
 				{
@@ -499,7 +498,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 			bool ispcResult;
 			int loopCount = getNodeLoopCount(node->bounds);
-			callIspcTemplateNotConst(aabbIntersect, loopCount, (float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray));
+			callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 			if (ispcResult)
 			{
 				if (reverse)
@@ -579,7 +578,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 
 			bool ispcResult;
 			int loopCount = getNodeLoopCount(node->bounds);
-			callIspcTemplateNotConst(aabbIntersect, loopCount, (float*)node->bounds.data(), (float*)aabbDistances.data(), reinterpret_cast<float*>(&ray));
+			callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 			if (ispcResult)
 			{
 				for (int i = 0; i < nodeMemory; i++)

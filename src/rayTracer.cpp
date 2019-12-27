@@ -604,7 +604,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				//create camera and render image
 				CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
 				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideRender);
 			}
 			else
 			{
@@ -612,7 +612,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				//create camera and render image
 				CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
 				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideRender);
 			}
 		}
 		else
@@ -626,7 +626,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			//create camera and render image
 			CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
 			c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
+				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideRender);
 		}
 	}
 	std::cout << "All to do with rendering took " << getTimeFloat(timeBeginRendering) << " seconds." << std::endl;

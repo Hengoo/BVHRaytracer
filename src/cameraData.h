@@ -82,8 +82,9 @@ public:
 	template<typename T>
 	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
 		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount,
-		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis)
+		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis, bool wideRender)
 	{
+		int workGroupSize = nonTemplateWorkGroupSize;
 		/*
 		glm::vec3 decScale;
 		glm::quat decOrientation;
@@ -93,115 +94,161 @@ public:
 		glm::decompose(transform, decScale, decOrientation, decTranslation, decSkew, decPerspective);
 		*/
 		//simplified ortho version for now:
-
-		fillRenderInfo();
-
-		std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
-			[&](auto& info)
+		if (!wideRender)
+		{
+			//normal render:
+#pragma omp parallel for schedule(dynamic, 4)
+			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 			{
-				glm::vec3 pos = getRayTargetPosition(info);
-				auto ray = Ray(position, pos - position, bvh);
-
-				bool result;
-				switch (renderType)
+				for (int j = 0; j < workGroupSquare; j++)
 				{
-				case 0:
-					result = bvh.intersect(ray);
-					break;
-				case 1:
-					result = nodeManager.intersect(ray);
-					break;
-				case 2:
-					result = nodeManager.intersectImmediately(ray, false);
-					break;
-				case 3:
-					result = nodeManager.intersectImmediately(ray, true);
-					break;
-				default:
-					result = nodeManager.intersectImmediately(ray, true);
-					break;
-				}
+					RenderInfo info(
+						((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
+						-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
+						0);
+					info.index = (info.w + width / 2) + (-info.h + height / 2) * width;
+					int realIndex = i * workGroupSquare + j;
+					glm::vec3 targetPos = getRayTargetPosition(info);
+					auto ray = Ray(position, targetPos - position, bvh);
 
-				//check shadows and ambient occlusion if ray hit something
-				if (result)
-				{
-					//ambient occlusion:
-					unsigned ambientResult = 0;
-
-					for (size_t i = 0; i < ambientSampleCount; i++)
+					bool result;
+					switch (renderType)
 					{
-						//deterministic random direction
-						auto direction = getAmbientDirection(info.index, ray.surfaceNormal, i);
-						Ray ambientRay(ray.surfacePosition + direction * 0.001f, direction, bvh, true);
-						ambientRay.tMax = ambientDistance;
-
-						if (shootShadowRay(ambientRay, ray, info, bvh, nodeManager, renderType))
-						{
-							ambientResult++;
-						}
-					}
-					if (ambientSampleCount != 0)
-					{
-						float factor = 1 - ambientResult / (float)ambientSampleCount;
-						factor = (factor + 1) / 2.f;
-						ray.surfaceColor.scale(factor);
-						//ray.surfaceColor = Color(factor);
+					case 0:
+						result = bvh.intersect(ray);
+						break;
+					case 1:
+						result = nodeManager.intersect(ray);
+						break;
+					case 2:
+						result = nodeManager.intersectImmediately(ray, false);
+						break;
+					case 3:
+						result = nodeManager.intersectImmediately(ray, true);
+						break;
+					default:
+						result = nodeManager.intersectImmediately(ray, true);
+						break;
 					}
 
-					float factor = 1;
-
-					//resolve shadows
-
-					for (auto& l : lights)
+					//check shadows and ambient occlusion if ray hit something
+					if (result)
 					{
-						float lightDistance;
-						glm::vec3 lightVector;
+						//ambient occlusion:
+						unsigned ambientResult = 0;
 
-						//todo use light color
-						auto lightColor = l->getLightDirection(ray.surfacePosition, lightVector, lightDistance);
-
-						float f = glm::dot(ray.surfaceNormal, lightVector);
-						//add bias to vector to prevent shadow rays hitting the surface they where created for
-						Ray shadowRay(ray.surfacePosition + lightVector * 0.001f, lightVector, bvh, true);
-						shadowRay.tMax = lightDistance;
-
-
-						//only shoot ray when surface points in light direction
-						if (castShadows && factor > 0)
+						for (size_t i = 0; i < ambientSampleCount; i++)
 						{
-							if (shootShadowRay(shadowRay, ray, info, bvh, nodeManager, renderType))
+							//deterministic random direction
+							auto direction = getAmbientDirection(realIndex, ray.surfaceNormal, i);
+							Ray ambientRay(ray.surfacePosition + direction * 0.001f, direction, bvh, true);
+							ambientRay.tMax = ambientDistance;
+
+							if (shootShadowRay(ambientRay, ray, info, bvh, nodeManager, renderType))
 							{
-								factor = 0;
+								ambientResult++;
 							}
 						}
+						if (ambientSampleCount != 0)
+						{
+							float factor = 1 - ambientResult / (float)ambientSampleCount;
+							factor = (factor + 1) / 2.f;
+							ray.surfaceColor.scale(factor);
+							//ray.surfaceColor = Color(factor);
+						}
 
-						factor = std::max(0.3f, factor);
-						ray.surfaceColor.scale(factor);
+						float factor = 1;
+
+						//resolve shadows
+
+						for (auto& l : lights)
+						{
+							float lightDistance;
+							glm::vec3 lightVector;
+
+							//todo use light color
+							auto lightColor = l->getLightDirection(ray.surfacePosition, lightVector, lightDistance);
+
+							float f = glm::dot(ray.surfaceNormal, lightVector);
+							//add bias to vector to prevent shadow rays hitting the surface they where created for
+							Ray shadowRay(ray.surfacePosition + lightVector * 0.001f, lightVector, bvh, true);
+							shadowRay.tMax = lightDistance;
+
+
+							//only shoot ray when surface points in light direction
+							if (castShadows && factor > 0)
+							{
+								if (shootShadowRay(shadowRay, ray, info, bvh, nodeManager, renderType))
+								{
+									factor = 0;
+								}
+							}
+
+							factor = std::max(0.3f, factor);
+							ray.surfaceColor.scale(factor);
+						}
+
 					}
 
+					image[info.index * 4 + 0] = (uint8_t)(ray.surfaceColor.r * 255);
+					image[info.index * 4 + 1] = (uint8_t)(ray.surfaceColor.g * 255);
+					image[info.index * 4 + 2] = (uint8_t)(ray.surfaceColor.b * 255);
+					image[info.index * 4 + 3] = (uint8_t)(ray.surfaceColor.a * 255);
+
+					//renders normal
+					//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
+					//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
+					//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+
+					//copy vectors
+					nodeIntersectionPerPixelCount[info.index] = ray.nodeIntersectionCount;
+					leafIntersectionPerPixelCount[info.index] = ray.leafIntersectionCount;
+					childFullnessPerPixelCount[info.index] = ray.childFullness;
+					primitiveFullnessPerPixelCount[info.index] = ray.primitiveFullness;
+
+					primitiveIntersectionsPerPixel[info.index] += ray.primitiveIntersectionCount;
+					successfulPrimitiveIntersectionsPerPixel[info.index] += ray.successfulPrimitiveIntersectionCount;
+					successfulAabbIntersectionsPerPixel[info.index] += ray.successfulAabbIntersectionCount;
+					aabbIntersectionsPerPixel[info.index] += ray.aabbIntersectionCount;
+
+				}
+			}
+		}
+		else
+		{
+			//exit if not supported render type:
+			if (renderType != 3)
+			{
+				std::cerr << "for wide render only render type 3 is supported." << std::endl;
+				return;
+			}
+			//wide render
+#pragma omp parallel for schedule(dynamic, 4)
+			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+			{
+				//prepare rays for render chunk
+				std::vector<Ray> rays(workGroupSquare);
+
+				int tmp0 = ((i * workGroupSize) / width) * workGroupSize - height / 2;
+				int tmp1 = ((i * workGroupSize) % width - width / 2);
+				for (int j = 0; j < workGroupSquare; j++)
+				{
+					glm::vec3 targetPos = getRayTargetPosition(
+						(-tmp0 - (j / workGroupSize)),
+						(tmp1 + (j % workGroupSize)));
+					rays[j] = Ray(position, targetPos, bvh);
 				}
 
-				image[info.index * 4 + 0] = (uint8_t)(ray.surfaceColor.r * 255);
-				image[info.index * 4 + 1] = (uint8_t)(ray.surfaceColor.g * 255);
-				image[info.index * 4 + 2] = (uint8_t)(ray.surfaceColor.b * 255);
-				image[info.index * 4 + 3] = (uint8_t)(ray.surfaceColor.a * 255);
+				//shoot primary rays
 
-				//renders normal
-				//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
-				//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
-				//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
 
-				//copy vectors
-				nodeIntersectionPerPixelCount[info.index] = ray.nodeIntersectionCount;
-				leafIntersectionPerPixelCount[info.index] = ray.leafIntersectionCount;
-				childFullnessPerPixelCount[info.index] = ray.childFullness;
-				primitiveFullnessPerPixelCount[info.index] = ray.primitiveFullness;
+				//prepare secondary rays
 
-				primitiveIntersectionsPerPixel[info.index] += ray.primitiveIntersectionCount;
-				successfulPrimitiveIntersectionsPerPixel[info.index] += ray.successfulPrimitiveIntersectionCount;
-				successfulAabbIntersectionsPerPixel[info.index] += ray.successfulAabbIntersectionCount;
-				aabbIntersectionsPerPixel[info.index] += ray.aabbIntersectionCount;
-			});
+				//shoot secondary rays
+			}
+		}
+
+		//gather data:
 
 		leafIntersectionPerDepthCount.resize(bvh.bvhDepth);
 		for (auto& perPixel : leafIntersectionPerPixelCount)
@@ -430,32 +477,32 @@ public:
 			};
 
 			//later sorted by median
-			std::vector<StorageStruct> nodeStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
-			std::vector<StorageStruct> leafStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
-			std::vector<StorageStruct> combinedStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
-			std::vector<StorageStruct> secondaryCombinedStorage((width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize));
+			std::vector<StorageStruct> nodeStorage((width / workGroupSize) * (height / workGroupSize));
+			std::vector<StorageStruct> leafStorage((width / workGroupSize) * (height / workGroupSize));
+			std::vector<StorageStruct> combinedStorage((width / workGroupSize) * (height / workGroupSize));
+			std::vector<StorageStruct> secondaryCombinedStorage((width / workGroupSize) * (height / workGroupSize));
 
 			if (fileWorkGroup0.is_open())
 			{
 				//output will be a table
 
-				std::vector<int> nodeIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
-				std::vector<int> leafIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
-				std::vector<int> combinedIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
-				std::vector<int> secondaryCombinedIntersections(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
-				int medianId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.5f;
-				//int lowerQuartileId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.25f;
-				//int upperQuartileId = nonTemplateWorkGroupSize * nonTemplateWorkGroupSize * 0.75f;
-				for (int i = 0; i < (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize); i++)
+				std::vector<int> nodeIntersections(workGroupSquare);
+				std::vector<int> leafIntersections(workGroupSquare);
+				std::vector<int> combinedIntersections(workGroupSquare);
+				std::vector<int> secondaryCombinedIntersections(workGroupSquare);
+				int medianId = workGroupSquare * 0.5f;
+				//int lowerQuartileId = workGroupSquare * 0.25f;
+				//int upperQuartileId = workGroupSquare * 0.75f;
+				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 				{
 					int nodeSum = 0;
 					int leafSum = 0;
 					//take sum and max of node and leaf intersections
-					for (int j = 0; j < nonTemplateWorkGroupSize * nonTemplateWorkGroupSize; j++)
+					for (int j = 0; j < workGroupSquare; j++)
 					{
-						int w = ((i * nonTemplateWorkGroupSize) % width) + (j % nonTemplateWorkGroupSize);
-						int h = (((i * nonTemplateWorkGroupSize) / width) * nonTemplateWorkGroupSize) + (j / nonTemplateWorkGroupSize);
-						int index = i * nonTemplateWorkGroupSize * nonTemplateWorkGroupSize + j;
+						int w = ((i * workGroupSize) % width) + (j % workGroupSize);
+						int h = (((i * workGroupSize) / width) * workGroupSize) + (j / workGroupSize);
+						int index = i * workGroupSquare + j;
 						int index2 = w + h * width;
 						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
 						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
@@ -468,11 +515,11 @@ public:
 						combinedIntersections[j] = nodeInter + leafInter;
 						secondaryCombinedIntersections[j] = secondaryNodeInter + secondaryLeafInter;
 					}
-					float nodeAverage = nodeSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
-					float leafAverage = leafSum / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+					float nodeAverage = nodeSum / (float)(workGroupSquare);
+					float leafAverage = leafSum / (float)(workGroupSquare);
 					float combinedAverage = nodeAverage + leafAverage;
 					float secondaryCombinedAverage = std::accumulate(secondaryCombinedIntersections.begin(),
-						secondaryCombinedIntersections.end(), 0) / (float)(nonTemplateWorkGroupSize * nonTemplateWorkGroupSize);
+						secondaryCombinedIntersections.end(), 0) / (float)(workGroupSquare);
 
 					float leafVariance = 0;
 					float leafSd = 0;
@@ -484,11 +531,11 @@ public:
 					float secondaryCombinedVariance = 0;
 					float secondaryCombinedSd = 0;
 					//second loop for standard deviation and variance
-					for (int j = 0; j < nonTemplateWorkGroupSize * nonTemplateWorkGroupSize; j++)
+					for (int j = 0; j < workGroupSquare; j++)
 					{
-						int w = ((i * nonTemplateWorkGroupSize) % width) + (j % nonTemplateWorkGroupSize);
-						int h = (((i * nonTemplateWorkGroupSize) / width) * nonTemplateWorkGroupSize) + (j / nonTemplateWorkGroupSize);
-						int index = i * nonTemplateWorkGroupSize * nonTemplateWorkGroupSize + j;
+						int w = ((i * workGroupSize) % width) + (j % workGroupSize);
+						int h = (((i * workGroupSize) / width) * workGroupSize) + (j / workGroupSize);
+						int index = i * workGroupSquare + j;
 						int index2 = w + h * width;
 						int nodeInter = std::accumulate(nodeIntersectionPerPixelCount[index2].begin(), nodeIntersectionPerPixelCount[index2].end(), 0);
 						int leafInter = std::accumulate(leafIntersectionPerPixelCount[index2].begin(), leafIntersectionPerPixelCount[index2].end(), 0);
@@ -499,10 +546,10 @@ public:
 						combinedVariance += pow((leafInter + nodeInter) - combinedAverage, 2);
 						secondaryCombinedVariance += pow((secondaryNodeInter + secondaryLeafInter) - secondaryCombinedAverage, 2);
 					}
-					leafVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
-					nodeVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
-					combinedVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
-					secondaryCombinedVariance /= nonTemplateWorkGroupSize * nonTemplateWorkGroupSize;
+					leafVariance /= workGroupSquare;
+					nodeVariance /= workGroupSquare;
+					combinedVariance /= workGroupSquare;
+					secondaryCombinedVariance /= workGroupSquare;
 					leafSd = sqrt(leafVariance);
 					nodeSd = sqrt(nodeVariance);
 					combinedSd = sqrt(combinedVariance);
@@ -514,10 +561,10 @@ public:
 					std::sort(combinedIntersections.begin(), combinedIntersections.end());
 					std::sort(secondaryCombinedIntersections.begin(), secondaryCombinedIntersections.end());
 
-					int leafMax = leafIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
-					int nodeMax = nodeIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
-					int combinedMax = combinedIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
-					int secondaryCombinedMax = secondaryCombinedIntersections[nonTemplateWorkGroupSize * nonTemplateWorkGroupSize - 1];
+					int leafMax = leafIntersections[workGroupSquare - 1];
+					int nodeMax = nodeIntersections[workGroupSquare - 1];
+					int combinedMax = combinedIntersections[workGroupSquare - 1];
+					int secondaryCombinedMax = secondaryCombinedIntersections[workGroupSquare - 1];
 
 					nodeStorage[i] = StorageStruct(nodeIntersections[medianId], nodeIntersections[0],
 						nodeMax, nodeAverage - nodeSd, nodeAverage + nodeSd);
@@ -538,7 +585,7 @@ public:
 			fileWorkGroup0 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
 			fileWorkGroup1 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
 
-			for (int i = 0; i < (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize); i++)
+			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 			{
 				fileWorkGroup0 << combinedStorage[i].median << ", ";
 				fileWorkGroup0 << combinedStorage[i].min << ", ";
@@ -569,79 +616,79 @@ public:
 			{
 				uint16_t depthIntersections = 0;
 				//find max element first to normalise to;
-				std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
-					[&](auto& info)
+#pragma omp parallel for schedule(static, 128)
+				for (int i = 0; i < width * height; i++)
+				{
+					if (d < nodeIntersectionPerPixelCount[i].size())
 					{
-						if (d < nodeIntersectionPerPixelCount[info.index].size())
-						{
-							depthIntersections = std::max(nodeIntersectionPerPixelCount[info.index][d], depthIntersections);
-						}
-					});
+						depthIntersections = std::max(nodeIntersectionPerPixelCount[i][d], depthIntersections);
+					}
+				}
 
 				myfile << d << " : " << depthIntersections << std::endl;
 
 				//go trough RenderInfo vector and use the stored nodeIntersectionPerPixelCount
-				std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
-					[&](auto& info)
+#pragma omp parallel for schedule(static, 128)
+				for (int i = 0; i < width * height; i++)
+				{
+					uint16_t sum = 0;
+					if (d < nodeIntersectionPerPixelCount[i].size())
 					{
-						uint16_t sum = 0;
-						if (d < nodeIntersectionPerPixelCount[info.index].size())
-						{
-							sum = nodeIntersectionPerPixelCount[info.index][d];
-						}
+						sum = nodeIntersectionPerPixelCount[i][d];
+					}
 
-						//Color c(sum * 0.01f);
-						Color c(sum * (1 / (float)depthIntersections));
-						image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
-						image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
-						image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
-						image[info.index * 4 + 3] = (uint8_t)(c.a * 255);
-					});
+					//Color c(sum * 0.01f);
+					Color c(sum * (1 / (float)depthIntersections));
+					image[i * 4 + 0] = (uint8_t)(c.r * 255);
+					image[i * 4 + 1] = (uint8_t)(c.g * 255);
+					image[i * 4 + 2] = (uint8_t)(c.b * 255);
+					image[i * 4 + 3] = (uint8_t)(c.a * 255);
+				}
 				encodeTwoSteps(path + "/" + name + problem + "_NodeDepth" + std::to_string(d) + ".png", image, width, height);
 			}
 
 			unsigned maxNodeSum = 0;
 			unsigned maxLeafSum = 0;
 			//find min and max for nodeintersection and leafintersection: (and number of different depth intersections
-			std::for_each(std::execution::seq, renderInfos.begin(), renderInfos.end(),
-				[&](auto& info)
-				{
-					unsigned sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
-					maxNodeSum = std::max(sum, maxNodeSum);
-					sum = std::accumulate(leafIntersectionPerPixelCount[info.index].begin(), leafIntersectionPerPixelCount[info.index].end(), 0);
-					maxLeafSum = std::max(sum, maxLeafSum);
-				});
+#pragma omp parallel for schedule(static, 128)
+			for (int i = 0; i < width * height; i++)
+			{
+				unsigned sum = std::accumulate(nodeIntersectionPerPixelCount[i].begin(), nodeIntersectionPerPixelCount[i].end(), 0);
+				maxNodeSum = std::max(sum, maxNodeSum);
+				sum = std::accumulate(leafIntersectionPerPixelCount[i].begin(), leafIntersectionPerPixelCount[i].end(), 0);
+				maxLeafSum = std::max(sum, maxLeafSum);
+			}
 			float normalisation = 1 / (float)maxNodeSum;
 			//pixel bvh depth
 			//std::cout << normalisation << std::endl;
 			//std::cout << minSum << std::endl;
 			//std::cout << maxSum << std::endl;
-			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
-				[&](auto& info)
-				{
-					unsigned sum = std::accumulate(nodeIntersectionPerPixelCount[info.index].begin(), nodeIntersectionPerPixelCount[info.index].end(), 0);
-					Color c(sum * normalisation);
-					image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
-					image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
-					image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
-					image[info.index * 4 + 3] = (uint8_t)(c.a * 255);
-				});
+#pragma omp parallel for schedule(static, 128)
+			for (int i = 0; i < width * height; i++)
+			{
+				unsigned sum = std::accumulate(nodeIntersectionPerPixelCount[i].begin(), nodeIntersectionPerPixelCount[i].end(), 0);
+				Color c(sum * normalisation);
+				image[i * 4 + 0] = (uint8_t)(c.r * 255);
+				image[i * 4 + 1] = (uint8_t)(c.g * 255);
+				image[i * 4 + 2] = (uint8_t)(c.b * 255);
+				image[i * 4 + 3] = (uint8_t)(c.a * 255);
+			}
 			encodeTwoSteps(path + "/" + name + problem + "_NodeIntersectionCount.png", image, width, height);
 
 			myfile << std::endl;
 			myfile << "max leaf intersections :" << maxLeafSum << std::endl;
 			normalisation = 1.0 / maxLeafSum;
 			//std::cout << maxLeafSum << std::endl;
-			std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
-				[&](auto& info)
-				{
-					unsigned sum = std::accumulate(leafIntersectionPerPixelCount[info.index].begin(), leafIntersectionPerPixelCount[info.index].end(), 0);
-					Color c(sum * normalisation);
-					image[info.index * 4 + 0] = (uint8_t)(c.r * 255);
-					image[info.index * 4 + 1] = (uint8_t)(c.g * 255);
-					image[info.index * 4 + 2] = (uint8_t)(c.b * 255);
-					image[info.index * 4 + 3] = (uint8_t)(c.a * 255);
-				});
+#pragma omp parallel for schedule(static, 128)
+			for (int i = 0; i < width * height; i++)
+			{
+				unsigned sum = std::accumulate(leafIntersectionPerPixelCount[i].begin(), leafIntersectionPerPixelCount[i].end(), 0);
+				Color c(sum * normalisation);
+				image[i * 4 + 0] = (uint8_t)(c.r * 255);
+				image[i * 4 + 1] = (uint8_t)(c.g * 255);
+				image[i * 4 + 2] = (uint8_t)(c.b * 255);
+				image[i * 4 + 3] = (uint8_t)(c.a * 255);
+			}
 			encodeTwoSteps(path + "/" + name + problem + "_LeafIntersectionCount.png", image, width, height);
 			myfile.close();
 		}

@@ -12,15 +12,15 @@ branchStep = 1
 workGroupSize = 16
 
 #What analysis to do:
-renderAnalysisImage = false
-saveDepthDetailedImage = false
+renderAnalysisImage = true
+saveDepthDetailedImage = true
 bvhAnalysis = false
 saveBvhImage = false
 saveImage = true
 doWorkGroupAnalysis = false
 
 #Do performance Analysis: (this disables parallel execution)
-doPerformanceTest = true
+doPerformanceTest = false
 doLeafMemoryTests = false
 doNodeMemoryTests = false
 
@@ -50,7 +50,7 @@ subdivisionStep = 1
 #	3 = compact node immediate SaveDistance<- tests all childNodes at once but saves the distance to trough nodes away
 renderType = 3
 
-#Render type for performance Render:
+#Use wide renderer or not:
 wideRender = true
 
 #Settings for performance render:

@@ -377,6 +377,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 		imageCorrect.resize(height * width * 4);
 
 		for (int h = 0; h < height; h++)
+		{
 			for (int w = 0; w < width; w++)
 			{
 				//one line of smallsize
@@ -388,6 +389,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				imageCorrect[idOrig * 4 + 2] = image[id * 4 + 2];
 				imageCorrect[idOrig * 4 + 3] = image[id * 4 + 3];
 			}
+		}
 		encodeTwoSteps(path + "/" + name + "_Perf.png", imageCorrect, width, height);
 	}
 	return std::make_tuple(getTimeFloat(totalTime), getTimeFloat(timeRaySum), getTimeFloat(timeTrianglesSum));
