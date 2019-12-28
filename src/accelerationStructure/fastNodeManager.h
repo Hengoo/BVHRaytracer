@@ -11,7 +11,7 @@
 
 class FastRay;
 
-#define workGroupSquare workGroupSize * workGroupSize
+#define workGroupSquare (workGroupSize * workGroupSize)
 
 template  <unsigned nodeMemory>
 struct alignas(32) FastNode

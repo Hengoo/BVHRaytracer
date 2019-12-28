@@ -39,7 +39,7 @@ public:
 	uint16_t successfulAabbIntersectionCount;
 	uint16_t aabbIntersectionCount;
 
-	Ray(const glm::vec3& pos, const glm::vec3& direction,const Bvh& bvh, bool shadowRay = false);
+	Ray(const glm::vec3& pos, const glm::vec3& direction, const Bvh& bvh, bool shadowRay = false);
 
 	Ray()
 	{

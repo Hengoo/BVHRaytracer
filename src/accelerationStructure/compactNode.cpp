@@ -115,6 +115,179 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 }
 
 template<typename T>
+void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
+{
+	if constexpr (std::is_same<T, CompactNodeV3>::value)
+	{
+
+		//this is basically the slow version of fastNodeManager intersectWide that collects extra data
+		int wideSize = rays.size();
+		//stack for each ray. 32 is current max stack size
+		std::vector<std::array<int32_t, 32>>stack(wideSize);
+		std::vector< uint8_t>stackIndex(wideSize);
+		for (int i = 0; i < wideSize; i++)
+		{
+			stack[i][0] = 0;
+			stackIndex[i] = 1;
+		}
+
+		//ray id list to keep track of what rays we need to do.
+		std::vector<uint16_t> nodeWork(wideSize);
+		std::iota(nodeWork.begin(), nodeWork.end(), 0);
+		std::vector<uint16_t> leafWork(wideSize);
+
+		//number of noderays and leafrays so we know what ids to read.
+		uint16_t nodeRays = wideSize;
+		uint16_t leafRays = 0;
+
+		uint16_t nodeRaysNext = 0;
+		uint16_t leafRaysNext = 0;
+
+		while (nodeRays != 0 || leafRays != 0)
+		{
+			//loop over nodes
+			if (nodeRays != 0)
+			{
+				for (int i = 0; i < nodeRays; i++)
+				{
+					auto rayId = nodeWork[i];
+					auto& ray = rays[rayId];
+
+					T* node = &compactNodes[stack[rayId][--stackIndex[rayId]]];
+
+					//test ray against NodeId and write result in correct array
+
+					//update counters
+					uint16_t childCount = node->getChildCount();
+					ray.childFullness[childCount] ++;
+
+					//ray.nodeIntersectionCount[depth]++;
+
+					//traverse nodes with children that can have arbitrary sorting
+					int code = maxAbsDimension(ray.direction);
+					bool reverse = ray.direction[code] <= 0;
+					if (reverse)
+					{
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+							[&](auto& cId)
+							{
+								int nodeId = node->childIdBegin + cId;
+								if (aabbCheck(ray, nodeId))
+								{
+									//test if hit is a node or leaf
+									if (compactNodes[nodeId].hasPrimitive())
+									{
+										stack[rayId][stackIndex[rayId]++] = -(int32_t)(node->childIdBegin + cId);
+									}
+									else
+									{
+										stack[rayId][stackIndex[rayId]++] = (int32_t)node->childIdBegin + cId;
+									}
+								}
+							});
+					}
+					else
+					{
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+							[&](auto& cId)
+							{
+								int nodeId = node->childIdBegin + cId;
+								if (aabbCheck(ray, nodeId))
+								{
+									//test if hit is a node or leaf
+									if (compactNodes[nodeId].hasPrimitive())
+									{
+										stack[rayId][stackIndex[rayId]++] = -(int32_t)(node->childIdBegin + cId);
+									}
+									else
+									{
+										stack[rayId][stackIndex[rayId]++] = (int32_t)node->childIdBegin + cId;
+									}
+								}
+							});
+					}
+
+					//depending on next element in stack. put this ray in node or leaf
+					if (stackIndex[rayId] != 0)
+					{
+						if (stack[rayId][stackIndex[rayId] - 1] >= 0)
+						{
+							//node
+							nodeWork[nodeRaysNext++] = rayId;
+						}
+						else
+						{
+							//leaf
+							leafWork[leafRays++] = rayId;
+						}
+					}
+				}
+				nodeRays = nodeRaysNext;
+				nodeRaysNext = 0;
+			}
+
+			//loop over triangles
+			if (leafRays != 0)
+				//if (leafRays >= 8 || nodeRays <= 8)
+			{
+				for (int i = 0; i < leafRays; i++)
+				{
+					auto rayId = leafWork[i];
+					auto& ray = rays[rayId];
+
+					//get current id (most recently added because we do depth first)
+					T* node = &compactNodes[-stack[rayId][--stackIndex[rayId]]];
+					//test ray against NodeId and write result in correct array
+
+					uint32_t primCount = node->primIdEndOffset;
+					//logging: primitive fullness:
+					ray.primitiveFullness[primCount] ++;
+					//ray.leafIntersectionCount[depth]++;
+
+					bool anyHit = false;
+					//TODO in theory i need to save the clostest distance and only apply it tot he ray at the end?
+					std::for_each(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
+						[&](auto& p)
+						{
+							if (p->intersect(ray))
+							{
+								anyHit = true;
+							}
+						});
+					
+					if (ray.shadowRay && anyHit)
+					{
+						//Stop this ray if shadowray and it hit something.
+						ray.tMax = NAN;
+						continue;
+					}
+					//depending on next element in stack. put this ray in node or leaf
+					if (stackIndex[rayId] != 0)
+					{
+						if (stack[rayId][stackIndex[rayId] - 1] >= 0)
+						{
+							//node
+							nodeWork[nodeRays++] = rayId;
+						}
+						else
+						{
+							//leaf
+							leafWork[leafRaysNext++] = rayId;
+						}
+					}
+				}
+				leafRays = leafRaysNext;
+				leafRaysNext = 0;
+			}
+		}
+	}
+	else
+	{
+		std::cerr << "unsupported node type for wideIntersect data collection" << std::endl;
+	}
+}
+
+template<typename T>
 bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 {
 	//traverse compact node vector
@@ -176,10 +349,8 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 				std::for_each(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
 					[&](auto& p)
 					{
-						ray.primitiveIntersectionCount++;
 						if (p->intersect(ray))
 						{
-							ray.successfulPrimitiveIntersectionCount++;
 							result = true;
 						}
 					});
@@ -189,10 +360,8 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 				auto b = std::any_of(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
 					[&](auto& p)
 					{
-						ray.primitiveIntersectionCount++;
 						if (p->intersect(ray))
 						{
-							ray.successfulPrimitiveIntersectionCount++;
 							if (ray.shadowRay)
 							{
 								return true;
@@ -362,10 +531,8 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 				std::for_each(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
 					[&](auto& p)
 					{
-						ray.primitiveIntersectionCount++;
 						if (p->intersect(ray))
 						{
-							ray.successfulPrimitiveIntersectionCount++;
 							result = true;
 						}
 					});
@@ -375,10 +542,8 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 				auto b = std::any_of(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
 					[&](auto& p)
 					{
-						ray.primitiveIntersectionCount++;
 						if (p->intersect(ray))
 						{
-							ray.successfulPrimitiveIntersectionCount++;
 							if (ray.shadowRay)
 							{
 								return true;

@@ -105,8 +105,7 @@ public:
 					RenderInfo info(
 						((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
 						-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
-						0);
-					info.index = (info.w + width / 2) + (-info.h + height / 2) * width;
+						(i * workGroupSize) % width + (j % workGroupSize) + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width);
 					int realIndex = i * workGroupSquare + j;
 					glm::vec3 targetPos = getRayTargetPosition(info);
 					auto ray = Ray(position, targetPos - position, bvh);
@@ -236,15 +235,51 @@ public:
 					glm::vec3 targetPos = getRayTargetPosition(
 						(-tmp0 - (j / workGroupSize)),
 						(tmp1 + (j % workGroupSize)));
-					rays[j] = Ray(position, targetPos, bvh);
+					rays[j] = Ray(position, targetPos - position, bvh);
 				}
 
 				//shoot primary rays
+				nodeManager.intersectWide(rays);
 
-
-				//prepare secondary rays
 
 				//shoot secondary rays
+				std::vector<Ray> secondaryRays(workGroupSquare);
+				std::vector<uint8_t> ambientResult(workGroupSquare);
+				for (int a = 0; a < ambientSampleCount; a++)
+				{
+					for (int j = 0; j < workGroupSquare; j++)
+					{
+						auto direction = getAmbientDirection(i * workGroupSquare + j, rays[j].surfaceNormal, j);
+						secondaryRays[j] = Ray(rays[j].surfacePosition + rays[j].surfaceNormal * 0.001f, direction, bvh, true);
+						secondaryRays[j].tMax = ambientDistance;
+					}
+					nodeManager.intersectWide(secondaryRays);
+					for (int j = 0; j < workGroupSquare; j++)
+					{
+						if (isnan(secondaryRays[j].tMax))
+						{
+							ambientResult[j] ++;
+						}
+					}
+				}
+
+				//write image
+				for (int j = 0; j < workGroupSquare; j++)
+				{
+					int id = (i * workGroupSize) % width + (j % workGroupSize) + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width;
+
+					float factor = 1 - (ambientResult[j] / (float)ambientSampleCount);
+					//factor = rays[j].tMax / 100.0f;
+					uint8_t imageResult = (uint8_t)(factor * 255);
+					image[id * 4 + 0] = imageResult;
+					image[id * 4 + 1] = imageResult;
+					image[id * 4 + 2] = imageResult;
+					image[id * 4 + 3] = 255;
+
+				}
+
+				//write Ray info into arrays:
+
 			}
 		}
 

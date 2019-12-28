@@ -86,7 +86,6 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 	}
 
 	//ray id list to keep track of what rays we need to do.
-	//TODO this could be uint8 for workGroupSize of 16 and smaller
 	std::array<uint16_t, workGroupSquare> nodeWork;
 	std::iota(nodeWork.begin(), nodeWork.end(), 0);
 	std::array<uint16_t, workGroupSquare> leafWork;

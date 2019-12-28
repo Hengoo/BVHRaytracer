@@ -57,10 +57,8 @@ bool Node::intersect(Ray& ray)
 			std::for_each(primitiveBegin, primitiveEnd,
 				[&](auto& p)
 				{
-					ray.primitiveIntersectionCount++;
 					if (p->intersect(ray))
 					{
-						ray.successfulPrimitiveIntersectionCount++;
 						result = true;
 					}
 				});
@@ -70,10 +68,8 @@ bool Node::intersect(Ray& ray)
 			return std::any_of(primitiveBegin, primitiveEnd,
 				[&](auto& p)
 				{
-					ray.primitiveIntersectionCount++;
 					if (p->intersect(ray))
 					{
-						ray.successfulPrimitiveIntersectionCount++;
 						if (ray.shadowRay)
 						{
 							return true;

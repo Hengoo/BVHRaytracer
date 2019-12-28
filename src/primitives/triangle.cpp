@@ -51,6 +51,7 @@ inline void Triangle::updateBounds()
 
 bool Triangle::intersect(Ray& ray)
 {
+	ray.primitiveIntersectionCount++;
 	//do aabb intersection before triangle (only usefull for a leafsize > 1, but overhead is minimal anyway)
 	//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
 	float temp;
@@ -240,6 +241,8 @@ bool Triangle::intersect(Ray& ray)
 	ray.tMax = t;
 	ray.surfaceColor = color;
 	ray.surfacePosition = pHit;
+
+	ray.successfulPrimitiveIntersectionCount++;
 	return true;
 }
 

@@ -215,6 +215,8 @@ public:
 	//similar to normal intersect but instantly tests all child aabbs immediately (instead of only testing the closest)
 	bool intersectImmediately(Ray& ray, bool useDistance);
 
+	void intersectWide(std::vector<Ray>& rays);
+
 	//first add all children of node, then rekusion for each child
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);
 
@@ -229,63 +231,39 @@ public:
 	inline bool aabbCheck(Ray& ray, int id)
 	{
 		ray.aabbIntersectionCount++;
-		//aabb intersection (same as in Aabb)
-		//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+		//faster version -> from ISPC ratracer exmaple https://github.com/ispc/ispc/blob/master/examples/rt/rt_serial.cpp
+		float t0 = 0, t1 = ray.tMax;
+		glm::fvec3 tNear = (compactNodes[id].boundMin - ray.pos) * ray.invDirection;
+		glm::fvec3 tFar = (compactNodes[id].boundMax - ray.pos) * ray.invDirection;
+		if (tNear.x > tFar.x)
+		{
+			std::swap(tNear.x, tFar.x);
+		}
+		t0 = std::max(tNear.x, t0);
+		t1 = std::min(tFar.x, t1);
 
-		glm::fvec3 t1 = (compactNodes[id].boundMin - ray.pos) * ray.invDirection;
-		glm::fvec3 t2 = (compactNodes[id].boundMax - ray.pos) * ray.invDirection;
-		float tmin = glm::compMax(glm::min(t1, t2));
-		float tmax = glm::compMin(glm::max(t1, t2));
+		if (tNear.y > tFar.y)
+		{
+			std::swap(tNear.y, tFar.y);
+		}
+		t0 = std::max(tNear.y, t0);
+		t1 = std::min(tFar.y, t1);
 
-		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-		if (tmax < 0)
+		if (tNear.z > tFar.z)
 		{
-			return false;
+			std::swap(tNear.z, tFar.z);
 		}
-		// if tmin > tmax, ray doesn't intersect AABB
-		if (tmin > tmax)
-		{
-			return false;
-		}
-		//stop when current ray distance is closer than minimum possible distance of the aabb
-		if (ray.tMax < tmin)
-		{
-			return false;
-		}
-		ray.successfulAabbIntersectionCount++;
-		return true;
+		t0 = std::max(tNear.z, t0);
+		t1 = std::min(tFar.z, t1);
+
+		bool result = t0 <= t1;
+		ray.successfulAabbIntersectionCount += result;
+		return result;
 	}
 
 	inline bool aabbCheck(Ray& ray, int id, float& distance)
 	{
 		ray.aabbIntersectionCount++;
-		//aabb intersection (same as in Aabb)
-		//code modified from here : https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
-
-		/*
-		glm::fvec3 t1 = (compactNodes[id].boundMin - ray.pos) * ray.invDirection;
-		glm::fvec3 t2 = (compactNodes[id].boundMax - ray.pos) * ray.invDirection;
-		float tmin = glm::compMax(glm::min(t1, t2));
-		float tmax = glm::compMin(glm::max(t1, t2));
-
-		// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-		if (tmax < 0)
-		{
-			return false;
-		}
-		// if tmin > tmax, ray doesn't intersect AABB
-		if (tmin > tmax)
-		{
-			return false;
-		}
-		//stop when current ray distance is closer than minimum possible distance of the aabb
-		if (ray.tMax < tmin)
-		{
-			return false;
-		}
-		distance = tmin;
-		ray.successfulAabbIntersectionCount++;
-		return true;*/
 
 		//faster version -> from ISPC ratracer exmaple https://github.com/ispc/ispc/blob/master/examples/rt/rt_serial.cpp
 		float t0 = 0, t1 = ray.tMax;
