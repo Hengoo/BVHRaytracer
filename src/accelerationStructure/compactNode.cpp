@@ -68,7 +68,7 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 				pEnd = std::distance(bvh.primitives->begin(), n->node->primitiveEnd);
 			}
 			Aabb* aabb = static_cast<Aabb*>(n->node);
-			compactNodes.push_back(T(childs, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis));
+			compactNodes.push_back(T(childs, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis, n->depth));
 		}
 	}
 	else if constexpr (std::is_same<T, CompactNodeV1>::value || std::is_same<T, CompactNodeV2>::value || std::is_same<T, CompactNodeV3>::value)
@@ -93,11 +93,11 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 			Aabb* aabb = static_cast<Aabb*>(n->node);
 			if constexpr (std::is_same<T, CompactNodeV1>::value || std::is_same<T, CompactNodeV2>::value)
 			{
-				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis));
+				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->sortAxis, n->depth));
 			}
 			else if constexpr (std::is_same<T, CompactNodeV3>::value)
 			{
-				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->traverseOrderEachAxis));
+				compactNodes.push_back(T(cBegin, cEnd, pBegin, pEnd, aabb->boundMin, aabb->boundMax, n->node->traverseOrderEachAxis, n->depth));
 			}
 		}
 	}
@@ -161,14 +161,14 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 					uint16_t childCount = node->getChildCount();
 					ray.childFullness[childCount] ++;
 
-					//ray.nodeIntersectionCount[depth]++;
+					ray.nodeIntersectionCount[node->depth]++;
 
 					//traverse nodes with children that can have arbitrary sorting
 					int code = maxAbsDimension(ray.direction);
 					bool reverse = ray.direction[code] <= 0;
 					if (reverse)
 					{
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
 							[&](auto& cId)
 							{
 								int nodeId = node->childIdBegin + cId;
@@ -188,7 +188,7 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 					}
 					else
 					{
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
 							[&](auto& cId)
 							{
 								int nodeId = node->childIdBegin + cId;
@@ -242,10 +242,10 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 					uint32_t primCount = node->primIdEndOffset;
 					//logging: primitive fullness:
 					ray.primitiveFullness[primCount] ++;
-					//ray.leafIntersectionCount[depth]++;
+					ray.leafIntersectionCount[node->depth]++;
 
 					bool anyHit = false;
-					//TODO in theory i need to save the clostest distance and only apply it tot he ray at the end?
+					//In theory i need to save the clostest distance and only apply it to the ray at the end?
 					std::for_each(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
 						[&](auto& p)
 						{
@@ -303,9 +303,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 	std::vector<uint32_t> queue;
 	queue.reserve(50);
 	queue.push_back(0);
-	std::vector<uint8_t> depths;
-	depths.reserve(50);
-	depths.push_back(0);
 	std::vector<float> distances;
 	if (useDistance)
 	{
@@ -320,8 +317,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 		//get current id (most recently added because we do depth first)
 		uint32_t id = queue.back();
 		queue.pop_back();
-		uint8_t depth = depths.back();
-		depths.pop_back();
 		float distance = 0;
 		if (useDistance)
 		{
@@ -342,7 +337,7 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 			uint32_t primCount = node->primIdEndOffset;
 			//logging: primitive fullness:
 			ray.primitiveFullness[primCount] ++;
-			ray.leafIntersectionCount[depth]++;
+			ray.leafIntersectionCount[node->depth]++;
 
 			if (!ray.shadowRay)
 			{
@@ -383,7 +378,7 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 			uint16_t childCount = node->getChildCount();
 
 			ray.childFullness[childCount] ++;
-			ray.nodeIntersectionCount[depth]++;
+			ray.nodeIntersectionCount[node->depth]++;
 
 			if constexpr (std::is_same<T, CompactNodeV0>::value)
 			{
@@ -397,7 +392,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 								return;
 							}
 							queue.push_back(i);
-							depths.push_back(depth + 1);
 							distances.push_back(distance);
 						});
 				}
@@ -411,7 +405,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 								return;
 							}
 							queue.push_back(i);
-							depths.push_back(depth + 1);
 							distances.push_back(distance);
 						});
 				}
@@ -433,7 +426,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 						//depths.insert(depths.begin() + insertPoint, depth + 1);
 
 						queue.push_back(i);
-						depths.push_back(depth + 1);
 						distances.push_back(distance);
 					}
 				}
@@ -446,7 +438,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 							continue;
 						}
 						queue.push_back(i);
-						depths.push_back(depth + 1);
 						distances.push_back(distance);
 					}
 				}
@@ -464,7 +455,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 							if (aabbCheck(ray, node->childIdBegin + cId, distance))
 							{
 								queue.push_back(node->childIdBegin + cId);
-								depths.push_back(depth + 1);
 								distances.push_back(distance);
 							}
 						});
@@ -477,7 +467,6 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 							if (aabbCheck(ray, node->childIdBegin + cId, distance))
 							{
 								queue.push_back(node->childIdBegin + cId);
-								depths.push_back(depth + 1);
 								distances.push_back(distance);
 							}
 						});
@@ -497,9 +486,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 	std::vector<uint32_t> queue;
 	queue.reserve(20);
 	queue.push_back(0);
-	std::vector<uint8_t> depths;
-	depths.reserve(20);
-	depths.push_back(0);
 
 	bool result = false;
 
@@ -508,8 +494,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 		//get current id (most recently added because we do depth first)
 		uint32_t id = queue.back();
 		queue.pop_back();
-		uint8_t depth = depths.back();
-		depths.pop_back();
 
 		//check intersection with id
 		T* node = &compactNodes[id];
@@ -525,7 +509,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 			uint16_t primCount = node->primIdEndOffset;
 			//logging: primitive fullness:
 			ray.primitiveFullness[primCount] ++;
-			ray.leafIntersectionCount[depth]++;
+			ray.leafIntersectionCount[node->depth]++;
 			if (!ray.shadowRay)
 			{
 				std::for_each(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
@@ -564,7 +548,7 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 			//update child Fullness:
 			uint16_t childCount = node->getChildCount();
 			ray.childFullness[childCount] ++;
-			ray.nodeIntersectionCount[depth]++;
+			ray.nodeIntersectionCount[node->depth]++;
 
 			if constexpr (std::is_same<T, CompactNodeV0>::value)
 			{
@@ -575,7 +559,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 						[&](auto& i)
 						{
 							queue.push_back(i);
-							depths.push_back(depth + 1);
 						});
 				}
 				else
@@ -584,7 +567,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 						[&](auto& i)
 						{
 							queue.push_back(i);
-							depths.push_back(depth + 1);
 						});
 				}
 			}
@@ -595,7 +577,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 					for (uint32_t i = node->childIdEndOffset + node->childIdBegin; i >= node->childIdBegin; i--)
 					{
 						queue.push_back(i);
-						depths.push_back(depth + 1);
 					}
 				}
 				else
@@ -603,7 +584,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 					for (uint32_t i = node->childIdBegin; i <= node->childIdEndOffset + node->childIdBegin; i++)
 					{
 						queue.push_back(i);
-						depths.push_back(depth + 1);
 					}
 				}
 			}
@@ -620,7 +600,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 						[&](auto& cId)
 						{
 							queue.push_back(node->childIdBegin + cId);
-							depths.push_back(depth + 1);
 						});
 				}
 				else
@@ -629,7 +608,6 @@ bool CompactNodeManager<T>::intersect(Ray& ray)
 						[&](auto& cId)
 						{
 							queue.push_back(node->childIdBegin + cId);
-							depths.push_back(depth + 1);
 						});
 				}
 			}

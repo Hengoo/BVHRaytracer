@@ -9,7 +9,7 @@ minBranch = 4
 maxBranch = 4
 branchStep = 1
 
-workGroupSize = 16
+workGroupSize = 8
 
 #What analysis to do:
 renderAnalysisImage = true
@@ -47,14 +47,13 @@ subdivisionStep = 1
 #	0 = normal bvh tree traversal
 #	1 = compact node
 #	2 = compact node immediate <- tests all childNodes at once
-#	3 = compact node immediate SaveDistance<- tests all childNodes at once but saves the distance to trough nodes away
-renderType = 3
+renderType = 2
+
+#Save distance only for render type 2 and performance render
+saveDistance = false
 
 #Use wide renderer or not:
-wideRender = true
-
-#Settings for performance render:
-saveDistance = false
+wideRender = false
 
 #Scenes:
 #	0 = lizard

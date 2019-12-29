@@ -103,7 +103,7 @@ void RayTracer::run()
 	minBranch = std::min(maxBranch, minBranch);
 	maxLeafSize = std::max(maxLeafSize, minLeafSize);
 	minLeafSize = std::min(maxLeafSize, minLeafSize);
-	if (renderType > 3)
+	if (renderType > 2)
 	{
 		std::cerr << "unknown renderType" << std::endl;
 		return;
@@ -596,6 +596,19 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 	if (renderAnalysisImage)
 	{
+		if (renderType == 2 && saveDistance)
+		{
+			renderType == 3;
+		}
+		if (wideRender)
+		{
+			if (renderType != 2 || saveDistance)
+			{
+				std::cerr << "wide renderer only supports fake simd intersect (renderType 2) without distance saving" << std::endl;
+				std::cerr << "the settings where adjusted for this render." << std::endl;
+			}
+			renderType == 2;
+		}
 		if (compactNodeOrder == 0 || compactNodeOrder == 1)
 		{
 			if (sortEachSplit)

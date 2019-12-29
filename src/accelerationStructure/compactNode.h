@@ -46,12 +46,13 @@ struct CompactNodeV0
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-
+	//just for data collection
+	int depth;
 
 	CompactNodeV0(std::vector<uint32_t> childrenIds, uint32_t primIdBegin,
-		uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
+		uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis, int depth)
 		:childrenIds(childrenIds), primIdBegin(primIdBegin),
-		boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
+		boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis), depth(depth)
 	{
 		primIdEndOffset = primIdEnd - primIdBegin;
 	}
@@ -83,8 +84,12 @@ struct CompactNodeV1
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-	CompactNodeV1(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
-		: childIdBegin(childIdBegin), primIdBegin(primIdBegin), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis)
+	//just for data collection
+	int depth;
+
+	CompactNodeV1(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd,
+		glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis, int depth)
+		: childIdBegin(childIdBegin), primIdBegin(primIdBegin), boundMin(boundMin), boundMax(boundMax), sortAxis(sortAxis), depth(depth)
 	{
 		childIdEndOffset = childIdEnd - childIdBegin;
 		primIdEndOffset = primIdEnd - primIdBegin;
@@ -123,8 +128,12 @@ struct CompactNodeV2
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-	CompactNodeV2(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis)
-		: boundMin(boundMin), boundMax(boundMax)
+	//just for data collection
+	int depth;
+
+	CompactNodeV2(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd,
+		glm::vec3 boundMin, glm::vec3 boundMax, uint8_t sortAxis, int depth)
+		: boundMin(boundMin), boundMax(boundMax), depth(depth)
 	{
 		if (childIdBegin != childIdEnd)
 		{
@@ -171,10 +180,13 @@ struct CompactNodeV3
 	glm::vec3 boundMin;
 	glm::vec3 boundMax;
 
-	CompactNodeV3(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin,
-		uint32_t primIdEnd, glm::vec3 boundMin, glm::vec3 boundMax, std::array<std::vector<int8_t>, 3> traverseOrderEachAxis)
+	//just for data collection
+	int depth;
+
+	CompactNodeV3(uint32_t childIdBegin, uint32_t childIdEnd, uint32_t primIdBegin, uint32_t primIdEnd,
+		glm::vec3 boundMin, glm::vec3 boundMax, std::array<std::vector<int8_t>, 3> traverseOrderEachAxis, int depth)
 		: childIdBegin(childIdBegin), primIdBegin(primIdBegin), boundMin(boundMin),
-		boundMax(boundMax), traverseOrderEachAxis(traverseOrderEachAxis)
+		boundMax(boundMax), traverseOrderEachAxis(traverseOrderEachAxis), depth(depth)
 	{
 		childIdEndOffset = childIdEnd - childIdBegin;
 		primIdEndOffset = primIdEnd - primIdBegin;

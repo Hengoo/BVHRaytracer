@@ -229,6 +229,7 @@ bool Triangle::intersect(Ray& ray)
 		//return t >= 0.001f;
 
 		//instead of above we spawns shadowrays "above" the surface
+		ray.successfulPrimitiveIntersectionCount++;
 		return true;
 	}
 

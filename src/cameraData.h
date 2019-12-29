@@ -140,7 +140,7 @@ public:
 						{
 							//deterministic random direction
 							auto direction = getAmbientDirection(realIndex, ray.surfaceNormal, i);
-							Ray ambientRay(ray.surfacePosition + direction * 0.001f, direction, bvh, true);
+							Ray ambientRay(ray.surfacePosition + ray.surfaceNormal * 0.001f, direction, bvh, true);
 							ambientRay.tMax = ambientDistance;
 
 							if (shootShadowRay(ambientRay, ray, info, bvh, nodeManager, renderType))
@@ -170,7 +170,7 @@ public:
 
 							float f = glm::dot(ray.surfaceNormal, lightVector);
 							//add bias to vector to prevent shadow rays hitting the surface they where created for
-							Ray shadowRay(ray.surfacePosition + lightVector * 0.001f, lightVector, bvh, true);
+							Ray shadowRay(ray.surfacePosition + ray.surfaceNormal * 0.001f, lightVector, bvh, true);
 							shadowRay.tMax = lightDistance;
 
 
@@ -199,28 +199,12 @@ public:
 					//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
 					//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
 
-					//copy vectors
-					nodeIntersectionPerPixelCount[info.index] = ray.nodeIntersectionCount;
-					leafIntersectionPerPixelCount[info.index] = ray.leafIntersectionCount;
-					childFullnessPerPixelCount[info.index] = ray.childFullness;
-					primitiveFullnessPerPixelCount[info.index] = ray.primitiveFullness;
-
-					primitiveIntersectionsPerPixel[info.index] += ray.primitiveIntersectionCount;
-					successfulPrimitiveIntersectionsPerPixel[info.index] += ray.successfulPrimitiveIntersectionCount;
-					successfulAabbIntersectionsPerPixel[info.index] += ray.successfulAabbIntersectionCount;
-					aabbIntersectionsPerPixel[info.index] += ray.aabbIntersectionCount;
-
+					collectPrimaryRayData(ray, info.index);
 				}
 			}
 		}
 		else
 		{
-			//exit if not supported render type:
-			if (renderType != 3)
-			{
-				std::cerr << "for wide render only render type 3 is supported." << std::endl;
-				return;
-			}
 			//wide render
 #pragma omp parallel for schedule(dynamic, 4)
 			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
@@ -254,12 +238,16 @@ public:
 						secondaryRays[j].tMax = ambientDistance;
 					}
 					nodeManager.intersectWide(secondaryRays);
+
 					for (int j = 0; j < workGroupSquare; j++)
 					{
 						if (isnan(secondaryRays[j].tMax))
 						{
 							ambientResult[j] ++;
 						}
+
+						int id = (i * workGroupSize) % width + (j % workGroupSize) + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width;
+						collectSecondaryRayData(secondaryRays[j], id);
 					}
 				}
 
@@ -276,10 +264,8 @@ public:
 					image[id * 4 + 2] = imageResult;
 					image[id * 4 + 3] = 255;
 
+					collectPrimaryRayData(rays[j], id);
 				}
-
-				//write Ray info into arrays:
-
 			}
 		}
 
@@ -734,7 +720,6 @@ private:
 	bool shootShadowRay(Ray& shadowRay, Ray& ray, RenderInfo& info, Bvh& bvh, CompactNodeManager<T>& nodeManager, int& renderType)
 	{
 		bool result;
-		shadowRayCounter[info.index] ++;
 		switch (renderType)
 		{
 		case 0:
@@ -754,51 +739,66 @@ private:
 			break;
 		}
 
-		if (shadowNodeIntersectionPerPixelCount[info.index].size() < shadowRay.nodeIntersectionCount.size())
+		collectSecondaryRayData(shadowRay, info.index);
+		return result;
+	}
+
+	void collectPrimaryRayData(Ray ray, int id)
+	{
+		//make sure i call the method correct in the future:
+		if (ray.shadowRay)
 		{
-			shadowNodeIntersectionPerPixelCount[info.index].resize(shadowRay.nodeIntersectionCount.size());
+			std::cerr << "collect Primary data primaryRay is not a primary ray" << std::endl;
+		}
+
+
+		nodeIntersectionPerPixelCount[id] = ray.nodeIntersectionCount;
+		leafIntersectionPerPixelCount[id] = ray.leafIntersectionCount;
+		childFullnessPerPixelCount[id] = ray.childFullness;
+		primitiveFullnessPerPixelCount[id] = ray.primitiveFullness;
+
+		primitiveIntersectionsPerPixel[id] += ray.primitiveIntersectionCount;
+		successfulPrimitiveIntersectionsPerPixel[id] += ray.successfulPrimitiveIntersectionCount;
+		successfulAabbIntersectionsPerPixel[id] += ray.successfulAabbIntersectionCount;
+		aabbIntersectionsPerPixel[id] += ray.aabbIntersectionCount;
+	}
+
+	void collectSecondaryRayData(Ray shadowRay, int id)
+	{
+		//make sure i call the method correct in the future:
+		if (!shadowRay.shadowRay)
+		{
+			std::cerr << "collect secondary data shadowray is not a shadowray" << std::endl;
+		}
+		shadowRayCounter[id] ++;
+		if (shadowNodeIntersectionPerPixelCount[id].size() < shadowRay.nodeIntersectionCount.size())
+		{
+			shadowNodeIntersectionPerPixelCount[id].resize(shadowRay.nodeIntersectionCount.size());
 		}
 		for (size_t i = 0; i < shadowRay.nodeIntersectionCount.size(); i++)
 		{
-			shadowNodeIntersectionPerPixelCount[info.index][i] += shadowRay.nodeIntersectionCount[i];
+			shadowNodeIntersectionPerPixelCount[id][i] += shadowRay.nodeIntersectionCount[i];
 		}
 
-		if (shadowLeafIntersectionPerPixelCount[info.index].size() < shadowRay.leafIntersectionCount.size())
+		if (shadowLeafIntersectionPerPixelCount[id].size() < shadowRay.leafIntersectionCount.size())
 		{
-			shadowLeafIntersectionPerPixelCount[info.index].resize(shadowRay.leafIntersectionCount.size());
+			shadowLeafIntersectionPerPixelCount[id].resize(shadowRay.leafIntersectionCount.size());
 		}
 		for (size_t i = 0; i < shadowRay.leafIntersectionCount.size(); i++)
 		{
-			shadowLeafIntersectionPerPixelCount[info.index][i] += shadowRay.leafIntersectionCount[i];
+			shadowLeafIntersectionPerPixelCount[id][i] += shadowRay.leafIntersectionCount[i];
 		}
 
-		if (ray.childFullness.size() < shadowRay.childFullness.size())
-		{
-			ray.childFullness.resize(shadowRay.childFullness.size());
-		}
-		for (size_t i = 0; i < shadowRay.childFullness.size(); i++)
-		{
-			//ray.childFullness[i] += shadowRay.childFullness[i];
-		}
+		shadowPrimitiveIntersectionsPerPixel[id] += shadowRay.primitiveIntersectionCount;
 
-		if (ray.primitiveFullness.size() < shadowRay.primitiveFullness.size())
-		{
-			ray.primitiveFullness.resize(shadowRay.primitiveFullness.size());
-		}
-		for (size_t i = 0; i < shadowRay.primitiveFullness.size(); i++)
-		{
-			//ray.primitiveFullness[i] += shadowRay.primitiveFullness[i];
-		}
-
-		shadowPrimitiveIntersectionsPerPixel[info.index] += shadowRay.primitiveIntersectionCount;
-		if (shadowRay.successfulPrimitiveIntersectionCount > 1)
-		{
-			std::cerr << "error: more than 1 successful shadowray primitive intersection for one light" << std::endl;
-		}
-		shadowSuccessfulPrimitiveIntersectionsPerPixel[info.index] += shadowRay.successfulPrimitiveIntersectionCount;
-		shadowSuccessfulAabbIntersectionsPerPixel[info.index] += shadowRay.successfulAabbIntersectionCount;
-		shadowAabbIntersectionsPerPixel[info.index] += shadowRay.aabbIntersectionCount;
-		return result;
+		//this is not correct since we can have multiple hits for our intersect (since its "simd"
+		//if (shadowRay.successfulPrimitiveIntersectionCount > 1)
+		//{
+		//	std::cerr << "error: more than 1 successful shadowray primitive intersection for one light" << std::endl;
+		//}
+		shadowSuccessfulPrimitiveIntersectionsPerPixel[id] += shadowRay.successfulPrimitiveIntersectionCount;
+		shadowSuccessfulAabbIntersectionsPerPixel[id] += shadowRay.successfulAabbIntersectionCount;
+		shadowAabbIntersectionsPerPixel[id] += shadowRay.aabbIntersectionCount;
 	}
 
 	inline void initializeVariables()
