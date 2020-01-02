@@ -615,17 +615,17 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			{
 				CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
+				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPos, cameraTarget);
 				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideRender);
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 			}
 			else
 			{
 				CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
+				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPos, cameraTarget);
 				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideRender);
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 			}
 		}
 		else
@@ -637,9 +637,9 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			}
 			CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 			//create camera and render image
-			CameraData c(path, name, problem, workGroupSize, cameraPos, cameraTarget);
+			CameraData c(path, name, problem, workGroupSize, wideRender, cameraPos, cameraTarget);
 			c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideRender);
+				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 		}
 	}
 	std::cout << "All to do with rendering took " << getTimeFloat(timeBeginRendering) << " seconds." << std::endl;

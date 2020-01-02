@@ -1,6 +1,7 @@
 #include "compactNode.h"
 #include "nodeAnalysis.h"
 #include "aabb.h"
+#include <set>
 
 template class CompactNodeManager<CompactNodeV0>;
 template class CompactNodeManager<CompactNodeV1>;
@@ -115,11 +116,13 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 }
 
 template<typename T>
-void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
+void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<uint32_t>& nodeWorkPerStep, std::vector<uint32_t>& leafWorkPerStep,
+	std::vector<uint32_t>& uniqueNodesPerStep, std::vector<uint32_t>& uniqueLeafsPerStep)
 {
+	//TODO: reserve vector sizes for performance
+
 	if constexpr (std::is_same<T, CompactNodeV3>::value)
 	{
-
 		//this is basically the slow version of fastNodeManager intersectWide that collects extra data
 		int wideSize = rays.size();
 		//stack for each ray. 32 is current max stack size
@@ -143,8 +146,14 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 		uint16_t nodeRaysNext = 0;
 		uint16_t leafRaysNext = 0;
 
+		std::set<uint16_t> uniqueNumbers;
+
 		while (nodeRays != 0 || leafRays != 0)
 		{
+			//collect data before node loop
+			nodeWorkPerStep.push_back(nodeRays);
+			uniqueNumbers.clear();
+
 			//loop over nodes
 			if (nodeRays != 0)
 			{
@@ -152,8 +161,9 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 				{
 					auto rayId = nodeWork[i];
 					auto& ray = rays[rayId];
-
-					T* node = &compactNodes[stack[rayId][--stackIndex[rayId]]];
+					auto nodeId = stack[rayId][--stackIndex[rayId]];
+					T* node = &compactNodes[nodeId];
+					uniqueNumbers.insert(nodeId);
 
 					//test ray against NodeId and write result in correct array
 
@@ -226,6 +236,12 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 				nodeRaysNext = 0;
 			}
 
+			uniqueNodesPerStep.push_back(uniqueNumbers.size());
+			uniqueNumbers.clear();
+
+			//collect data before leaf loop
+			leafWorkPerStep.push_back(leafRays);
+
 			//loop over triangles
 			if (leafRays != 0)
 				//if (leafRays >= 8 || nodeRays <= 8)
@@ -234,10 +250,11 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 				{
 					auto rayId = leafWork[i];
 					auto& ray = rays[rayId];
-
+					auto leafId = -stack[rayId][--stackIndex[rayId]];
 					//get current id (most recently added because we do depth first)
-					T* node = &compactNodes[-stack[rayId][--stackIndex[rayId]]];
+					T* node = &compactNodes[leafId];
 					//test ray against NodeId and write result in correct array
+					uniqueNumbers.insert(leafId);
 
 					uint32_t primCount = node->primIdEndOffset;
 					//logging: primitive fullness:
@@ -254,7 +271,7 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 								anyHit = true;
 							}
 						});
-					
+
 					if (ray.shadowRay && anyHit)
 					{
 						//Stop this ray if shadowray and it hit something.
@@ -279,12 +296,14 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays)
 				leafRays = leafRaysNext;
 				leafRaysNext = 0;
 			}
+			uniqueLeafsPerStep.push_back(uniqueNumbers.size());
 		}
 	}
 	else
 	{
 		std::cerr << "unsupported node type for wideIntersect data collection" << std::endl;
 	}
+	return;
 }
 
 template<typename T>

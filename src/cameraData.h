@@ -47,6 +47,20 @@ public:
 	std::vector<uint64_t> shadowNodeIntersectionPerDepthCount;
 	std::vector<uint64_t> shadowLeafIntersectionPerDepthCount;
 
+	//per workGroup per step:
+	std::vector<std::vector<uint32_t>> nodeWorkPerStep;
+	std::vector<std::vector<uint32_t>> leafWorkPerStep;
+	std::vector<std::vector<uint32_t>> uniqueNodesPerStep;
+	std::vector<std::vector<uint32_t>> uniqueLeafsPerStep;
+
+	std::vector<std::vector<uint32_t>> secondaryNodeWorkPerStep;
+	std::vector<std::vector<uint32_t>> secondaryLeafWorkPerStep;
+	std::vector<std::vector<uint32_t>> secondaryUniqueNodesPerStep;
+	std::vector<std::vector<uint32_t>> secondaryUniqueLeafsPerStep;
+
+	//per workGroup
+	//step count can be infered from  size of per Work Group per steps size. (and it should be the same as sum of node / leaf)
+
 	//normal counter
 	uint64_t nodeIntersectionCount;
 	uint64_t leafIntersectionCount;
@@ -62,17 +76,19 @@ public:
 	uint64_t shadowSuccessfulAabbIntersections;
 	uint64_t shadowAabbIntersections;
 
-	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, glm::vec3 position, glm::vec3 lookCenter
+	bool wideRender;
+
+	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, bool wideRender, glm::vec3 position, glm::vec3 lookCenter
 		, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
-		:Camera(path, name, problem, workGroupSize, position, lookCenter, upward, focalLength, height, width)
+		:Camera(path, name, problem, workGroupSize, position, lookCenter, upward, focalLength, height, width), wideRender(wideRender)
 	{
 		image.resize(height * width * 4);
 		initializeVariables();
 	}
 
-	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, glm::mat4 transform,
+	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, bool wideRender, glm::mat4 transform,
 		float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
-		:Camera(path, name, problem, workGroupSize, transform, focalLength, height, width)
+		:Camera(path, name, problem, workGroupSize, transform, focalLength, height, width), wideRender(wideRender)
 	{
 		image.resize(height * width * 4);
 		initializeVariables();
@@ -82,7 +98,7 @@ public:
 	template<typename T>
 	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
 		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount,
-		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis, bool wideRender)
+		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis)
 	{
 		int workGroupSize = nonTemplateWorkGroupSize;
 		/*
@@ -223,7 +239,7 @@ public:
 				}
 
 				//shoot primary rays
-				nodeManager.intersectWide(rays);
+				nodeManager.intersectWide(rays, nodeWorkPerStep[i], leafWorkPerStep[i], uniqueNodesPerStep[i], uniqueLeafsPerStep[i]);
 
 
 				//shoot secondary rays
@@ -237,7 +253,8 @@ public:
 						secondaryRays[j] = Ray(rays[j].surfacePosition + rays[j].surfaceNormal * 0.001f, direction, bvh, true);
 						secondaryRays[j].tMax = ambientDistance;
 					}
-					nodeManager.intersectWide(secondaryRays);
+					nodeManager.intersectWide(secondaryRays, secondaryNodeWorkPerStep[i], secondaryLeafWorkPerStep[i],
+						secondaryUniqueNodesPerStep[i], secondaryUniqueLeafsPerStep[i]);
 
 					for (int j = 0; j < workGroupSquare; j++)
 					{
@@ -335,6 +352,29 @@ public:
 		shadowSuccessfulAabbIntersections = std::accumulate(shadowSuccessfulAabbIntersectionsPerPixel.begin(), shadowSuccessfulAabbIntersectionsPerPixel.end(), 0);
 		shadowAabbIntersections = std::accumulate(shadowAabbIntersectionsPerPixel.begin(), shadowAabbIntersectionsPerPixel.end(), 0);
 		shadowPrimitiveIntersections = std::accumulate(shadowPrimitiveIntersectionsPerPixel.begin(), shadowPrimitiveIntersectionsPerPixel.end(), 0);
+
+		//for wide renderer
+		if (wideRender)
+		{
+			std::cerr << "test" << std::endl;
+			uint64_t nodeCountTest = 0;
+			uint64_t leafCountTest = 0;
+			//verified that that the basic intersection numbers are right
+
+			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+			{
+				nodeCountTest = std::accumulate(nodeWorkPerStep[i].begin(), nodeWorkPerStep[i].end(), nodeCountTest);
+				leafCountTest = std::accumulate(leafWorkPerStep[i].begin(), leafWorkPerStep[i].end(), leafCountTest);
+			}
+			if (nodeCountTest != nodeIntersectionCount)
+			{
+				std::cerr << "nodeCount off " << nodeCountTest << " target: " << nodeIntersectionCount << std::endl;
+			}
+			if (leafCountTest != leafIntersectionCount)
+			{
+				std::cerr << "leafCount off " << leafCountTest << " target: " << leafIntersectionCount << std::endl;
+			}
+		}
 
 		//normalize by ray
 		float factor = 1 / (float)(width * height);
@@ -456,7 +496,7 @@ public:
 		{
 			//some parts of this are kinda obsolete. (separated node and leafs, since only the combined one is intresting)
 
-			//matthaeus wants wisker plot. -> need min, max, median , and standard deviation
+			//First part is the wisker plot of workload. -> need min, max, median , and standard deviation
 
 			//lets look at average work group depth, variance (and standart deviation? )
 			//std::ofstream fileWorkGroup0(path + "/" + name + problem + "_WorkGroupDepthInfo.txt");
@@ -596,32 +636,154 @@ public:
 					secondaryCombinedStorage[i] = StorageStruct(secondaryCombinedIntersections[medianId], secondaryCombinedIntersections[0],
 						secondaryCombinedMax, secondaryCombinedAverage - secondaryCombinedSd, secondaryCombinedAverage + secondaryCombinedSd);
 				}
+				std::sort(nodeStorage.begin(), nodeStorage.end());
+				std::sort(leafStorage.begin(), leafStorage.end());
+				std::sort(combinedStorage.begin(), combinedStorage.end());
+				std::sort(secondaryCombinedStorage.begin(), secondaryCombinedStorage.end());
+
+				fileWorkGroup0 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+				fileWorkGroup1 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+
+				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+				{
+					fileWorkGroup0 << combinedStorage[i].median << ", ";
+					fileWorkGroup0 << combinedStorage[i].min << ", ";
+					fileWorkGroup0 << combinedStorage[i].max << ", ";
+					fileWorkGroup0 << combinedStorage[i].lowerSd << ", ";
+					fileWorkGroup0 << combinedStorage[i].upperSd << std::endl;
+
+					fileWorkGroup1 << secondaryCombinedStorage[i].median << ", ";
+					fileWorkGroup1 << secondaryCombinedStorage[i].min << ", ";
+					fileWorkGroup1 << secondaryCombinedStorage[i].max << ", ";
+					fileWorkGroup1 << secondaryCombinedStorage[i].lowerSd << ", ";
+					fileWorkGroup1 << secondaryCombinedStorage[i].upperSd << std::endl;
+				}
+				fileWorkGroup0.close();
+				fileWorkGroup1.close();
 			}
 			else std::cerr << "Unable to open file for work group analysis" << std::endl;
-			std::sort(nodeStorage.begin(), nodeStorage.end());
-			std::sort(leafStorage.begin(), leafStorage.end());
-			std::sort(combinedStorage.begin(), combinedStorage.end());
-			std::sort(secondaryCombinedStorage.begin(), secondaryCombinedStorage.end());
 
-			fileWorkGroup0 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
-			fileWorkGroup1 << "median, min, max, lowerStdDeviation, upperStdDeviation" << std::endl;
+			//second part is detailed analysis of when what work is done.
 
-			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+			std::ofstream fileWorkGroup(path + "/" + name + problem + "_WorkGroupData.txt");
+			if (fileWorkGroup.is_open())
 			{
-				fileWorkGroup0 << combinedStorage[i].median << ", ";
-				fileWorkGroup0 << combinedStorage[i].min << ", ";
-				fileWorkGroup0 << combinedStorage[i].max << ", ";
-				fileWorkGroup0 << combinedStorage[i].lowerSd << ", ";
-				fileWorkGroup0 << combinedStorage[i].upperSd << std::endl;
+				fileWorkGroup << "stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique,"
+					<< " avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork, avgSecondaryLeafUnique" << std::endl;
 
-				fileWorkGroup1 << secondaryCombinedStorage[i].median << ", ";
-				fileWorkGroup1 << secondaryCombinedStorage[i].min << ", ";
-				fileWorkGroup1 << secondaryCombinedStorage[i].max << ", ";
-				fileWorkGroup1 << secondaryCombinedStorage[i].lowerSd << ", ";
-				fileWorkGroup1 << secondaryCombinedStorage[i].upperSd << std::endl;
 
+				//what i want to show: for now average and standard deviation of the new values the workGroupRenderer collects
+				//when what work is done, and the number of unique nodes / leafs that are used. For primary and secondary ray each
+
+				//get max size of nodeWorkPerStep:
+				int maxSize = 0;
+				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+				{
+					if (nodeWorkPerStep[i].size() > maxSize)
+					{
+						maxSize = nodeWorkPerStep[i].size();
+					}
+					if (nodeWorkPerStep[i].size() > maxSize)
+					{
+						maxSize = secondaryNodeWorkPerStep[i].size();
+					}
+				}
+
+				//average calculation is done per workStep
+				std::vector<float> nodeWorkPerStepAverage(maxSize, 0);
+				std::vector<float> leafWorkPerStepAverage(maxSize, 0);
+				std::vector<float> uniqueNodesPerStepAverage(maxSize, 0);
+				std::vector<float> uniqueLeafsPerStepAverage(maxSize, 0);
+
+				std::vector<float> secondaryNodeWorkPerStepAverage(maxSize, 0);
+				std::vector<float> secondaryLeafWorkPerStepAverage(maxSize, 0);
+				std::vector<float> secondaryUniqueNodesPerStepAverage(maxSize, 0);
+				std::vector<float> secondaryUniqueLeafsPerStepAverage(maxSize, 0);
+
+				//go trough workSteps
+				for (int j = 0; j < maxSize; j++)
+				{
+					//counter to calculate average.
+					//general counters go over workgroups that still do work in this step
+					//unique counters go over workroups that at least woked with one node / leaf
+					int primaryCount = 0;
+					int primaryNodeUniqueCount = 0;
+					int primaryLeafUniqueCount = 0;
+					int secondaryCount = 0;
+					int secondaryNodeUniqueCount = 0;
+					int secondaryLeafUniqueCount = 0;
+					for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+					{
+						if (nodeWorkPerStep[i].size() > j)
+						{
+							primaryCount++;
+							nodeWorkPerStepAverage[j] += nodeWorkPerStep[i][j];
+							leafWorkPerStepAverage[j] += leafWorkPerStep[i][j];
+							uniqueNodesPerStepAverage[j] += uniqueNodesPerStep[i][j];
+							uniqueLeafsPerStepAverage[j] += uniqueLeafsPerStep[i][j];
+
+							if (uniqueNodesPerStep[i][j] != 0)
+							{
+								primaryNodeUniqueCount++;
+							}
+							if (uniqueLeafsPerStep[i][j] != 0)
+							{
+								primaryLeafUniqueCount++;
+							}
+						}
+						if (secondaryNodeWorkPerStep[i].size() > j)
+						{
+							secondaryCount++;
+							secondaryNodeWorkPerStepAverage[j] += secondaryNodeWorkPerStep[i][j];
+							secondaryLeafWorkPerStepAverage[j] += secondaryLeafWorkPerStep[i][j];
+							secondaryUniqueNodesPerStepAverage[j] += secondaryUniqueNodesPerStep[i][j];
+							secondaryUniqueLeafsPerStepAverage[j] += secondaryUniqueLeafsPerStep[i][j];
+
+							if (secondaryUniqueNodesPerStep[i][j] != 0)
+							{
+								secondaryNodeUniqueCount++;
+							}
+							if (secondaryUniqueLeafsPerStep[i][j] != 0)
+							{
+								secondaryLeafUniqueCount++;
+							}
+						}
+					}
+					//fix nan error for 0/0:
+					primaryCount = std::max(primaryCount, 1);
+					primaryNodeUniqueCount = std::max(primaryNodeUniqueCount, 1);
+					primaryLeafUniqueCount = std::max(primaryLeafUniqueCount, 1);
+					secondaryCount = std::max(secondaryCount, 1);
+					secondaryNodeUniqueCount = std::max(secondaryNodeUniqueCount, 1);
+					secondaryLeafUniqueCount = std::max(secondaryLeafUniqueCount, 1);
+
+					nodeWorkPerStepAverage[j] /= (float)primaryCount;
+					leafWorkPerStepAverage[j] /= (float)primaryCount;
+					uniqueNodesPerStepAverage[j] /= (float)primaryNodeUniqueCount;
+					uniqueLeafsPerStepAverage[j] /= (float)primaryLeafUniqueCount;
+
+					secondaryNodeWorkPerStepAverage[j] /= (float)secondaryCount;
+					secondaryLeafWorkPerStepAverage[j] /= (float)secondaryCount;
+					secondaryUniqueNodesPerStepAverage[j] /= (float)secondaryNodeUniqueCount;
+					secondaryUniqueLeafsPerStepAverage[j] /= (float)secondaryLeafUniqueCount;
+
+					//could also do standard deviation? (mean doesnt really make sense)
+
+					//values are written into file in step order.
+					fileWorkGroup << j << ", ";
+					fileWorkGroup << nodeWorkPerStepAverage[j] << ", ";
+					fileWorkGroup << uniqueNodesPerStepAverage[j] << ", ";
+					fileWorkGroup << leafWorkPerStepAverage[j] << ", ";
+					fileWorkGroup << uniqueLeafsPerStepAverage[j] << ", ";
+
+					fileWorkGroup << secondaryNodeWorkPerStepAverage[j] << ", ";
+					fileWorkGroup << secondaryUniqueNodesPerStepAverage[j] << ", ";
+					fileWorkGroup << secondaryLeafWorkPerStepAverage[j] << ", ";
+					fileWorkGroup << secondaryUniqueLeafsPerStepAverage[j] << std::endl;
+
+				}
 			}
-
+			else std::cerr << "Unable to open file for work group second analysis" << std::endl;
 		}
 
 		if (saveImage)
@@ -830,5 +992,20 @@ private:
 		shadowAabbIntersections = 0;
 		shadowSuccessfulPrimitiveIntersections = 0;
 		shadowRayCount = 0;
+
+		if (wideRender)
+		{
+			int size = (width / nonTemplateWorkGroupSize) * (height / nonTemplateWorkGroupSize);
+
+			nodeWorkPerStep.resize(size);
+			leafWorkPerStep.resize(size);
+			uniqueNodesPerStep.resize(size);
+			uniqueLeafsPerStep.resize(size);
+
+			secondaryNodeWorkPerStep.resize(size);
+			secondaryLeafWorkPerStep.resize(size);
+			secondaryUniqueNodesPerStep.resize(size);
+			secondaryUniqueLeafsPerStep.resize(size);
+		}
 	}
 };
