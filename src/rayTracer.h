@@ -70,62 +70,11 @@ public:
 	//is called in the loop that iterates trough branchingfactor and leafsize
 	void renderImage(unsigned branchingFactor, unsigned leafSize, unsigned gangSize, primPointVector& primitives,
 		glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights,
-		std::string& name, std::string& path, std::string& pathPerf);
+		std::string& name, std::string& path, std::string& pathPerf, float sahFactor);
 
 	void preparePrimitives(primPointVector& primitives, GameObject& root, int subdivision);
 
 	void readConfig();
 
-	inline void readInt(const std::string& line, const std::string& name, int& result)
-	{
-		auto res = line.find(name, 0);
-		if (res != std::string::npos)
-		{
-			result = std::stoi(line.substr(line.find("=") + 1));
-			return;
-		}
-	};
-	inline void readInt(const std::string& line, const std::string& name, unsigned& result)
-	{
-		auto res = line.find(name, 0);
-		if (res != std::string::npos)
-		{
-			result = std::stoi(line.substr(line.find("=") + 1));
-			return;
-		}
-	};
-	inline void readFloat(const std::string& line, const std::string& name, float& result)
-	{
-		auto res = line.find(name, 0);
-		if (res != std::string::npos)
-		{
-			result = std::stof(line.substr(line.find("=") + 1));
-			return;
-		}
-	};
-	inline void readBool(const std::string& line, const std::string& name, bool& result)
-	{
-		auto res = line.find(name, 0);
-		if (res != std::string::npos)
-		{
-			res = line.find("true", 0);
-			auto res2 = line.find("false", 0);
-			if (res != std::string::npos)
-			{
-				result = true;
-				return;
-			}
-			else if (res2 != std::string::npos)
-			{
-				result = false;
-				return;
-			}
-			else
-			{
-				std::cerr << name << "value written wrong -> default = false" << std::endl;
-				result = false;
-				return;
-			}
-		}
-	};
+	float loadSahFactor(int leafSize, int nodeSize, int stepSize);
 };

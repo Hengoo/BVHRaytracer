@@ -44,6 +44,7 @@
     <ClInclude Include="src\cameraData.h" />
     <ClInclude Include="src\color.h" />
     <ClInclude Include="src\cameraFast.h" />
+    <ClInclude Include="src\configUtil.h" />
     <ClInclude Include="src\fastRay.h" />
     <ClInclude Include="src\gameobject.h" />
     <ClInclude Include="src\glmInclude.h" />

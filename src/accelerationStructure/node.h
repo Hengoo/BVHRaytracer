@@ -24,7 +24,7 @@ public:
 	//std::vector<std::array<int8_t, 3>>& sortAxisEachSplit;
 
 	//3 faces (could sort by x axis and therefore reduce to 2 for compact representation.
-	std::array<std::vector<int8_t>,3> traverseOrderEachAxis;
+	std::array<std::vector<int8_t>, 3> traverseOrderEachAxis;
 
 	virtual void addNode(std::shared_ptr<Node> n);
 
@@ -40,7 +40,8 @@ public:
 	virtual void recursiveOctree(const unsigned leafSize);
 
 	//unsigned int depth, const unsigned int branchingFactor, const unsigned int leafCount
-	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafSize, bool sortEachSplit, const int leafSplitOption);
+	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafSize,
+		bool sortEachSplit, const int leafSplitOption, float sahFactor);
 
 	virtual size_t getChildCount();
 	virtual size_t getPrimCount();

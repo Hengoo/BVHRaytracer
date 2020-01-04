@@ -17,6 +17,8 @@
 #include "lights/pointLight.h"
 #include "lights/directionalLight.h"
 
+#include "configUtil.h"
+
 // Include the header file that the ispc compiler generates
 #include "ISPC/ISPCBuild/rayTracer_ISPC.h"
 using namespace::ispc;
@@ -470,7 +472,9 @@ void RayTracer::run()
 					{
 						for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
 						{
-							renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path, pathPerf);
+							float sahFactor = loadSahFactor(l, b, gangSize);
+							renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget,
+								lights, name, path, pathPerf, sahFactor);
 						}
 					}
 				}
@@ -497,7 +501,9 @@ void RayTracer::run()
 									{
 										for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
 										{
-											renderImage(b, (l - minLeafSize) * leafStep + minLeafSize, gangSize, primitives, cameraPos, cameraTarget, lights, name, path, pathPerf);
+											float sahFactor = loadSahFactor(l, b, gangSize);
+											renderImage(b, (l - minLeafSize) * leafStep + minLeafSize, gangSize, primitives,
+												cameraPos, cameraTarget, lights, name, path, pathPerf, sahFactor);
 										}
 									}
 								});
@@ -518,7 +524,9 @@ void RayTracer::run()
 									{
 										for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
 										{
-											renderImage((b - minBranch) * branchStep + minBranch, l, gangSize, primitives, cameraPos, cameraTarget, lights, name, path, pathPerf);
+											float sahFactor = loadSahFactor(l, b, gangSize);
+											renderImage((b - minBranch) * branchStep + minBranch, l, gangSize, primitives,
+												cameraPos, cameraTarget, lights, name, path, pathPerf, sahFactor);
 										}
 									}
 								});
@@ -538,7 +546,7 @@ void RayTracer::run()
 
 void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigned gangSize, primPointVector& primitives,
 	glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights,
-	std::string& name, std::string& path, std::string& pathPerf)
+	std::string& name, std::string& path, std::string& pathPerf, float sahFactor)
 {
 	std::string problem;
 	std::cout << std::endl << std::endl << "-------------------------------------------------------------------" << std::endl;
@@ -553,7 +561,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 	//bvh of loaded model:
 	Bvh bvh = Bvh(primitives, branchingFactor, leafSize, sortEachSplit, leafSplitOption);
-	bvh.recursiveOctree();
+	bvh.recursiveBvh(sahFactor);
 
 	float ambientDistance = cbrt(bvh.getRoot()->getVolume()) / 10.f;
 	//std::cout << ambientDistance << std::endl;
@@ -656,7 +664,6 @@ void RayTracer::preparePrimitives(primPointVector& primitives, GameObject& root,
 
 void RayTracer::readConfig()
 {
-	//ugly but works 
 	std::string line;
 	std::ifstream myfile("config.txt");
 
@@ -724,4 +731,49 @@ void RayTracer::readConfig()
 			}
 		}
 	}
+}
+
+
+float RayTracer::loadSahFactor(int leafSize, int nodeSize, int gangSize)
+{
+	//i think i will shrink the table from summary to just have leafsize, nodesize, and sahfactor and read from that
+	//read sahNodeFactorConfig
+	float sahFactor = NAN;
+
+	std::string line;
+	std::string gangSizeName = "Sse";
+	if (gangSize == 8)
+	{
+		gangSizeName = "Avx";
+		std::cerr << "Avx sah factor config not set up / tested." << std::endl;
+		return 1;
+	}
+	std::ifstream myfile("sahFactorConfig" + gangSizeName + ".txt");
+
+	std::vector<float> lineContent;
+	if (myfile.is_open())
+	{
+		std::getline(myfile, line);
+		while (std::getline(myfile, line))
+		{
+			if (!line.empty())
+			{
+				int configNodeSize = 0;
+				int configLeafSize = 0;
+				lineContent = readConfigLine(line, configNodeSize, configLeafSize);
+				if ((configNodeSize <= nodeSize && configNodeSize > nodeSize - gangSize)
+					&& (configLeafSize <= leafSize && configLeafSize > leafSize - leafSize))
+				{
+					sahFactor = lineContent[0];
+				}
+			}
+		}
+	}
+	if (isnan(sahFactor))
+	{
+		std::cerr << "not able to find fitting sahFactor in config, instead took 1" << std::endl;
+		sahFactor = 1;
+	}
+	std::cout << "using sah factor of " << sahFactor << std::endl;
+	return sahFactor;
 }

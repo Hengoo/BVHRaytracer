@@ -33,10 +33,10 @@ Bvh::Bvh(primPointVector primitives, const unsigned int branchingFactor, const u
 	root = std::make_shared<Aabb>(0, this->primitives->begin(), this->primitives->end());
 }
 
-void Bvh::recursiveOctree()
+void Bvh::recursiveBvh(float sahFactor)
 {
 	//root->recursiveOctree(leafCount);
-	root->recursiveBvh(branchingFactor, leafSize, sortEachSplit, leafSplitOption);
+	root->recursiveBvh(branchingFactor, leafSize, sortEachSplit, leafSplitOption, sahFactor);
 }
 
 void Bvh::collapseChilds(int collapeCount)

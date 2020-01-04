@@ -73,3 +73,5 @@ static std::string customToString(float f, int digits)
 	ss << std::fixed << std::setprecision(digits) << f;
 	return ss.str();
 }
+
+//some config managing stuff:

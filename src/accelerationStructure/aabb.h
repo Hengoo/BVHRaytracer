@@ -145,7 +145,8 @@ public:
 		return d;
 	}
 
-	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget, const bool sortEachSplit, const int  leafSplitOption);
+	virtual void recursiveBvh(const unsigned branchingFactor, const unsigned leafTarget,
+		const bool sortEachSplit, const int  leafSplitOption, float sahFactor);
 
 	inline virtual bool intersectNode(Ray& ray, float& distance) override
 	{

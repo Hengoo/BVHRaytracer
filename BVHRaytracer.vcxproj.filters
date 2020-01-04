@@ -170,6 +170,9 @@
     <ClInclude Include="src\rayTracer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\configUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\ISPC\test.ispc">
