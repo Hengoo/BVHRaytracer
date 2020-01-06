@@ -69,7 +69,7 @@ public:
 
 	//is called in the loop that iterates trough branchingfactor and leafsize
 	void renderImage(unsigned branchingFactor, unsigned leafSize, unsigned gangSize, primPointVector& primitives,
-		glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights,
+		std::vector<glm::vec3>& cameraPositions, std::vector<glm::vec3>& cameraTargets, std::vector<std::unique_ptr<Light>>& lights,
 		std::string& name, std::string& path, std::string& pathPerf, float sahFactor);
 
 	void preparePrimitives(primPointVector& primitives, GameObject& root, int subdivision);

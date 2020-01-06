@@ -89,7 +89,7 @@ if constexpr (gangS == 4)												\
 #define startPerfRender5(gangS, branchMem, workGroupS) 	{												\
 	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
 	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory);								\
-	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, wideRender, cameraPos, cameraTarget);			\
+	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, wideRender, cameraPositions, cameraTargets);			\
 	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);						\
 }
 
@@ -174,8 +174,8 @@ void RayTracer::run()
 			std::string path;
 			//path where we save performance results (this will include avx or sse in the foldername)
 			std::string pathPerf;
-			glm::vec3  cameraPos;
-			glm::vec3  cameraTarget;
+			std::vector<glm::vec3>  cameraPositions;
+			std::vector<glm::vec3>  cameraTargets;
 
 			std::vector<std::unique_ptr<Light>> lights;
 
@@ -193,8 +193,8 @@ void RayTracer::run()
 				//https://sketchfab.com/3d-models/lizard-mage-817d52d9887948bfa0ca43aef6064eaa
 				name = "lizard";
 				loadGltfModel("models/Lizard/scene.gltf", gameObjects, meshBins);
-				cameraPos = glm::vec3(3.5f, 1.5f, 5.f);
-				cameraTarget = glm::vec3(-1, -1, 1.1);
+				cameraPositions.push_back(glm::vec3(3.5f, 1.5f, 5.f));
+				cameraTargets.push_back(glm::vec3(-1, -1, 1.1));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;
@@ -202,8 +202,8 @@ void RayTracer::run()
 				//https://sketchfab.com/3d-models/shift-happens-canyon-diorama-ffd36dfbfda8432d97388988883f6295
 				name = "shiftHappens";
 				loadGltfModel("models/ShiftHappensTest.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(20, 10, -10);
-				cameraTarget = glm::vec3(0, 5, 0);
+				cameraPositions.push_back(glm::vec3(20, 10, -10));
+				cameraTargets.push_back(glm::vec3(0, 5, 0));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;
@@ -212,8 +212,8 @@ void RayTracer::run()
 				//erato scene converted to glb with blender (replaced some #indoo with 0 so blender could load it?)
 				name = "erato";
 				loadGltfModel("models/erato/erato.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(10, 6, 9);
-				cameraTarget = glm::vec3(-3, 1.5, 0);
+				cameraPositions.push_back(glm::vec3(10, 6, 9));
+				cameraTargets.push_back(glm::vec3(-3, 1.5, 0));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;
@@ -221,8 +221,8 @@ void RayTracer::run()
 				//just some cubes for debuging single rays
 				name = "cubes";
 				loadGltfModel("models/4Cubes.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(0, 0, -3);
-				cameraTarget = glm::vec3(0, 0, 0);
+				cameraPositions.push_back(glm::vec3(0, 0, -3));
+				cameraTargets.push_back(glm::vec3(0, 0, 0));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;
@@ -231,8 +231,8 @@ void RayTracer::run()
 				//the "Crytek Sponza"
 				name = "sponza";
 				loadGltfModel("models/sponzaColorful/sponzaColorful.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(-1100, 300, 0);
-				cameraTarget = glm::vec3(-900, 290, 0);
+				cameraPositions.push_back(glm::vec3(-1100, 300, 0));
+				cameraTargets.push_back(glm::vec3(-900, 290, 0));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;
@@ -241,8 +241,8 @@ void RayTracer::run()
 				//https://sketchfab.com/3d-models/davia-rocks-b8576a61715a4feabd9637215eeb2e05
 				name = "daviaRock";
 				loadGltfModel("models/davia_rocks/scene.gltf", gameObjects, meshBins);
-				cameraPos = glm::vec3(10, 2, 2);
-				cameraTarget = glm::vec3(0, 0, 0);
+				cameraPositions.push_back(glm::vec3(10, 2, 2));
+				cameraTargets.push_back(glm::vec3(0, 0, 0));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;
@@ -252,8 +252,8 @@ void RayTracer::run()
 				name = "rungholt";
 				loadGltfModel("models/rungholt/rungholt.glb", gameObjects, meshBins);
 
-				cameraPos = glm::vec3(-100, 41, -200);
-				cameraTarget = glm::vec3(-140, 0, -70);
+				cameraPositions.push_back(glm::vec3(-100, 41, -200));
+				cameraTargets.push_back(glm::vec3(-140, 0, -70));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
@@ -264,8 +264,8 @@ void RayTracer::run()
 				name = "breakfast";
 				loadGltfModel("models/breakfast_room/breakfast_room.glb", gameObjects, meshBins);
 
-				cameraPos = glm::vec3(4, 7.8, 9.5);
-				cameraTarget = glm::vec3(2.4, 5.2, 5.1);
+				cameraPositions.push_back(glm::vec3(4, 7.8, 9.5));
+				cameraTargets.push_back(glm::vec3(2.4, 5.2, 5.1));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
@@ -274,8 +274,8 @@ void RayTracer::run()
 				//San miguel "low poly" scene converted to glb with this tool https://blackthread.io/gltf-converter/
 				name = "sanMiguel";
 				loadGltfModel("models/san-miguel-low-poly/san-miguel-low-poly.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(22, 2.2, 12.6);
-				cameraTarget = glm::vec3(14, 2.0, 5.8);
+				cameraPositions.push_back(glm::vec3(22, 2.2, 12.6));
+				cameraTargets.push_back(glm::vec3(14, 2.0, 5.8));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
@@ -284,8 +284,8 @@ void RayTracer::run()
 				//amazon lumberyard inside scene converted to glb with this tool https://blackthread.io/gltf-converter/
 				name = "amazonLumberyardInterior";
 				loadGltfModel("models/AmazonLumberyard/interior.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(-109, 284, -147);
-				cameraTarget = glm::vec3(20, 257, -151);
+				cameraPositions.push_back(glm::vec3(-109, 284, -147));
+				cameraTargets.push_back(glm::vec3(20, 257, -151));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
@@ -294,8 +294,8 @@ void RayTracer::run()
 				//amazon lumberyard exterior scene converted to glb with this tool https://blackthread.io/gltf-converter/
 				name = "amazonLumberyardExterior";
 				loadGltfModel("models/AmazonLumberyard/exterior.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(-1059, 384, -200);
-				cameraTarget = glm::vec3(300, 257, 330);
+				cameraPositions.push_back(glm::vec3(-1059, 384, -200));
+				cameraTargets.push_back(glm::vec3(300, 257, 330));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
@@ -305,8 +305,8 @@ void RayTracer::run()
 				name = "amazonLumberyardCombinedExterior";
 				loadGltfModel("models/AmazonLumberyard/exterior.glb", gameObjects, meshBins);
 				loadGltfModel("models/AmazonLumberyard/interior.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(-1059, 384, -200);
-				cameraTarget = glm::vec3(300, 257, 330);
+				cameraPositions.push_back(glm::vec3(-1059, 384, -200));
+				cameraTargets.push_back(glm::vec3(300, 257, 330));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
@@ -315,8 +315,8 @@ void RayTracer::run()
 				//gallery converted to glb with this tool https://blackthread.io/gltf-converter/
 				name = "gallery";
 				loadGltfModel("models/gallery/gallery.glb", gameObjects, meshBins);
-				cameraPos = glm::vec3(-2.7, 2.88, 8);
-				cameraTarget = glm::vec3(-1.2, 2.2, 1);
+				cameraPositions.push_back(glm::vec3(-2.7, 2.88, 8));
+				cameraTargets.push_back(glm::vec3(-1.2, 2.2, 1));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;
@@ -473,7 +473,7 @@ void RayTracer::run()
 						for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
 						{
 							float sahFactor = loadSahFactor(l, b, gangSize);
-							renderImage(b, l, gangSize, primitives, cameraPos, cameraTarget,
+							renderImage(b, l, gangSize, primitives, cameraPositions, cameraTargets,
 								lights, name, path, pathPerf, sahFactor);
 						}
 					}
@@ -503,7 +503,7 @@ void RayTracer::run()
 										{
 											float sahFactor = loadSahFactor(l, b, gangSize);
 											renderImage(b, (l - minLeafSize) * leafStep + minLeafSize, gangSize, primitives,
-												cameraPos, cameraTarget, lights, name, path, pathPerf, sahFactor);
+												cameraPositions, cameraTargets, lights, name, path, pathPerf, sahFactor);
 										}
 									}
 								});
@@ -526,7 +526,7 @@ void RayTracer::run()
 										{
 											float sahFactor = loadSahFactor(l, b, gangSize);
 											renderImage((b - minBranch) * branchStep + minBranch, l, gangSize, primitives,
-												cameraPos, cameraTarget, lights, name, path, pathPerf, sahFactor);
+												cameraPositions, cameraTargets, lights, name, path, pathPerf, sahFactor);
 										}
 									}
 								});
@@ -545,7 +545,7 @@ void RayTracer::run()
 }
 
 void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigned gangSize, primPointVector& primitives,
-	glm::vec3& cameraPos, glm::vec3& cameraTarget, std::vector<std::unique_ptr<Light>>& lights,
+	std::vector<glm::vec3>& cameraPositions, std::vector<glm::vec3>& cameraTargets, std::vector<std::unique_ptr<Light>>& lights,
 	std::string& name, std::string& path, std::string& pathPerf, float sahFactor)
 {
 	std::string problem;
@@ -623,16 +623,16 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			{
 				CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
+				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
+				c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
 					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 			}
 			else
 			{
 				CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPos, cameraTarget);
-				c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
+				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
+				c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
 					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 			}
 		}
@@ -645,8 +645,8 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			}
 			CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 			//create camera and render image
-			CameraData c(path, name, problem, workGroupSize, wideRender, cameraPos, cameraTarget);
-			c.renderImage(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
+			CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
+			c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
 				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
 		}
 	}

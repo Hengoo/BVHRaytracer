@@ -313,10 +313,12 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 
 	//check root node
 	T* node = &compactNodes[0];
-	if (!aabbCheck(ray, 0))
-	{
-		return false;
-	}
+
+	//first root aabb test is not neccessary
+	//if (!aabbCheck(ray, 0))
+	//{
+	//	return false;
+	//}
 
 	//ids of nodes that are already tested but didnt test the children jet:
 	std::vector<uint32_t> queue;
@@ -371,6 +373,8 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 			}
 			else
 			{
+				//version that stops after hitting first triangle. This is NOT how avx sse does it..
+				/*
 				auto b = std::any_of(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
 					[&](auto& p)
 					{
@@ -385,6 +389,24 @@ bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)
 					});
 				if (b)
 				{
+					return true;
+				}*/
+
+				//correct version that loops over all triangles
+				bool anyHit = false;
+				//In theory i need to save the clostest distance and only apply it to the ray at the end?
+				std::for_each(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
+					[&](auto& p)
+					{
+						if (p->intersect(ray))
+						{
+							anyHit = true;
+						}
+					});
+
+				if (ray.shadowRay && anyHit)
+				{
+					//Stop this ray if shadowray and it hit something.
 					return true;
 				}
 			}

@@ -235,9 +235,10 @@ bool Triangle::intersect(Ray& ray)
 
 	//set ray data for later shading:
 	auto normal = glm::normalize(b0 * vertices[0].normal + b1 * vertices[1].normal + b2 * vertices[2].normal);
-	ray.surfaceNormal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
+	//ray.surfaceNormal = glm::normalize(gameObject->globalTransform * glm::vec4(normal, 0));
 
-	//ray.surfaceNormal = -computeNormal(points[0], points[1], points[2]);
+	//same normal calculation as for the performance renderer
+	ray.surfaceNormal = computeNormal(points[0], points[1], points[2]);
 
 	ray.tMax = t;
 	ray.surfaceColor = color;
