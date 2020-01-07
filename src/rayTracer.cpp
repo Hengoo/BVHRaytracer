@@ -152,6 +152,19 @@ void RayTracer::run()
 	std::cout << "Gang size of " << gangSize << std::endl;
 	std::cout << std::endl;
 
+	if (wideRender)
+	{
+		std::cout << "Doing wide renderer" << std::endl;
+	}
+	else
+	{
+		std::cout << "Doing normal (NOT wide) renderer" << std::endl;
+	}
+	if (doWorkGroupAnalysis)
+	{
+		std::cout << "do Workgroup Analysis" << std::endl;
+	}
+
 	if (doPerformanceTest)
 	{
 		std::cout << "press button to continue performance test (set high periority fist)" << std::endl;
@@ -286,6 +299,10 @@ void RayTracer::run()
 				loadGltfModel("models/AmazonLumberyard/interior.glb", gameObjects, meshBins);
 				cameraPositions.push_back(glm::vec3(-109, 284, -147));
 				cameraTargets.push_back(glm::vec3(20, 257, -151));
+
+				//tmp second camera is just duplicate
+				cameraPositions.push_back(glm::vec3(765, 207, 550));
+				cameraTargets.push_back(glm::vec3(786, 174, 123));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(-0.3, -1, -0.1), 10));
 				break;

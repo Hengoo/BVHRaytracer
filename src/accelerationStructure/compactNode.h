@@ -228,7 +228,7 @@ public:
 	bool intersectImmediately(Ray& ray, bool useDistance);
 
 	void intersectWide(std::vector<Ray>& rays, std::vector<uint32_t>& nodeWorkPerStep, std::vector<uint32_t>& leafWorkPerStep,
-		std::vector<uint32_t>& uniqueNodesPerStep, std::vector<uint32_t>& uniqueLeafsPerStep);
+		std::vector<uint32_t>& uniqueNodesPerStep, std::vector<uint32_t>& uniqueLeafsPerStep, std::vector<uint32_t>& terminationsPerStep);
 
 	//first add all children of node, then rekusion for each child
 	void customTreeOrder(NodeAnalysis* n, std::vector<NodeAnalysis*>& nodeVector);

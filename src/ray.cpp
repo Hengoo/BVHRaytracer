@@ -28,7 +28,7 @@ Ray::Ray(const glm::vec3& pos, const glm::vec3& direction,const Bvh& bvh, bool s
 	tMax = 222222.f;
 	surfaceColor = Color(0);
 	surfaceNormal = glm::vec3(0, 0, 0);
-	surfacePosition = glm::vec3(0, 0, 0);
+	surfacePosition = glm::vec3(NAN, 0, 0);
 	primitiveIntersectionCount = 0;
 	successfulPrimitiveIntersectionCount = 0;
 	successfulAabbIntersectionCount = 0;

@@ -238,20 +238,35 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 	std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest) const
 {
 	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
+	//id 0 is root node
 	std::vector< std::array<int32_t, workGroupSquare>> stack(32);
 	stack[0].fill(0);
+
+	//ray id list to keep track of what rays we need to do.
+	//this could be uint8 for workGroupSize of 16 and smaller
+	std::array<uint16_t, workGroupSquare> nodeWork;
+	std::array<uint16_t, workGroupSquare> leafWork;
+
 	//id of the current element in the stack we have to work on. 0 means we are finished
 	std::array< uint8_t, workGroupSquare>stackIndex;
 	stackIndex.fill(1);
 
-	//ray id list to keep track of what rays we need to do.
-	//TODO this could be uint8 for workGroupSize of 16 and smaller
-	std::array<uint16_t, workGroupSquare> nodeWork;
-	std::iota(nodeWork.begin(), nodeWork.end(), 0);
-	std::array<uint16_t, workGroupSquare> leafWork;
+	int counter = 0;
+	for (int i = 0; i < workGroupSquare; i++)
+	{
+		if (!isnan(rays[i].pos.x))
+		{
+			nodeWork[counter++] = i;
+		}
+	}
+	//fill rest with 0 (no work)
+	for (int i = counter; i < workGroupSquare; i++)
+	{
+		nodeWork[i] = 0;
+	}
 
 	//number of noderays and leafrays so we how much to read in nodeWork and leafWork
-	uint16_t nodeRays = workGroupSquare;
+	uint16_t nodeRays = counter;
 	uint16_t leafRays = 0;
 
 	//same as above but for the next iteration.

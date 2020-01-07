@@ -25,6 +25,7 @@ public:
 
 	Color surfaceColor;
 	glm::vec3 surfaceNormal;
+	//first element of surface position is NAN when ray hit nothing.
 	glm::vec3 surfacePosition;
 
 	//float distance;

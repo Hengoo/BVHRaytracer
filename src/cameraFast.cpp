@@ -100,60 +100,59 @@ template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager, const unsigned ambientSampleCount,
 	const float ambientDistance, const bool mute)
 {
-	int cameraId = 0;
-	//if image should be saved one first run to save the image. Just to be sure we still do one render we trough away before performance measurements
-	if (saveImage)
-	{
-		renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId);
-	}
-
-	//"first" render to load everything in cache
-	for (int i = 0; i < 1; i++)
-	{
-		renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId);
-	}
+	int cameraCount = positions.size();
+	//all values we store:
+	float totalTime = 0;
+	float timeSumEachRay = 0;
+	float timeSumTriangle = 0;
 
 	//has to be an odd number for correct median
 	int sampleCount = 5;
 	//total raytracer time, time sum each ray, time sum triangle cost
 	std::vector<std::tuple<float, float, float>> results;
 	results.reserve(sampleCount);
-	//median. (median of overall time or of each individual time?
-	for (int i = 0; i < sampleCount; i++)
-	{
-		results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId));
-	}
-	//calculate median
-	//this sorts by the first value of the tupel (the total raytracer time)
-	sort(results.begin(), results.end());
-	auto median = results[sampleCount / 2];
 
+	//loop over the different camera positions
+	for (int cameraId = 0; cameraId < cameraCount; cameraId++)
+	{
+		//if image should be saved one first run to save the image. Just to be sure we still do one render we trough away before performance measurements
+		if (saveImage)
+		{
+			renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId);
+		}
+
+		//"first" render to load everything in cache
+		for (int i = 0; i < 1; i++)
+		{
+			renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId);
+		}
+
+		//median. (median of overall time or of each individual time?
+		for (int i = 0; i < sampleCount; i++)
+		{
+			results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId));
+		}
+		//calculate median
+		//this sorts by the first value of the tupel (the total raytracer time)
+		sort(results.begin(), results.end());
+		auto median = results[sampleCount / 2];
+		totalTime += std::get<0>(median);
+		timeSumEachRay += std::get<1>(median);
+		timeSumTriangle += std::get<2>(median);
+
+		results.clear();
+	}
+
+	totalTime /= (float)cameraCount;
+	timeSumEachRay /= (float)cameraCount;
+	timeSumTriangle /= (float)cameraCount;
+	//output
 	if (!mute)
 	{
-		bool detailed = false;
-		if (!detailed)
-		{
-			std::cout << "Raytracing took " << std::get<0>(median) << " seconds." << std::endl;
-			std::cout << "ray sum took " << std::get<1>(median) << " seconds." << std::endl;
-			std::cout << "triangleTests took " << std::get<2>(median) << " seconds." << std::endl;
-			std::cout << "all rays minus triangle took " << std::get<1>(median) - std::get<2>(median) << " seconds." << std::endl;
-		}
-		else
-		{
-			float totalDiff0 = 0;
-			float totalDiff1 = 0;
-			float totalDiff2 = 0;
-			for (auto& i : results)
-			{
-				totalDiff0 += std::abs(std::get<0>(i) - std::get<0>(median));
-				totalDiff1 += std::abs(std::get<1>(i) - std::get<1>(median));
-				totalDiff2 += std::abs(std::get<2>(i) - std::get<2>(median));
-			}
-			std::cout << "Raytracing took " << std::get<0>(median) << " seconds. Difference between tries: " << totalDiff0 << std::endl;
-			std::cout << "ray sum took " << std::get<1>(median) << " seconds. Difference between tries: " << totalDiff1 << std::endl;
-			std::cout << "triangleTests took " << std::get<2>(median) << " seconds. Difference between tries: " << totalDiff2 << std::endl;
-			std::cout << "all rays minus triangle took " << std::get<1>(median) - std::get<2>(median) << " seconds." << std::endl;
-		}
+		std::cout << "Raytracing took " << totalTime << " seconds." << std::endl;
+		std::cout << "ray sum took " << timeSumEachRay << " seconds." << std::endl;
+		std::cout << "triangleTests took " << timeSumTriangle << " seconds." << std::endl;
+		std::cout << "all rays minus triangle took " << timeSumEachRay - timeSumTriangle << " seconds." << std::endl;
 	}
 
 	std::ofstream myfile(path + "/" + name + problem + problemPrefix + "_Perf.txt");
@@ -161,10 +160,10 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	{
 		myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;
 		myfile << "with a gang size of " << gangSize << ", a node meory of " << nodeMemory << ", and a leaf memory of " << nodeManager.leafMemory << std::endl;
-		myfile << "Raytracer total time: " << std::get<0>(median) << std::endl;
-		myfile << "Time for all rays (SUM): " << std::get<1>(median) << std::endl;
-		myfile << "Time for triangle intersections (SUM): " << std::get<2>(median) << std::endl;
-		myfile << "Time all rays(sum) - triangle(sum): " << std::get<1>(median) - std::get<2>(median) << std::endl;
+		myfile << "Raytracer total time: " << totalTime << std::endl;
+		myfile << "Time for all rays (SUM): " << timeSumEachRay << std::endl;
+		myfile << "Time for triangle intersections (SUM): " << timeSumTriangle << std::endl;
+		myfile << "Time all rays(sum) - triangle(sum): " << timeSumEachRay - timeSumTriangle << std::endl;
 
 		//add some extra information needed for final analysis (tri count and average tree depth)
 
@@ -328,7 +327,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					//no primary hit -> in the end it will spawn a ray with a spawn position that 
 					//is outside of what i would expect as a scene so it never hits anything.
 					//and i also dont expect no primary hits to happen often.
-					rays[j].pos = glm::vec3(1000000000.f);
+					rays[j].pos = glm::vec3(NAN);
 					surfaceNormal[j] = glm::vec3(1.f);
 				}
 			}
@@ -391,7 +390,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				imageCorrect[idOrig * 4 + 3] = image[id * 4 + 3];
 			}
 		}
-		encodeTwoSteps(path + "/" + name + "_Perf.png", imageCorrect, width, height);
+		encodeTwoSteps(path + "/" + name + "_c" + std::to_string(cameraId) + "_Perf.png", imageCorrect, width, height);
 	}
 	return std::make_tuple(getTimeFloat(totalTime), getTimeFloat(timeRaySum), getTimeFloat(timeTrianglesSum));
 }

@@ -117,7 +117,7 @@ CompactNodeManager<T>::CompactNodeManager(Bvh bvh, int nodeOrder)
 
 template<typename T>
 void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<uint32_t>& nodeWorkPerStep, std::vector<uint32_t>& leafWorkPerStep,
-	std::vector<uint32_t>& uniqueNodesPerStep, std::vector<uint32_t>& uniqueLeafsPerStep)
+	std::vector<uint32_t>& uniqueNodesPerStep, std::vector<uint32_t>& uniqueLeafsPerStep, std::vector<uint32_t>& terminationsPerStep)
 {
 	//TODO: reserve vector sizes for performance
 
@@ -125,22 +125,48 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 	{
 		//this is basically the slow version of fastNodeManager intersectWide that collects extra data
 		int wideSize = rays.size();
+
+		//ray id list to keep track of what rays we need to do.
+		std::vector<uint16_t> nodeWork(wideSize);
+		std::vector<uint16_t> leafWork(wideSize);
+
 		//stack for each ray. 32 is current max stack size
 		std::vector<std::array<int32_t, 32>>stack(wideSize);
 		std::vector< uint8_t>stackIndex(wideSize);
+
 		for (int i = 0; i < wideSize; i++)
 		{
 			stack[i][0] = 0;
 			stackIndex[i] = 1;
 		}
 
-		//ray id list to keep track of what rays we need to do.
-		std::vector<uint16_t> nodeWork(wideSize);
-		std::iota(nodeWork.begin(), nodeWork.end(), 0);
-		std::vector<uint16_t> leafWork(wideSize);
+		int counter = 0;
+		if (!rays[0].shadowRay)
+		{
+			std::iota(nodeWork.begin(), nodeWork.end(), 0);
+			counter = wideSize;
+
+		}
+		else
+		{
+			//check secondary rays and only traverse those where the primary ray hit something
+			for (int i = 0; i < wideSize; i++)
+			{
+				if (!isnan(rays[i].pos.x))
+				{
+					nodeWork[counter++] = i;
+				}
+			}
+			//fill rest with 0 (means no work)
+			for (int i = counter; i < wideSize; i++)
+			{
+				nodeWork[i] = 0;
+			}
+		}
+		terminationsPerStep.push_back(wideSize - counter);
 
 		//number of noderays and leafrays so we know what ids to read.
-		uint16_t nodeRays = wideSize;
+		uint16_t nodeRays = counter;
 		uint16_t leafRays = 0;
 
 		uint16_t nodeRaysNext = 0;
@@ -150,6 +176,8 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 
 		while (nodeRays != 0 || leafRays != 0)
 		{
+			int terminationsThisStep = 0;
+
 			//collect data before node loop
 			nodeWorkPerStep.push_back(nodeRays);
 			uniqueNumbers.clear();
@@ -231,6 +259,10 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 							leafWork[leafRays++] = rayId;
 						}
 					}
+					else
+					{
+						terminationsThisStep++;
+					}
 				}
 				nodeRays = nodeRaysNext;
 				nodeRaysNext = 0;
@@ -276,6 +308,7 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 					{
 						//Stop this ray if shadowray and it hit something.
 						ray.tMax = NAN;
+						terminationsThisStep++;
 						continue;
 					}
 					//depending on next element in stack. put this ray in node or leaf
@@ -292,11 +325,16 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 							leafWork[leafRaysNext++] = rayId;
 						}
 					}
+					else
+					{
+						terminationsThisStep++;
+					}
 				}
 				leafRays = leafRaysNext;
 				leafRaysNext = 0;
 			}
 			uniqueLeafsPerStep.push_back(uniqueNumbers.size());
+			terminationsPerStep.push_back(terminationsThisStep);
 		}
 	}
 	else
