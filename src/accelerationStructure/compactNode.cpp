@@ -163,7 +163,8 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 				nodeWork[i] = 0;
 			}
 		}
-		terminationsPerStep.push_back(wideSize - counter);
+
+		
 
 		//number of noderays and leafrays so we know what ids to read.
 		uint16_t nodeRays = counter;
@@ -173,6 +174,13 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 		uint16_t leafRaysNext = 0;
 
 		std::set<uint16_t> uniqueNumbers;
+
+		//state "before" we start loop
+		terminationsPerStep.push_back(wideSize - counter);
+		nodeWorkPerStep.push_back(nodeRays);
+		uniqueNodesPerStep.push_back(0);
+		leafWorkPerStep.push_back(0);
+		uniqueLeafsPerStep.push_back(0);
 
 		while (nodeRays != 0 || leafRays != 0)
 		{
