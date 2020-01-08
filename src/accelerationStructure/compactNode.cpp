@@ -119,7 +119,14 @@ template<typename T>
 void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<uint32_t>& nodeWorkPerStep, std::vector<uint32_t>& leafWorkPerStep,
 	std::vector<uint32_t>& uniqueNodesPerStep, std::vector<uint32_t>& uniqueLeafsPerStep, std::vector<uint32_t>& terminationsPerStep)
 {
-	//TODO: reserve vector sizes for performance
+	//reserve vector size for performance. Most rays are finished after 100 steps.
+	int reserveSize = 100;
+	nodeWorkPerStep.reserve(reserveSize);
+	leafWorkPerStep.reserve(reserveSize);
+	uniqueNodesPerStep.reserve(reserveSize);
+	uniqueLeafsPerStep.reserve(reserveSize);
+	terminationsPerStep.reserve(reserveSize);
+
 
 	if constexpr (std::is_same<T, CompactNodeV3>::value)
 	{
@@ -164,7 +171,7 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 			}
 		}
 
-		
+
 
 		//number of noderays and leafrays so we know what ids to read.
 		uint16_t nodeRays = counter;
