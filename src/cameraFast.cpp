@@ -155,7 +155,13 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 		std::cout << "all rays minus triangle took " << timeSumEachRay - timeSumTriangle << " seconds." << std::endl;
 	}
 
-	std::ofstream myfile(path + "/" + name + problem + problemPrefix + "_Perf.txt");
+	std::string workGroupName = "";
+	if (wideRender)
+	{
+		workGroupName = "_s" + std::to_string(workGroupSize);
+	}
+
+	std::ofstream myfile(path + "/" + name + problem + problemPrefix + workGroupName + "_Perf.txt");
 	if (myfile.is_open())
 	{
 		myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;

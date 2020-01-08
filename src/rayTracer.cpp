@@ -209,6 +209,9 @@ void RayTracer::run()
 				cameraPositions.push_back(glm::vec3(3.5f, 1.5f, 5.f));
 				cameraTargets.push_back(glm::vec3(-1, -1, 1.1));
 
+				cameraPositions.push_back(glm::vec3(3.5f, 1.5f, 5.f));
+				cameraTargets.push_back(glm::vec3(-1, -1, 1.1));
+
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;
 			case 1:
@@ -300,7 +303,6 @@ void RayTracer::run()
 				cameraPositions.push_back(glm::vec3(-109, 284, -147));
 				cameraTargets.push_back(glm::vec3(20, 257, -151));
 
-				//tmp second camera is just duplicate
 				cameraPositions.push_back(glm::vec3(765, 207, 550));
 				cameraTargets.push_back(glm::vec3(786, 174, 123));
 

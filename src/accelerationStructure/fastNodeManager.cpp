@@ -77,7 +77,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 	nanoSec& timeTriangleTest) const
 {
 	//stack for each ray. 32 is current max stack size
-	std::vector< std::array<int32_t, workGroupSquare>> stack(32);
+	std::vector< std::array<int32_t, workGroupSquare>> stack(36);
 	std::array< uint8_t, workGroupSquare>stackIndex;
 	for (int i = 0; i < workGroupSquare; i++)
 	{
@@ -239,7 +239,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 {
 	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
 	//id 0 is root node
-	std::vector< std::array<int32_t, workGroupSquare>> stack(32);
+	std::vector< std::array<int32_t, workGroupSquare>> stack(36);
 	stack[0].fill(0);
 
 	//ray id list to keep track of what rays we need to do.
@@ -385,7 +385,7 @@ template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
-	std::array<std::tuple<uint32_t, float>, 32> nodeStack;
+	std::array<std::tuple<uint32_t, float>, 36> nodeStack;
 	nodeStack[0] = std::make_tuple<uint32_t, float>(0, 0);
 	uint8_t stackIndex = 1;
 
@@ -469,7 +469,7 @@ template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest) const
 {
 	//ids of ndodes that we still need to test:
-	std::array<uint32_t, 32> nodeStack;
+	std::array<uint32_t, 36> nodeStack;
 	nodeStack[0] = 0;
 	uint8_t stackIndex = 1;
 
@@ -553,7 +553,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 	//differences: no return for triangles. No aabb distance stop (no saving of distance of aabb intersections since we stop after first hit)
 
 	//ids of ndodes that we still need to test:
-	std::array<uint32_t, 32> nodeStack;
+	std::array<uint32_t, 36> nodeStack;
 	nodeStack[0] = 0;
 	uint8_t stackIndex = 1;
 	bool result = false;
