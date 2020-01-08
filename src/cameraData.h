@@ -815,13 +815,13 @@ private:
 			std::vector<float> leafWorkPerStepAverage(maxSize, 0);
 			std::vector<float> uniqueNodesPerStepAverage(maxSize, 0);
 			std::vector<float> uniqueLeafsPerStepAverage(maxSize, 0);
-			std::vector<float> rayTerminationsPerStepAverage(maxSize, 0);
+			std::vector<float> terminatedRaysStepAverage(maxSize, 0);
 
 			std::vector<float> secondaryNodeWorkPerStepAverage(maxSize, 0);
 			std::vector<float> secondaryLeafWorkPerStepAverage(maxSize, 0);
 			std::vector<float> secondaryUniqueNodesPerStepAverage(maxSize, 0);
 			std::vector<float> secondaryUniqueLeafsPerStepAverage(maxSize, 0);
-			std::vector<float> secondaryRayTerminationsPerStepAverage(maxSize, 0);
+			std::vector<float> secondaryTerminatedRaysStepAverage(maxSize, 0);
 			//go trough workSteps
 			for (int j = 0; j < maxSize; j++)
 			{
@@ -844,7 +844,7 @@ private:
 						leafWorkPerStepAverage[j] += leafWorkPerStep[i][j];
 						uniqueNodesPerStepAverage[j] += uniqueNodesPerStep[i][j];
 						uniqueLeafsPerStepAverage[j] += uniqueLeafsPerStep[i][j];
-						rayTerminationsPerStepAverage[j] += terminationsPerStep[i][j];
+						terminatedRaysStepAverage[j] += terminationsPerStep[i][j];
 
 						if (uniqueNodesPerStep[i][j] != 0)
 						{
@@ -863,7 +863,7 @@ private:
 						secondaryLeafWorkPerStepAverage[j] += secondaryLeafWorkPerStep[i][j];
 						secondaryUniqueNodesPerStepAverage[j] += secondaryUniqueNodesPerStep[i][j];
 						secondaryUniqueLeafsPerStepAverage[j] += secondaryUniqueLeafsPerStep[i][j];
-						secondaryRayTerminationsPerStepAverage[j] += secondaryTerminationsPerStep[i][j];
+						secondaryTerminatedRaysStepAverage[j] += secondaryTerminationsPerStep[i][j];
 
 						if (secondaryUniqueNodesPerStep[i][j] != 0)
 						{
@@ -888,14 +888,20 @@ private:
 				leafWorkPerStepAverage[j] /= (float)primaryCount;
 				uniqueNodesPerStepAverage[j] /= (float)primaryNodeUniqueCount;
 				uniqueLeafsPerStepAverage[j] /= (float)primaryLeafUniqueCount;
-				rayTerminationsPerStepAverage[j] /= (float)(width / workGroupSize) * (height / workGroupSize);
+				terminatedRaysStepAverage[j] /= (float)(width / workGroupSize) * (height / workGroupSize);
 
 				secondaryNodeWorkPerStepAverage[j] /= (float)secondaryCount;
 				secondaryLeafWorkPerStepAverage[j] /= (float)secondaryCount;
 				secondaryUniqueNodesPerStepAverage[j] /= (float)secondaryNodeUniqueCount;
 				secondaryUniqueLeafsPerStepAverage[j] /= (float)secondaryLeafUniqueCount;
-				secondaryRayTerminationsPerStepAverage[j] /= (float)(width / workGroupSize) * (height / workGroupSize);
+				secondaryTerminatedRaysStepAverage[j] /= (float)(width / workGroupSize) * (height / workGroupSize);
 
+				//add Terminated rays together:
+				if (j != 0)
+				{
+					terminatedRaysStepAverage[j] += terminatedRaysStepAverage[j - 1];
+					secondaryTerminatedRaysStepAverage[j] += secondaryTerminatedRaysStepAverage[j - 1];
+				}
 
 				//could also do standard deviation? (mean doesnt really make sense)
 
@@ -905,13 +911,13 @@ private:
 				fileWorkGroup << uniqueNodesPerStepAverage[j] << ", ";
 				fileWorkGroup << leafWorkPerStepAverage[j] << ", ";
 				fileWorkGroup << uniqueLeafsPerStepAverage[j] << ", ";
-				fileWorkGroup << rayTerminationsPerStepAverage[j] << ", ";
+				fileWorkGroup << terminatedRaysStepAverage[j] << ", ";
 
 				fileWorkGroup << secondaryNodeWorkPerStepAverage[j] << ", ";
 				fileWorkGroup << secondaryUniqueNodesPerStepAverage[j] << ", ";
 				fileWorkGroup << secondaryLeafWorkPerStepAverage[j] << ", ";
 				fileWorkGroup << secondaryUniqueLeafsPerStepAverage[j] << ", ";
-				fileWorkGroup << secondaryRayTerminationsPerStepAverage[j] << std::endl;
+				fileWorkGroup << secondaryTerminatedRaysStepAverage[j] << std::endl;
 			}
 			fileWorkGroup.close();
 		}

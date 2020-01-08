@@ -178,7 +178,7 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 		//state "before" we start loop
 		terminationsPerStep.push_back(wideSize - counter);
 		nodeWorkPerStep.push_back(nodeRays);
-		uniqueNodesPerStep.push_back(0);
+		uniqueNodesPerStep.push_back(1);
 		leafWorkPerStep.push_back(0);
 		uniqueLeafsPerStep.push_back(0);
 
