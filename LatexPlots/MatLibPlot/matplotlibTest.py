@@ -4,15 +4,18 @@ import numpy as np
 inputFolder = "../Data/"
 outputFolder = "../Plots/"
 
-showImage = False
+showImage = True
 
-def endPlot(plt):
+	#TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! need to think about what plots should start at 0
+
+def endPlot():
 	if showImage:
 		plt.show()
 	else:
 		plt.cla()
 
 def makePerfAnalysis(filePath, title, outputName):
+
 	fig = plt.figure() # an empty figure with no axes
 
 	#load:
@@ -35,7 +38,7 @@ def makePerfAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "RenderTimePerBranch.pdf")
 	plt.savefig(outputFolder + outputName + "RenderTimePerBranch.pgf")
-	endPlot(plt)
+	endPlot()
 
 	#total time by leaf size
 	plt.title(title)
@@ -50,7 +53,7 @@ def makePerfAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "RenderTimePerLeaf.pdf")
 	plt.savefig(outputFolder + outputName + "RenderTimePerLeaf.pgf")
-	endPlot(plt)
+	endPlot()
 
 	#Total time by branch factor.
 	plt.title(title)
@@ -65,7 +68,7 @@ def makePerfAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "NodeRenderTime.pdf")
 	plt.savefig(outputFolder + outputName + "NodeRenderTime.pgf")
-	endPlot(plt)
+	endPlot()
 
 	#total time by leaf size
 	plt.title(title)
@@ -80,7 +83,7 @@ def makePerfAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "LeafRenderTime.pdf")
 	plt.savefig(outputFolder + outputName + "LeafRenderTime.pgf")
-	endPlot(plt)
+	endPlot()
 
 	#Node factor
 	plt.title(title)
@@ -95,7 +98,7 @@ def makePerfAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "NodeFactorBranch.pdf")
 	plt.savefig(outputFolder + outputName + "NodeFactorBranch.pgf")
-	endPlot(plt)
+	endPlot()
 
 	#Node factor
 	plt.title(title)
@@ -110,11 +113,9 @@ def makePerfAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "NodeFactorLeaf.pdf")
 	plt.savefig(outputFolder + outputName + "NodeFactorLeaf.pgf")
-	endPlot(plt)
+	endPlot()
 
 def makeIntersectionAnalysis(filePath, title, outputName):
-	fig = plt.figure()  # an empty figure with no axes
-
 	#load the workload file and visualize it.
 
 	#load:
@@ -142,7 +143,7 @@ def makeIntersectionAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "PrimaryNodeIntersection.pdf")
 	plt.savefig(outputFolder + outputName + "PrimaryNodeIntersection.pgf")
-	endPlot(plt)
+	endPlot()
 
 	#aabb intersections by branching factor.
 	plt.title(title)
@@ -157,7 +158,7 @@ def makeIntersectionAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "PrimaryAabbIntersection.pdf")
 	plt.savefig(outputFolder + outputName + "PrimaryAabbIntersection.pgf")
-	endPlot(plt)
+	endPlot()
 
 
 	#Leaf intersections by Leaf size.
@@ -173,7 +174,7 @@ def makeIntersectionAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "PrimaryLeafIntersection.pdf")
 	plt.savefig(outputFolder + outputName + "PrimaryLeafIntersection.pgf")
-	endPlot(plt)
+	endPlot()
 	
 
 	#Leaf intersections by Leaf size.
@@ -190,22 +191,17 @@ def makeIntersectionAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + "PrimaryTriIntersection.pdf")
 	plt.savefig(outputFolder + outputName + "PrimaryTriIntersection.pgf")
-	endPlot(plt)
+	endPlot()
 
-def makeWorkGroupAnalysis(filePath, title, outputName):
-	fig = plt.figure() # an empty figure with no axes
-	
+def makeWorkGroupWiskerPlots(filePath, title, outputName):
 	plt.title(title)
-
-
-	#load the workload file and visualize it.
 
 	#load:
 	y, z, a, b, c = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows =1)
 
 	x = np.arange(y.size)
 	plt.plot(x,z, label='min', zorder=1)
-	plt.plot(x,a, label='max', zorder=2)
+	plt.plot(x,a, label='max', zorder=2)#
 	plt.fill_between(x, b,c, label = "mean + - standard deviation", color='m',zorder=3)
 
 
@@ -222,11 +218,106 @@ def makeWorkGroupAnalysis(filePath, title, outputName):
 	#save to file
 	plt.savefig(outputFolder + outputName + '.pdf')
 	plt.savefig(outputFolder + outputName + '.pgf')
-	endPlot(plt)
+	endPlot()
 
+def mask(array):
+	#prepare for masking arrays - 'conventional' arrays won't do it
+	maskArray = np.ma.array(array)
+	
+	#mask values below a certain threshold, but i want the axis to touch 0
+	#array = np.ma.masked_where(array <= 0 , array)
+	for i in range(len(array)-2):
+		index = i+1
+		if(array[index-1] == 0 and array[index] == 0 and array[index+1] == 0):
+			maskArray[index] = np.ma.masked
+	if array[0] == 0 and array[1] == 0:
+		maskArray [0] = np.ma.masked
+	if array[-1] == 0 and array[-2] == 0:
+		maskArray [-1] = np.ma.masked
+	return maskArray
 
-makePerfAnalysis(inputFolder + "amazonLumberyardInterior_4To16Table.txt", "Amazon Lumberyard Interior Sse", "AmazonLumberyardInterior_4To16Perf")
-makeIntersectionAnalysis(inputFolder + "amazonLumberyardInterior_1To16Table.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
+def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
+
+	filePath = filePath[0] + str(workGroupSize) + filePath[1]
+	title = title + str(workGroupSize)
+	outputName = outputName[0] + str(workGroupSize) + outputName[1]
+	(stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique, 
+		avgPrimaryRayTermination, avgSecondaryNodeWork, avgSecondaryNodeUnique,
+		avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows =1)
+
+	#find highers step id where secondary data is != 0
+	secondaryEndId = 0
+	for(currentId, a, b, c, d, e) in zip(stepId , avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination) :
+		if(a + b + c + d + e != 0):
+			secondaryEndId = currentId
+	secondaryEndId = secondaryEndId + 5
+
+	#mask those arrays i want to mask:
+	avgPrimaryNodeWork = mask(avgPrimaryNodeWork)
+	avgPrimaryNodeUnique = mask(avgPrimaryNodeUnique)
+	avgPrimaryLeafWork = mask(avgPrimaryLeafWork)
+	avgPrimaryLeafUnique = mask(avgPrimaryLeafUnique)
+	avgPrimaryRayTermination = mask(avgPrimaryRayTermination)
+
+	avgSecondaryNodeWork = mask(avgSecondaryNodeWork)
+	avgSecondaryNodeUnique = mask(avgSecondaryNodeUnique)
+	avgSecondaryLeafWork = mask(avgSecondaryLeafWork)
+	avgSecondaryLeafUnique = mask(avgSecondaryLeafUnique)
+	avgSecondaryRayTermination = mask(avgSecondaryRayTermination)
+
+	plt.figure(figsize=(15,7))
+
+	#first the overall node and leaf work + how many rays terminated
+	plt.subplot(2,2,1)
+	plt.title("Primary ")
+	plt.axhline(linewidth=1, color='0.5')
+	plt.axhline(y = workGroupSize * workGroupSize, linewidth=1, color='0.5')
+	plt.plot(stepId, avgPrimaryNodeWork, label = "Nodes")
+	plt.plot(stepId, avgPrimaryLeafWork, label = "Leafs")
+	plt.plot(stepId, avgPrimaryRayTermination, label = "Finished Rays")
+	xlimSave = plt.xlim()
+	plt.legend()
+
+	plt.subplot(2,2,3)
+	plt.title("Secondary")
+	plt.axhline(linewidth=1, color='0.5')
+	plt.axhline(y = workGroupSize * workGroupSize, linewidth=1, color='0.5')
+	plt.plot(stepId, avgSecondaryNodeWork, label = "Nodes")
+	plt.plot(stepId, avgSecondaryLeafWork, label = "Leafs")
+	plt.plot(stepId, avgSecondaryRayTermination, label = "Finished Rays")
+	plt.xlim(xlimSave)
+	plt.xlabel("Step Id")
+	plt.legend()
+
+	# second part is unique nodes and leafs
+	plt.subplot(2,2,2)
+	plt.title("Unique Nodes and Leafs loaded per Step (Primary Ray)")
+	plt.axhline(linewidth=1, color='0.5')
+	plt.plot(stepId, avgPrimaryNodeUnique, label = "Unique Nodes")
+	plt.plot(stepId, avgPrimaryLeafUnique, label = "Unique Leafs")
+	plt.xlim(xlimSave)
+	plt.legend()
+
+	plt.subplot(2,2,4)
+	plt.title("Unique Nodes and Leafs loaded per Step (Secondary ray)")
+	plt.axhline(linewidth=1, color='0.5')
+	plt.plot(stepId, avgSecondaryNodeUnique, label = "Unique Nodes")
+	plt.plot(stepId, avgSecondaryLeafUnique, label = "Unique Leafs")
+	plt.xlim(xlimSave)
+	plt.xlabel("Step Id")
+	plt.legend()
+
+	plt.savefig(outputFolder + outputName + ".pdf")
+	plt.savefig(outputFolder + outputName + ".pgf")
+	endPlot()
+
+#makePerfAnalysis(inputFolder + "amazonLumberyardInterior_4To16Table.txt", "Amazon Lumberyard Interior Sse", "AmazonLumberyardInterior_4To16Perf")
+#makeIntersectionAnalysis(inputFolder + "amazonLumberyardInterior_1To16Table.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
+
+#makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_s16_c1_WorkGroupData.txt', 'Primary N4L4S16', "PrimaryN4L4S16WorkGroupAnalysis")
+
+makeWorkGroupAnalysis((inputFolder + "amazonLumberyardInterior_b4_l4_s", "_c0_WorkGroupData.txt"), "Primary N4L4S", 32, ("N4L4S" ,"WorkGroupAnalysisC0"))
+makeWorkGroupAnalysis((inputFolder + "amazonLumberyardInterior_b4_l4_s", "_c1_WorkGroupData.txt"), "Primary N4L4S", 32, ("N4L4S" ,"WorkGroupAnalysisC1"))
 
 #makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_PrimaryWorkGroupWiskerPlot.txt', 'Primary N4L4', "PrimaryN4L4WorkGroupAnalysis")
 #makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_SecondaryWorkGroupWiskerPlot.txt', 'Secondary N4L4', "SecondaryN4L4WorkGroupAnalysis")
