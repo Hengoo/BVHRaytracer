@@ -69,8 +69,6 @@ else if (memoryName == 8 ) {ispcResult = functionName##8 (__VA_ARGS__);}		\
 else if (memoryName == 12) {ispcResult = functionName##12(__VA_ARGS__);}		\
 else {ispcResult = functionName##16(__VA_ARGS__);}			\
 
-
-
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::array<FastRay, workGroupSquare>& rays,
 	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<int8_t, workGroupSquare>& triIndex,
@@ -259,11 +257,6 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 			nodeWork[counter++] = i;
 		}
 	}
-	//fill rest with 0 (no work)
-	for (int i = counter; i < workGroupSquare; i++)
-	{
-		nodeWork[i] = 0;
-	}
 
 	//number of noderays and leafrays so we how much to read in nodeWork and leafWork
 	uint16_t nodeRays = counter;
@@ -378,6 +371,325 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
 		}
+	}
+}
+
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternative(std::array<FastRay, workGroupSquare>& rays,
+	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<int8_t, workGroupSquare>& triIndex,
+	nanoSec& timeTriangleTest) const
+{
+	//stack for each ray. 32 is current max stack size
+	std::vector< std::array<int32_t, workGroupSquare>> stack(36);
+	std::array< uint8_t, workGroupSquare>stackIndex;
+	for (int i = 0; i < workGroupSquare; i++)
+	{
+		stack[0][i] = 0;
+		stackIndex[i] = 1;
+	}
+
+	//ray id list to keep track of what rays we need to do.
+	std::array<uint16_t, workGroupSquare> work1;
+	std::iota(work1.begin(), work1.end(), 0);
+	std::array<uint16_t, workGroupSquare> work2;
+
+	std::array<uint16_t, workGroupSquare>* currentWork = &work1;
+	std::array<uint16_t, workGroupSquare>* nextWork = &work2;
+
+	//number of noderays and leafrays so we know what ids to read.
+	uint16_t nodeRays = workGroupSquare;
+	uint16_t leafRays = 0;
+
+	uint16_t nodeRaysNext = 0;
+	uint16_t leafRaysNext = 0;
+
+	//memory for aabb result
+	std::array<float, nodeMemory> aabbDistances;
+	aabbDistances.fill(NAN);
+
+	while (nodeRays != 0 || leafRays != 0)
+	{
+		//loop over nodes
+		if (nodeRays != 0)
+		{
+			for (int i = 0; i < nodeRays; i++)
+			{
+				auto rayId = (*currentWork)[i];
+				auto& ray = rays[rayId];
+
+				//get current id (most recently added because we do depth first)
+				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
+				//test ray against NodeId and write result in correct array
+
+				bool ispcResult;
+				int loopCount = getNodeLoopCount(node->bounds);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				if (ispcResult)
+				{
+					int code = maxAbsDimension(ray.direction);
+					bool reverse = ray.direction[code] <= 0;
+					if (reverse)
+					{
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+							[&](auto& cId)
+							{
+								if (!isnan(aabbDistances[cId]))
+								{
+									if (node->childType[cId])
+									{
+										//next is node
+										stack[stackIndex[rayId]++][rayId] = (int32_t)node->childIdBegin + cId;
+									}
+									else
+									{
+										//next is leaf
+										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+									}
+									aabbDistances[cId] = NAN;
+								}
+							});
+					}
+					else
+					{
+						//reverse order
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+							[&](auto& cId)
+							{
+								if (!isnan(aabbDistances[cId]))
+								{
+									if (node->childType[cId])
+									{
+										//next is node
+										stack[stackIndex[rayId]++][rayId] = node->childIdBegin + cId;
+									}
+									else
+									{
+										//next is leaf
+										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+									}
+									aabbDistances[cId] = NAN;
+								}
+							});
+					}
+				}
+				//depending on next element in stack. put this ray in node or leaf
+				if (stackIndex[rayId] != 0)
+				{
+					if (stack[stackIndex[rayId] - 1][rayId] >= 0)
+					{
+						//node
+						(*nextWork)[nodeRaysNext++] = rayId;
+					}
+					else
+					{
+						//leaf
+						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
+					}
+				}
+			}
+
+		}
+
+		//loop over triangles
+		if (leafRays != 0)
+			//if (leafRays >= 8 || nodeRays <= 8)
+		{
+			auto timeBeforeTriangleTest = getTime();
+
+			for (int i = 0; i < leafRays; i++)
+			{
+				auto rayId = (*currentWork)[workGroupSquare - 1 - i];
+				auto& ray = rays[rayId];
+
+				//get current id (most recently added because we do depth first)
+				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
+				//test ray against NodeId and write result in correct array
+
+				int ispcResult;
+				int loopCount = getLeafLoopCount(node->primIdBegin);
+				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+				//it returns the hit id -> -1 = no hit
+				if (ispcResult != -1)
+				{
+					leafIndex[rayId] = node->primIdBegin;
+					triIndex[rayId] = ispcResult;
+				}
+
+				//depending on next element in stack. put this ray in node or leaf
+				if (stackIndex[rayId] != 0)
+				{
+					if (stack[stackIndex[rayId] - 1][rayId] >= 0)
+					{
+						//node
+						(*nextWork)[nodeRaysNext++] = rayId;
+					}
+					else
+					{
+						//leaf
+						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
+					}
+				}
+			}
+
+		}
+		//prepare next loop:
+		leafRays = leafRaysNext;
+		leafRaysNext = 0;
+
+		nodeRays = nodeRaysNext;
+		nodeRaysNext = 0;
+
+		std::swap(currentWork, nextWork);
+	}
+}
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWideAlternative(
+	std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest) const
+{
+	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
+	//id 0 is root node
+	std::vector< std::array<int32_t, workGroupSquare>> stack(36);
+	stack[0].fill(0);
+
+	//ray id list to keep track of what rays we need to do.
+	std::array<uint16_t, workGroupSquare> work1;
+	std::array<uint16_t, workGroupSquare> work2;
+
+	std::array<uint16_t, workGroupSquare>* currentWork = &work1;
+	std::array<uint16_t, workGroupSquare>* nextWork = &work2;
+
+	//id of the current element in the stack we have to work on. 0 means we are finished
+	std::array< uint8_t, workGroupSquare>stackIndex;
+	stackIndex.fill(1);
+
+	int counter = 0;
+	for (int i = 0; i < workGroupSquare; i++)
+	{
+		if (!isnan(rays[i].pos.x))
+		{
+			(*currentWork)[counter++] = i;
+		}
+	}
+
+	//number of noderays and leafrays so we how much to read in nodeWork and leafWork
+	uint16_t nodeRays = counter;
+	uint16_t leafRays = 0;
+
+	//same as above but for the next iteration.
+	uint16_t nodeRaysNext = 0;
+	uint16_t leafRaysNext = 0;
+
+	//memory for aabb result
+	std::array<float, nodeMemory> aabbDistances;
+	aabbDistances.fill(NAN);
+
+	while (nodeRays != 0 || leafRays != 0)
+	{
+		//loop over nodes
+		if (nodeRays != 0)
+		{
+			for (int i = 0; i < nodeRays; i++)
+			{
+				auto rayId = (*currentWork)[i];
+				auto& ray = rays[rayId];
+
+				//get current id (most recently added because we do depth first)
+				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
+				//test ray against NodeId and write result in correct array
+
+				bool ispcResult;
+				int loopCount = getNodeLoopCount(node->bounds);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				if (ispcResult)
+				{
+					//this loop is faster with constant (nodememory) than with branching factor for N4L4.
+					for (int cId = 0; cId < nodeMemory; cId++)
+					{
+						if (!isnan(aabbDistances[cId]))
+						{
+							if (node->childType[cId])
+							{
+								//next is node
+								stack[stackIndex[rayId]++][rayId] = node->childIdBegin + cId;
+							}
+							else
+							{
+								//next is leaf
+								stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+							}
+							aabbDistances[cId] = NAN;
+						}
+					}
+				}
+				//depending on next element in stack. put this ray in node or leaf
+				if (stackIndex[rayId] != 0)
+				{
+					if (stack[stackIndex[rayId] - 1][rayId] >= 0)
+					{
+						//node
+						(*nextWork)[nodeRaysNext++] = rayId;
+					}
+					else
+					{
+						//leaf
+						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
+					}
+				}
+			}
+		}
+		//loop over triangles
+		if (leafRays != 0)
+			//if (leafRays >= 8 || nodeRays <= 8)
+		{
+			auto timeBeforeTriangleTest = getTime();
+
+			for (int i = 0; i < leafRays; i++)
+			{
+				auto rayId = (*currentWork)[workGroupSquare - 1 - i];
+				auto& ray = rays[rayId];
+
+				//get current id (most recently added because we do depth first)
+				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
+				//test ray against NodeId and write result in correct array
+
+				bool ispcResult;
+				int loopCount = getLeafLoopCount(node->primIdBegin);
+				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+				//it returns the hit id -> -1 = no hit
+				if (ispcResult)
+				{
+					result[rayId] ++;
+					//this ray is finished. Cancel and dont add it to the stack
+					continue;
+				}
+
+				//depending on next element in stack. put this ray in node or leaf
+				if (stackIndex[rayId] != 0)
+				{
+					if (stack[stackIndex[rayId] - 1][rayId] >= 0)
+					{
+						//node
+						(*nextWork)[nodeRaysNext++] = rayId;
+					}
+					else
+					{
+						//leaf
+						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
+					}
+				}
+			}
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+		}
+		//prepare next loop:
+		leafRays = leafRaysNext;
+		leafRaysNext = 0;
+
+		nodeRays = nodeRaysNext;
+		nodeRaysNext = 0;
+
+		std::swap(currentWork, nextWork);
 	}
 }
 

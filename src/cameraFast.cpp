@@ -287,6 +287,9 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 #pragma omp parallel for schedule(dynamic, 4)
 		for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 		{
+			//for now its hardcoded
+			bool alternativeRender = false;
+
 			auto timeBeforeRay = getTime();
 
 			//prepare primary ray
@@ -310,7 +313,14 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			}
 
 			//shoot primary ray
-			nodeManager.intersectWide(rays, leafIndex, triIndex, timeTriangleTest);
+			if (alternativeRender)
+			{
+				nodeManager.intersectWideAlternative(rays, leafIndex, triIndex, timeTriangleTest);
+			}
+			else
+			{
+				nodeManager.intersectWide(rays, leafIndex, triIndex, timeTriangleTest);
+			}
 
 			//prepare secondary rays:
 			std::array<uint8_t, workGroupSquare> ambientResult;
@@ -351,7 +361,14 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				}
 
 				//shoot secondary ray:
-				nodeManager.intersectSecondaryWide(rays, ambientResult, timeTriangleTest);
+				if (alternativeRender)
+				{
+					nodeManager.intersectSecondaryWideAlternative(rays, ambientResult, timeTriangleTest);
+				}
+				else
+				{
+					nodeManager.intersectSecondaryWide(rays, ambientResult, timeTriangleTest);
+				}
 			}
 			for (int j = 0; j < workGroupSquare; j++)
 			{
