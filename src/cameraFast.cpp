@@ -53,8 +53,8 @@ macro5(gS, 16, wGS)\
 //macro5(gS, 56, wGS)\
 //macro5(gS, 64, wGS)
 
-#define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, int cameraId);\
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute);
+#define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative);\
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute, const bool wideAlternative);
 
 //template class FastNodeManager<4, 4, 8>;
 macro1()
@@ -98,7 +98,7 @@ CameraFast::CameraFast(std::string path, std::string name, std::string problem, 
 //renders 6 images, We take median of the last 5 renders
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager, const unsigned ambientSampleCount,
-	const float ambientDistance, const bool mute)
+	const float ambientDistance, const bool mute, bool wideAlternative)
 {
 	int cameraCount = positions.size();
 	//all values we store:
@@ -118,19 +118,19 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 		//if image should be saved one first run to save the image. Just to be sure we still do one render we trough away before performance measurements
 		if (saveImage)
 		{
-			renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId);
+			renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative);
 		}
 
 		//"first" render to load everything in cache
 		for (int i = 0; i < 1; i++)
 		{
-			renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId);
+			renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative);
 		}
 
 		//median. (median of overall time or of each individual time?
 		for (int i = 0; i < sampleCount; i++)
 		{
-			results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId));
+			results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative));
 		}
 		//calculate median
 		//this sorts by the first value of the tupel (the total raytracer time)
@@ -185,7 +185,7 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager,
-	const unsigned ambientSampleCount, const float ambientDistance, int cameraId)
+	const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative)
 {
 	//fillRenderInfo();
 	auto timeBeginRaytracer = getTime();
@@ -287,9 +287,6 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 #pragma omp parallel for schedule(dynamic, 4)
 		for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 		{
-			//for now its hardcoded
-			bool alternativeRender = false;
-
 			auto timeBeforeRay = getTime();
 
 			//prepare primary ray
@@ -313,7 +310,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			}
 
 			//shoot primary ray
-			if (alternativeRender)
+			if (wideAlternative)
 			{
 				nodeManager.intersectWideAlternative(rays, leafIndex, triIndex, timeTriangleTest);
 			}
@@ -361,7 +358,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				}
 
 				//shoot secondary ray:
-				if (alternativeRender)
+				if (wideAlternative)
 				{
 					nodeManager.intersectSecondaryWideAlternative(rays, ambientResult, timeTriangleTest);
 				}

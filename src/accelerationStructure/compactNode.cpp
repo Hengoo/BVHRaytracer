@@ -137,8 +137,8 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 		std::vector<uint16_t> nodeWork(wideSize);
 		std::vector<uint16_t> leafWork(wideSize);
 
-		//stack for each ray. 32 is current max stack size
-		std::vector<std::array<int32_t, 32>>stack(wideSize);
+		//stack for each ray. 36 is current max stack size
+		std::vector<std::array<int32_t, 36>>stack(wideSize);
 		std::vector< uint8_t>stackIndex(wideSize);
 
 		for (int i = 0; i < wideSize; i++)
@@ -163,11 +163,6 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 				{
 					nodeWork[counter++] = i;
 				}
-			}
-			//fill rest with 0 (means no work)
-			for (int i = counter; i < wideSize; i++)
-			{
-				nodeWork[i] = 0;
 			}
 		}
 
@@ -358,6 +353,253 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 	}
 	return;
 }
+
+template<typename T>
+void CompactNodeManager<T>::intersectWideAlternative(std::vector<Ray>& rays, std::vector<uint32_t>& nodeWorkPerStep, std::vector<uint32_t>& leafWorkPerStep,
+	std::vector<uint32_t>& uniqueNodesPerStep, std::vector<uint32_t>& uniqueLeafsPerStep, std::vector<uint32_t>& terminationsPerStep)
+{
+	//reserve vector size for performance. Most rays are finished after 100 steps.
+	int reserveSize = 100;
+	nodeWorkPerStep.reserve(reserveSize);
+	leafWorkPerStep.reserve(reserveSize);
+	uniqueNodesPerStep.reserve(reserveSize);
+	uniqueLeafsPerStep.reserve(reserveSize);
+	terminationsPerStep.reserve(reserveSize);
+
+
+	if constexpr (std::is_same<T, CompactNodeV3>::value)
+	{
+		//this is basically the slow version of fastNodeManager intersectWide that collects extra data
+		int wideSize = rays.size();
+
+		//ray id list to keep track of what rays we need to do.
+		std::vector<uint16_t> work1(wideSize);
+		std::vector<uint16_t> work2(wideSize);
+
+		std::vector<uint16_t>* currentWork = &work1;
+		std::vector<uint16_t>* nextWork = &work2;
+
+		//stack for each ray. 36 is current max stack size
+		std::vector<std::array<int32_t, 36>>stack(wideSize);
+		std::vector< uint8_t>stackIndex(wideSize);
+
+		for (int i = 0; i < wideSize; i++)
+		{
+			stack[i][0] = 0;
+			stackIndex[i] = 1;
+		}
+
+		int counter = 0;
+		if (!rays[0].shadowRay)
+		{
+			std::iota(work1.begin(), work1.end(), 0);
+			counter = wideSize;
+
+		}
+		else
+		{
+			//check secondary rays and only traverse those where the primary ray hit something
+			for (int i = 0; i < wideSize; i++)
+			{
+				if (!isnan(rays[i].pos.x))
+				{
+					work1[counter++] = i;
+				}
+			}
+		}
+
+		//number of noderays and leafrays so we know what ids to read.
+		uint16_t nodeRays = counter;
+		uint16_t leafRays = 0;
+
+		uint16_t nodeRaysNext = 0;
+		uint16_t leafRaysNext = 0;
+
+		std::set<uint16_t> uniqueNumbers;
+
+		//state "before" we start loop
+		terminationsPerStep.push_back(wideSize - counter);
+		nodeWorkPerStep.push_back(nodeRays);
+		uniqueNodesPerStep.push_back(1);
+		leafWorkPerStep.push_back(0);
+		uniqueLeafsPerStep.push_back(0);
+
+		while (nodeRays != 0 || leafRays != 0)
+		{
+			int terminationsThisStep = 0;
+
+			//collect data before node loop
+			nodeWorkPerStep.push_back(nodeRays);
+			uniqueNumbers.clear();
+
+			//loop over nodes
+			if (nodeRays != 0)
+			{
+				for (int i = 0; i < nodeRays; i++)
+				{
+					auto rayId = (*currentWork)[i];
+					auto& ray = rays[rayId];
+					auto nodeId = stack[rayId][--stackIndex[rayId]];
+					T* node = &compactNodes[nodeId];
+					uniqueNumbers.insert(nodeId);
+
+					//test ray against NodeId and write result in correct array
+
+					//update counters
+					uint16_t childCount = node->getChildCount();
+					ray.childFullness[childCount] ++;
+
+					ray.nodeIntersectionCount[node->depth]++;
+
+					//traverse nodes with children that can have arbitrary sorting
+					int code = maxAbsDimension(ray.direction);
+					bool reverse = ray.direction[code] <= 0;
+					if (reverse)
+					{
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+							[&](auto& cId)
+							{
+								int nodeId = node->childIdBegin + cId;
+								if (aabbCheck(ray, nodeId))
+								{
+									//test if hit is a node or leaf
+									if (compactNodes[nodeId].hasPrimitive())
+									{
+										stack[rayId][stackIndex[rayId]++] = -(int32_t)(node->childIdBegin + cId);
+									}
+									else
+									{
+										stack[rayId][stackIndex[rayId]++] = (int32_t)node->childIdBegin + cId;
+									}
+								}
+							});
+					}
+					else
+					{
+						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+							[&](auto& cId)
+							{
+								int nodeId = node->childIdBegin + cId;
+								if (aabbCheck(ray, nodeId))
+								{
+									//test if hit is a node or leaf
+									if (compactNodes[nodeId].hasPrimitive())
+									{
+										stack[rayId][stackIndex[rayId]++] = -(int32_t)(node->childIdBegin + cId);
+									}
+									else
+									{
+										stack[rayId][stackIndex[rayId]++] = (int32_t)node->childIdBegin + cId;
+									}
+								}
+							});
+					}
+
+					//depending on next element in stack. put this ray in node or leaf
+					if (stackIndex[rayId] != 0)
+					{
+						if (stack[rayId][stackIndex[rayId] - 1] >= 0)
+						{
+							//node
+							(*nextWork)[nodeRaysNext++] = rayId;
+						}
+						else
+						{
+							//leaf
+							(*nextWork)[wideSize - 1 - (leafRaysNext++)] = rayId;
+						}
+					}
+					else
+					{
+						terminationsThisStep++;
+					}
+				}
+			}
+
+			uniqueNodesPerStep.push_back(uniqueNumbers.size());
+			uniqueNumbers.clear();
+
+			//collect data before leaf loop
+			leafWorkPerStep.push_back(leafRays);
+
+			//loop over triangles
+			if (leafRays != 0)
+				//if (leafRays >= 8 || nodeRays <= 8)
+			{
+				for (int i = 0; i < leafRays; i++)
+				{
+					auto rayId = (*currentWork)[wideSize - 1 - i];
+					auto& ray = rays[rayId];
+
+					auto leafId = -stack[rayId][--stackIndex[rayId]];
+					//get current id (most recently added because we do depth first)
+					T* node = &compactNodes[leafId];
+					//test ray against NodeId and write result in correct array
+					uniqueNumbers.insert(leafId);
+
+					uint32_t primCount = node->primIdEndOffset;
+					//logging: primitive fullness:
+					ray.primitiveFullness[primCount] ++;
+					ray.leafIntersectionCount[node->depth]++;
+
+					bool anyHit = false;
+					//In theory i need to save the clostest distance and only apply it to the ray at the end?
+					std::for_each(primitives->begin() + node->primIdBegin, primitives->begin() + node->primIdEndOffset + node->primIdBegin,
+						[&](auto& p)
+						{
+							if (p->intersect(ray))
+							{
+								anyHit = true;
+							}
+						});
+
+					if (ray.shadowRay && anyHit)
+					{
+						//Stop this ray if shadowray and it hit something.
+						ray.tMax = NAN;
+						terminationsThisStep++;
+						continue;
+					}
+					//depending on next element in stack. put this ray in node or leaf
+					if (stackIndex[rayId] != 0)
+					{
+						if (stack[rayId][stackIndex[rayId] - 1] >= 0)
+						{
+							//node
+							(*nextWork)[nodeRaysNext++] = rayId;
+						}
+						else
+						{
+							//leaf
+							(*nextWork)[wideSize - 1 - (leafRaysNext++)] = rayId;
+						}
+					}
+					else
+					{
+						terminationsThisStep++;
+					}
+				}
+			}
+			uniqueLeafsPerStep.push_back(uniqueNumbers.size());
+			terminationsPerStep.push_back(terminationsThisStep);
+
+			//prepare next loop:
+			leafRays = leafRaysNext;
+			leafRaysNext = 0;
+
+			nodeRays = nodeRaysNext;
+			nodeRaysNext = 0;
+
+			std::swap(currentWork, nextWork);
+		}
+	}
+	else
+	{
+		std::cerr << "unsupported node type for wideIntersect data collection" << std::endl;
+	}
+	return;
+}
+
 
 template<typename T>
 bool CompactNodeManager<T>::intersectImmediately(Ray& ray, bool useDistance)

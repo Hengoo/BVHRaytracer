@@ -29,9 +29,9 @@ public:
 	//renders 6 images, We take median of the last 5 renders
 	template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 	void renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager, const unsigned ambientSampleCount,
-		const float ambientDistance, const bool mute);
+		const float ambientDistance, const bool mute, const bool wideAlternative);
 
 	template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 	std::tuple<float, float, float> renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager,
-		const unsigned ambientSampleCount, const float ambientDistance, int cameraId);
+		const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative);
 };

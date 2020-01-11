@@ -3,21 +3,21 @@
 #Leafsize and Branching Factor to test:
 minLeafSize = 4
 maxLeafSize = 4
-leafStep = 1
+leafStep = 4
 
 minBranch = 4
 maxBranch = 4
-branchStep = 1
+branchStep = 4
 
-workGroupSize = 8
+workGroupSize = 16
 
 #What analysis to do:
 renderAnalysisImage = true
-saveDepthDetailedImage = true
+saveDepthDetailedImage = false
 bvhAnalysis = false
 saveBvhImage = false
 saveImage = true
-doWorkGroupAnalysis = false
+doWorkGroupAnalysis = true
 
 #Do performance Analysis: (this disables parallel execution)
 doPerformanceTest = false
@@ -26,7 +26,6 @@ doNodeMemoryTests = false
 
 #Number of samples for ambient occlusion
 ambientSampleCount = 1
-
 
 castShadows = false
 
@@ -53,7 +52,8 @@ renderType = 2
 saveDistance = false
 
 #Use wide renderer or not:
-wideRender = false
+wideRender = true
+wideAlternative = true
 
 #Scenes:
 #	0 = lizard

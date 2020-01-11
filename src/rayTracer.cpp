@@ -90,7 +90,7 @@ if constexpr (gangS == 4)												\
 	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
 	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory);								\
 	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, wideRender, cameraPositions, cameraTargets);			\
-	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute);						\
+	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute, wideAlternative);						\
 }
 
 
@@ -644,7 +644,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				//create camera and render image
 				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
 				c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideAlternative);
 			}
 			else
 			{
@@ -652,7 +652,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				//create camera and render image
 				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
 				c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
+					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideAlternative);
 			}
 		}
 		else
@@ -666,7 +666,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			//create camera and render image
 			CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
 			c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
-				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis);
+				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideAlternative);
 		}
 	}
 	std::cout << "All to do with rendering took " << getTimeFloat(timeBeginRendering) << " seconds." << std::endl;
@@ -747,6 +747,7 @@ void RayTracer::readConfig()
 				readBool(line, "doWorkGroupAnalysis", doWorkGroupAnalysis);
 				readBool(line, "saveDistance", saveDistance);
 				readBool(line, "wideRender", wideRender);
+				readBool(line, "wideAlternative", wideAlternative);
 			}
 		}
 	}

@@ -569,7 +569,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 	{
 		if (!isnan(rays[i].pos.x))
 		{
-			(*currentWork)[counter++] = i;
+			work1[counter++] = i;
 		}
 	}
 

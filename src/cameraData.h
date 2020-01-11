@@ -96,7 +96,7 @@ public:
 	template<typename T>
 	void renderImages(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
 		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount,
-		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis)
+		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis, bool wideAlternative)
 	{
 		int workGroupSize = nonTemplateWorkGroupSize;
 		int cameraCount = positions.size();
@@ -110,7 +110,7 @@ public:
 			}
 
 			renderImage(saveImage, saveDepthDebugImage, nodeManager, bvh, lights, ambientSampleCount,
-				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, cameraId);
+				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, cameraId, wideAlternative);
 
 			//save image for each camera and the data from wideRender
 			std::string cameraName = "_c" + std::to_string(cameraId);
@@ -327,7 +327,7 @@ public:
 	template<typename T>
 	void renderImage(bool saveImage, bool saveDepthDebugImage, CompactNodeManager<T>& nodeManager
 		, Bvh& bvh, std::vector<std::unique_ptr<Light>>& lights, unsigned ambientSampleCount,
-		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis, int cameraId)
+		float ambientDistance, bool castShadows, int renderType, bool mute, bool doWorkGroupAnalysis, int cameraId, bool wideAlternative)
 	{
 		int workGroupSize = nonTemplateWorkGroupSize;
 		/*
@@ -468,8 +468,14 @@ public:
 				}
 
 				//shoot primary rays
-				nodeManager.intersectWide(rays, nodeWorkPerStep[i], leafWorkPerStep[i], uniqueNodesPerStep[i], uniqueLeafsPerStep[i], terminationsPerStep[i]);
-
+				if (wideAlternative)
+				{
+					nodeManager.intersectWideAlternative(rays, nodeWorkPerStep[i], leafWorkPerStep[i], uniqueNodesPerStep[i], uniqueLeafsPerStep[i], terminationsPerStep[i]);
+				}
+				else
+				{
+					nodeManager.intersectWide(rays, nodeWorkPerStep[i], leafWorkPerStep[i], uniqueNodesPerStep[i], uniqueLeafsPerStep[i], terminationsPerStep[i]);
+				}
 
 				//shoot secondary rays
 				std::vector<Ray> secondaryRays(workGroupSquare);
@@ -490,8 +496,17 @@ public:
 							secondaryRays[j].tMax = ambientDistance;
 						}
 					}
-					nodeManager.intersectWide(secondaryRays, secondaryNodeWorkPerStep[i], secondaryLeafWorkPerStep[i],
-						secondaryUniqueNodesPerStep[i], secondaryUniqueLeafsPerStep[i], secondaryTerminationsPerStep[i]);
+
+					if (wideAlternative)
+					{
+						nodeManager.intersectWideAlternative(secondaryRays, secondaryNodeWorkPerStep[i], secondaryLeafWorkPerStep[i],
+							secondaryUniqueNodesPerStep[i], secondaryUniqueLeafsPerStep[i], secondaryTerminationsPerStep[i]);
+					}
+					else
+					{
+						nodeManager.intersectWide(secondaryRays, secondaryNodeWorkPerStep[i], secondaryLeafWorkPerStep[i],
+							secondaryUniqueNodesPerStep[i], secondaryUniqueLeafsPerStep[i], secondaryTerminationsPerStep[i]);
+					}
 
 					for (int j = 0; j < workGroupSquare; j++)
 					{

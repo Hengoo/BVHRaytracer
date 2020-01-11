@@ -4,7 +4,7 @@ import numpy as np
 inputFolder = "../Data/"
 outputFolder = "../Plots/"
 
-showImage = True
+showImage = False
 
 	#TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! need to think about what plots should start at 0
 
@@ -316,8 +316,8 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 
 #makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_s16_c1_WorkGroupData.txt', 'Primary N4L4S16', "PrimaryN4L4S16WorkGroupAnalysis")
 
-makeWorkGroupAnalysis((inputFolder + "amazonLumberyardInterior_b4_l4_s", "_c0_WorkGroupData.txt"), "Primary N4L4S", 32, ("N4L4S" ,"WorkGroupAnalysisC0"))
-makeWorkGroupAnalysis((inputFolder + "amazonLumberyardInterior_b4_l4_s", "_c1_WorkGroupData.txt"), "Primary N4L4S", 32, ("N4L4S" ,"WorkGroupAnalysisC1"))
+makeWorkGroupAnalysis((inputFolder + "WorkGroupTest/MyVersion/"+ "amazonLumberyardInterior_b4_l4_s", "_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
+makeWorkGroupAnalysis((inputFolder + "WorkGroupTest/NewVersion/"+ "amazonLumberyardInterior_b4_l4_s", "_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
 
 #makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_PrimaryWorkGroupWiskerPlot.txt', 'Primary N4L4', "PrimaryN4L4WorkGroupAnalysis")
 #makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_SecondaryWorkGroupWiskerPlot.txt', 'Secondary N4L4', "SecondaryN4L4WorkGroupAnalysis")
