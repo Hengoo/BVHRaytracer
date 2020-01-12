@@ -4,7 +4,7 @@ import numpy as np
 inputFolder = "../Data/"
 outputFolder = "../Plots/"
 
-showImage = False
+showImage = True
 
 	#TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! need to think about what plots should start at 0
 
@@ -269,21 +269,21 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 
 	#first the overall node and leaf work + how many rays terminated
 	plt.subplot(2,2,1)
-	plt.title("Primary ")
+	plt.title("Average Node and Leaf intersections per Step (Primary Ray)")
 	plt.axhline(linewidth=1, color='0.5')
 	plt.axhline(y = workGroupSize * workGroupSize, linewidth=1, color='0.5')
-	plt.plot(stepId, avgPrimaryNodeWork, label = "Nodes")
-	plt.plot(stepId, avgPrimaryLeafWork, label = "Leafs")
+	plt.plot(stepId, avgPrimaryNodeWork, label = "Node Intersections")
+	plt.plot(stepId, avgPrimaryLeafWork, label = "Leaf Intersections")
 	plt.plot(stepId, avgPrimaryRayTermination, label = "Finished Rays")
 	xlimSave = plt.xlim()
 	plt.legend()
 
 	plt.subplot(2,2,3)
-	plt.title("Secondary")
+	plt.title("Average Node and Leaf intersections per Step (Secondary Ray)")
 	plt.axhline(linewidth=1, color='0.5')
 	plt.axhline(y = workGroupSize * workGroupSize, linewidth=1, color='0.5')
-	plt.plot(stepId, avgSecondaryNodeWork, label = "Nodes")
-	plt.plot(stepId, avgSecondaryLeafWork, label = "Leafs")
+	plt.plot(stepId, avgSecondaryNodeWork, label = "Nodes Intersections")
+	plt.plot(stepId, avgSecondaryLeafWork, label = "Leafs Intersections")
 	plt.plot(stepId, avgSecondaryRayTermination, label = "Finished Rays")
 	plt.xlim(xlimSave)
 	plt.xlabel("Step Id")
@@ -291,7 +291,7 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 
 	# second part is unique nodes and leafs
 	plt.subplot(2,2,2)
-	plt.title("Unique Nodes and Leafs loaded per Step (Primary Ray)")
+	plt.title("Average Unique Nodes and Leafs loaded per Step (Primary Ray)")
 	plt.axhline(linewidth=1, color='0.5')
 	plt.plot(stepId, avgPrimaryNodeUnique, label = "Unique Nodes")
 	plt.plot(stepId, avgPrimaryLeafUnique, label = "Unique Leafs")
@@ -299,7 +299,7 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 	plt.legend()
 
 	plt.subplot(2,2,4)
-	plt.title("Unique Nodes and Leafs loaded per Step (Secondary ray)")
+	plt.title("Average Unique Nodes and Leafs loaded per Step (Secondary ray)")
 	plt.axhline(linewidth=1, color='0.5')
 	plt.plot(stepId, avgSecondaryNodeUnique, label = "Unique Nodes")
 	plt.plot(stepId, avgSecondaryLeafUnique, label = "Unique Leafs")
