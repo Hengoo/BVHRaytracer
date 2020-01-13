@@ -50,6 +50,7 @@ class storageType:
 		self.leafTime = None
 
 class everything:
+
 	def __init__(self):
 		#the folder all the scene folders are in: (leave empty if no folder)
 		#self.folder = "SavesSortedEarlyStop/"
@@ -61,11 +62,20 @@ class everything:
 		#self.names = [7, 8, 9, 10, 11, 12]
 		self.names = [9]
 		
-		#prefixTo the folderNames
-		#self.prefix = "Long" #< was for sponza long
-		self.prefix = "_4To16"
+		#prefixTo the folderNames like this "_4To16"
+		#self.prefix = "_4To16"
+		self.prefix = ""
 		#Prefix to the output txt (so its sceneNamePrefix.txt)
 		self.outputPrefix = ""
+
+		self.workGroupSize = 16
+		self.wideVersion = -1
+		if self.wideVersion == -1:
+			self.intermediateFolderName = ""
+		else:
+			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Version_" + str(self.wideVersion)
+		
+
 
 		# -1 for all, id otherwise (starting with 0)
 		self.singeIdOverride = -1
@@ -87,7 +97,7 @@ class everything:
 		self.gangType = 1
 		self.gangName = ["Avx", "Sse"]
 
-		#temprary cost function. needs replacement
+		#temprary cost function.
 		self.nodeCostFactor = 1
 		self.leafCostFactor = 1
 
@@ -213,7 +223,7 @@ class everything:
 						if(self.subdivisionRange[1] == 0):
 							fileName  = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
-							fileName3 = self.perfFolder + name + self.gangName[self.gangType] +"Perf" + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
+							fileName3 = self.perfFolder + name + self.gangName[self.gangType] +"Perf" + self.prefix + "/" + self.intermediateFolderName + "/"+ name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
 						else:
 							fileName  = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
@@ -256,17 +266,18 @@ class everything:
 			#create file if i want one file for all subs
 			name = scenes.sceneName
 
+			wideString = "V" + str(self.wideVersion)
+			if self.wideVersion == -1:
+				wideString = ""
 			#output file:
 			if(self.subdivisionRange[1] == 0):
-				fResult = open(self.outputFolder + name + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				fResult = open(self.outputFolder + name + self.prefix + "Table" + self.outputPrefix + wideString +".txt", "w+")
 			else:
-				fResult = open(self.outputFolder + name + "Sub" + self.prefix + "Table" + self.outputPrefix + ".txt", "w+")
+				fResult = open(self.outputFolder + name + "Sub" + self.prefix + "Table" + self.outputPrefix + str(self.wideVersion)+ ".txt", "w+")
 			fResult.write(firstLine + "\n")
-			lastBranch = -1
 			for subId, sub in enumerate(scenes.subdivisions):
 				for configStorage in sub:
 					#empty line for table with space if branching factor changes
-					lastBranch = configStorage.branch
 
 					#write results
 					line = self.makeLine([configStorage.branch, configStorage.leaf, configStorage.subdivision])
@@ -283,6 +294,7 @@ class everything:
 					line += ", " + self.makeLine([fixNone(configStorage.totalTime), fixNone(configStorage.nodeTime), fixNone(configStorage.leafTime), fixNone(nodeCost), fixNone(leafCost), fixNone(sahNodeFactor)])
 
 					fResult.write(line + "\n")
+			fResult.close()
 
 		#one for each subdivision and one for each branc / leafsize combination
 		#the more im thinking about it, average isnt that usefull

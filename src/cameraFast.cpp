@@ -158,10 +158,10 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	std::string workGroupName = "";
 	if (wideRender)
 	{
-		workGroupName = "_s" + std::to_string(workGroupSize);
+		workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) +"_Version_" + std::to_string(wideAlternative);;
 	}
 
-	std::ofstream myfile(path + "/" + name + problem + problemPrefix + workGroupName + "_Perf.txt");
+	std::ofstream myfile(path + "/" + workGroupName + "/" + name + problem + problemPrefix + "_Perf.txt");
 	if (myfile.is_open())
 	{
 		myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;
@@ -178,7 +178,7 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	}
 	else
 	{
-		std::cerr << "unable to open perf output file" << std::endl;
+		std::cerr << "unable to open perf output file!" << std::endl;
 	}
 	myfile.close();
 }

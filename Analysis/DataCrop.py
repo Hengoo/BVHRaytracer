@@ -13,8 +13,8 @@ collumsToKeep = ["branchFactor", "leafSize", "primaryNodeIntersections", "primar
 #config for the
 if True:
 	folder = "Summary/"
-	tableInput ="amazonLumberyardInterior_4To16Table.txt"
-	tableOutput = "sahFactorConfig.txt"
+	tableInput ="amazonLumberyardInteriorTable.txt"
+	tableOutput = "sahFactorConfigSse.txt"
 	collumsToKeep = ["branchFactor", "leafSize", "sahNodeFactor"]
 #open table
 if (path.exists(folder + tableInput)):

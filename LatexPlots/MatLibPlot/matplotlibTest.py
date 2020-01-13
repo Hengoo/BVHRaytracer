@@ -193,11 +193,18 @@ def makeIntersectionAnalysis(filePath, title, outputName):
 	plt.savefig(outputFolder + outputName + "PrimaryTriIntersection.pgf")
 	endPlot()
 
-def makeWorkGroupWiskerPlots(filePath, title, outputName):
-	plt.title(title)
+def makeWorkGroupWiskerPlots(filePath, title, workGroupSize, outputName):
+	filePath = filePath[0] + str(workGroupSize) + filePath[1]
+	title = title + str(workGroupSize)
 
 	#load:
 	y, z, a, b, c = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows =1)
+
+	(stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique,
+		avgPrimaryRayTermination, primaryNodeWorkMax, primaryNodeWorkMin, primaryLeafWorkMax,
+		primaryLeafWorkMin, avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork,
+		avgSecondaryLeafUnique, avgSecondaryRayTermination, secondaryNodeWorkMax, secondaryNodeWorkMin,
+		secondaryLeafWorkMax, secondaryLeafWorkMin) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows =1)
 
 	x = np.arange(y.size)
 	plt.plot(x,z, label='min', zorder=1)
@@ -241,11 +248,14 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 	filePath = filePath[0] + str(workGroupSize) + filePath[1]
 	title = title + str(workGroupSize)
 	outputName = outputName[0] + str(workGroupSize) + outputName[1]
-	(stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique, 
-		avgPrimaryRayTermination, avgSecondaryNodeWork, avgSecondaryNodeUnique,
-		avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows =1)
 
-	#find highers step id where secondary data is != 0
+	(stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique,
+		avgPrimaryRayTermination, primaryNodeWorkMax, primaryNodeWorkMin, primaryLeafWorkMax,
+		primaryLeafWorkMin, avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork,
+		avgSecondaryLeafUnique, avgSecondaryRayTermination, secondaryNodeWorkMax, secondaryNodeWorkMin,
+		secondaryLeafWorkMax, secondaryLeafWorkMin) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows =1)
+
+	#find highest step id where secondary data is != 0
 	secondaryEndId = 0
 	for(currentId, a, b, c, d, e) in zip(stepId , avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination) :
 		if(a + b + c + d + e != 0):
@@ -265,11 +275,12 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 	avgSecondaryLeafUnique = mask(avgSecondaryLeafUnique)
 	avgSecondaryRayTermination = mask(avgSecondaryRayTermination)
 
-	plt.figure(figsize=(15,7))
+	#First plot is about how much is done in each step
+	plt.figure(figsize=(7,7))
+	plt.suptitle("Average Node and Leaf intersections per Step")
 
-	#first the overall node and leaf work + how many rays terminated
-	plt.subplot(2,2,1)
-	plt.title("Average Node and Leaf intersections per Step (Primary Ray)")
+	plt.subplot(2,1,1)
+	plt.title("Primary Ray")
 	plt.axhline(linewidth=1, color='0.5')
 	plt.axhline(y = workGroupSize * workGroupSize, linewidth=1, color='0.5')
 	plt.plot(stepId, avgPrimaryNodeWork, label = "Node Intersections")
@@ -278,8 +289,8 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 	xlimSave = plt.xlim()
 	plt.legend()
 
-	plt.subplot(2,2,3)
-	plt.title("Average Node and Leaf intersections per Step (Secondary Ray)")
+	plt.subplot(2,1,2)
+	plt.title("Secondary Ray")
 	plt.axhline(linewidth=1, color='0.5')
 	plt.axhline(y = workGroupSize * workGroupSize, linewidth=1, color='0.5')
 	plt.plot(stepId, avgSecondaryNodeWork, label = "Nodes Intersections")
@@ -289,35 +300,74 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 	plt.xlabel("Step Id")
 	plt.legend()
 
-	# second part is unique nodes and leafs
-	plt.subplot(2,2,2)
-	plt.title("Average Unique Nodes and Leafs loaded per Step (Primary Ray)")
+	plt.savefig(outputFolder + outputName + "_NodeLeaf.pdf")
+	plt.savefig(outputFolder + outputName + "_NodeLeaf.pgf")
+	endPlot()
+
+	# second plot is about how many unique nodes and leafs where loaded
+	plt.figure(figsize=(15,7))
+	plt.suptitle("Unique Nodes and Leafs loaded per Step")
+	# first section contains left side with nodes in primary(top) and secondary(below)
+	yMax = max(secondaryNodeWorkMax.max(), primaryNodeWorkMax.max())
+	newyLim = ( 0 - yMax * 0.05, yMax *1.05)
+
+	plt.subplot(2,2,3)
+	plt.title("Unique Nodes loaded per Step (Secondary ray)")
 	plt.axhline(linewidth=1, color='0.5')
-	plt.plot(stepId, avgPrimaryNodeUnique, label = "Unique Nodes")
-	plt.plot(stepId, avgPrimaryLeafUnique, label = "Unique Leafs")
+	plt.plot(stepId, avgSecondaryNodeUnique, color=(0.9,0.5,0.13, 1), label = "Unique Nodes")
+	
+	plt.fill_between(stepId, secondaryNodeWorkMin, secondaryNodeWorkMax, label = "min max unique Nodes", color=(0.9,0.5,0.13, 0.5), zorder=-1)
 	plt.xlim(xlimSave)
+	plt.ylim(newyLim)
 	plt.legend()
+
+	plt.subplot(2,2,1)
+	plt.title("Unique Nodes loaded per Step (Primary Ray)")
+	plt.axhline(linewidth=1, color='0.5')
+	plt.plot(stepId, avgPrimaryNodeUnique, color=(0.9,0.5,0.13, 1), label = "Unique Nodes")
+
+	plt.fill_between(stepId, primaryNodeWorkMin, primaryNodeWorkMax, label = "min max unique Nodes", color=(0.9,0.5,0.13, 0.5), zorder=-1)
+	plt.xlim(xlimSave)
+	plt.ylim(newyLim)
+	plt.legend()
+	
+	# second section contains right side with leafs in primary(top) and secondary(below)
+	yMax = max(secondaryLeafWorkMax.max(), primaryLeafWorkMax.max())
+	newyLim = ( 0 - yMax * 0.05, yMax *1.05)
 
 	plt.subplot(2,2,4)
-	plt.title("Average Unique Nodes and Leafs loaded per Step (Secondary ray)")
+	plt.title("Unique Leafs loaded per Step (Secondary ray)")
 	plt.axhline(linewidth=1, color='0.5')
-	plt.plot(stepId, avgSecondaryNodeUnique, label = "Unique Nodes")
-	plt.plot(stepId, avgSecondaryLeafUnique, label = "Unique Leafs")
+	plt.plot(stepId, avgSecondaryLeafUnique, color=(0.13,0.5,0.9, 1), label = "Unique Leafs")
+	
+	plt.fill_between(stepId, secondaryLeafWorkMin, secondaryLeafWorkMax, label = "min max unique Leafs", color=(0.13,0.5,0.9, 0.5), zorder= -1)	
 	plt.xlim(xlimSave)
-	plt.xlabel("Step Id")
+	plt.ylim(newyLim)
 	plt.legend()
 
-	plt.savefig(outputFolder + outputName + ".pdf")
-	plt.savefig(outputFolder + outputName + ".pgf")
+
+	plt.subplot(2,2,2)
+	plt.title("Unique Leafs loaded per Step (Primary Ray)")
+	plt.axhline(linewidth=1, color='0.5')
+	plt.plot(stepId, avgPrimaryLeafUnique, color=(0.13,0.5,0.9, 1), label = "Unique Leafs")
+
+	plt.fill_between(stepId, primaryLeafWorkMin, primaryLeafWorkMax, label = "min max unique Leafs", color=(0.13,0.5,0.9, 0.5), zorder=-1)
+	plt.xlim(xlimSave)
+	plt.ylim(newyLim)
+	plt.legend()
+
+
+
+	plt.savefig(outputFolder + outputName + "_Unique.pdf")
+	plt.savefig(outputFolder + outputName + "_Unique.pgf")
 	endPlot()
 
 #makePerfAnalysis(inputFolder + "amazonLumberyardInterior_4To16Table.txt", "Amazon Lumberyard Interior Sse", "AmazonLumberyardInterior_4To16Perf")
 #makeIntersectionAnalysis(inputFolder + "amazonLumberyardInterior_1To16Table.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
 
-#makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_s16_c1_WorkGroupData.txt', 'Primary N4L4S16', "PrimaryN4L4S16WorkGroupAnalysis")
+#makeIntersectionAnalysis(inputFolder + "amazonLumberyardInterior_1To16Table.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
 
-makeWorkGroupAnalysis((inputFolder + "WorkGroupTest/MyVersion/"+ "amazonLumberyardInterior_b4_l4_s", "_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
-makeWorkGroupAnalysis((inputFolder + "WorkGroupTest/NewVersion/"+ "amazonLumberyardInterior_b4_l4_s", "_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
+#makeWorkGroupWiskerPlots((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
 
-#makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_PrimaryWorkGroupWiskerPlot.txt', 'Primary N4L4', "PrimaryN4L4WorkGroupAnalysis")
-#makeWorkGroupAnalysis(inputFolder + 'amazonLumberyardInterior_b4_l4_SecondaryWorkGroupWiskerPlot.txt', 'Secondary N4L4', "SecondaryN4L4WorkGroupAnalysis")
+makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
+makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))

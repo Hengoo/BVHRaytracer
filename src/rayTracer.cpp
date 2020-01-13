@@ -375,7 +375,13 @@ void RayTracer::run()
 					if (CreateDirectory(pathPerf.data(), NULL) ||
 						ERROR_ALREADY_EXISTS == GetLastError())
 					{
-
+						//create folders for the workGroup sizes we use:
+						std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);
+						if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+							ERROR_ALREADY_EXISTS == GetLastError()))
+						{
+							std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+						}
 					}
 					else
 					{
@@ -389,7 +395,16 @@ void RayTracer::run()
 					if (CreateDirectory(path.data(), NULL) ||
 						ERROR_ALREADY_EXISTS == GetLastError())
 					{
-
+						if (doWorkGroupAnalysis)
+						{
+							//create folder for the work group sizes we use:
+							std::string pathWorkGroup = path + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);
+							if (!(CreateDirectory(pathWorkGroup.data(), NULL) ||
+								ERROR_ALREADY_EXISTS == GetLastError()))
+							{
+								std::cerr << "failed to create general workGroup scene directory" << std::endl;
+							}
+						}
 					}
 					else
 					{
@@ -404,7 +419,7 @@ void RayTracer::run()
 				return;
 			}
 
-			//TODO: loading multiple models might have an error somehwrer?
+			//TODO: loading multiple models might have an error somewhere?
 
 			for (auto& go : gameObjects)
 			{
@@ -768,7 +783,12 @@ float RayTracer::loadSahFactor(int leafSize, int nodeSize, int gangSize)
 		std::cerr << "Avx sah factor config not set up / tested." << std::endl;
 		return 1;
 	}
-	std::ifstream myfile("sahFactorConfig" + gangSizeName + ".txt");
+	std::string versionName = "";
+	if (wideRender)
+	{
+		versionName = "V" + std::to_string(wideAlternative);
+	}
+	std::ifstream myfile("sahFactorConfig" + gangSizeName + versionName + ".txt");
 
 	std::vector<float> lineContent;
 	if (myfile.is_open())
@@ -789,11 +809,12 @@ float RayTracer::loadSahFactor(int leafSize, int nodeSize, int gangSize)
 			}
 		}
 	}
-	if (isnan(sahFactor))
-	{
-		std::cerr << "not able to find fitting sahFactor in config, instead took 1" << std::endl;
-		sahFactor = 1;
-	}
+	else
+		if (isnan(sahFactor))
+		{
+			std::cerr << "not able to find fitting sahFactor in config, instead took 1" << std::endl;
+			sahFactor = 1;
+		}
 	std::cout << "using sah factor of " << sahFactor << std::endl;
 	return sahFactor;
 }

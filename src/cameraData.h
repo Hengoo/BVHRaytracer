@@ -118,7 +118,7 @@ public:
 			{
 				if (wideRender)
 				{
-					workGroupAnalysisPerImage(cameraName);
+					workGroupAnalysisPerImage(cameraName, wideAlternative);
 				}
 				else
 				{
@@ -649,15 +649,15 @@ private:
 		shadowAabbIntersectionsPerPixel[id] += shadowRay.aabbIntersectionCount;
 	}
 
-	void workGroupAnalysisPerImage(std::string& cameraName)
+	void workGroupAnalysisPerImage(std::string& cameraName, bool wideAlternative)
 	{
 		int workGroupSize = nonTemplateWorkGroupSize;
 
 		//First part is the wisker plot of workload. -> need min, max, median , and standard deviation
 
-		std::string sizeName = "_s" + std::to_string(workGroupSize);
-		std::ofstream fileWorkGroup0(path + "/" + name + problem + sizeName + cameraName + "_PrimaryWorkGroupWiskerPlot.txt");
-		std::ofstream fileWorkGroup1(path + "/" + name + problem + sizeName + cameraName + "_SecondaryWorkGroupWiskerPlot.txt");
+		std::string sizeName = "WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);;
+		std::ofstream fileWorkGroup0(path + "/" + sizeName + "/" + name + problem + cameraName + "_PrimaryWorkGroupWiskerPlot.txt");
+		std::ofstream fileWorkGroup1(path + "/" + sizeName + "/" + name + problem + cameraName + "_SecondaryWorkGroupWiskerPlot.txt");
 
 
 		//struct to store the per workgroup information so we can later sort it correctly
@@ -801,15 +801,15 @@ private:
 		else std::cerr << "Unable to open file for work group whisker plots" << std::endl;
 
 		//second part is detailed analysis of when what work is done.
-		std::ofstream fileWorkGroup(path + "/" + name + problem + sizeName + cameraName + "_WorkGroupData.txt");
+		std::ofstream fileWorkGroup(path + "/" + sizeName + "/" + name + problem + cameraName + "_WorkGroupData.txt");
 		if (fileWorkGroup.is_open())
 		{
 			//what i want to show: for now average and ?standard deviation? of the new values the workGroupRenderer collects
 			//when what work is done, and the number of unique nodes / leafs that are used. For primary and secondary ray each
 			//in addition also how many rays terminate at each step(avg).
 
-			fileWorkGroup << "stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique, avgPrimaryRayTermination,"
-				<< " avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination" << std::endl;
+			fileWorkGroup << "stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique, avgPrimaryRayTermination, primaryNodeWorkMax, primaryNodeWorkMin, primaryLeafWorkMax, primaryLeafWorkMin"
+				<< " avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination, secondaryNodeWorkMax, secondaryNodeWorkMin, secondaryLeafWorkMax, secondaryLeafWorkMin" << std::endl;
 
 			//get max size of nodeWorkPerStep:
 			int maxSize = 0;
@@ -849,6 +849,15 @@ private:
 				int secondaryCount = 0;
 				int secondaryNodeUniqueCount = 0;
 				int secondaryLeafUniqueCount = 0;
+
+				uint32_t primaryNodeUniqueMax = 0;
+				uint32_t primaryNodeUniqueMin = workGroupSquare + 1;
+				uint32_t primaryLeafUniqueMax = 0;
+				uint32_t primaryLeafUniqueMin = workGroupSquare + 1;
+				uint32_t secondaryNodeUniqueMax = 0;
+				uint32_t secondaryNodeUniqueMin = workGroupSquare + 1;
+				uint32_t secondaryLeafUniqueMax = 0;
+				uint32_t secondaryLeafUniqueMin = workGroupSquare + 1;
 				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 				{
 					if (terminationsPerStep[i].size() > j)
@@ -864,10 +873,14 @@ private:
 						if (uniqueNodesPerStep[i][j] != 0)
 						{
 							primaryNodeUniqueCount++;
+							primaryNodeUniqueMax = std::max(uniqueNodesPerStep[i][j], primaryNodeUniqueMax);
+							primaryNodeUniqueMin = std::min(uniqueNodesPerStep[i][j], primaryNodeUniqueMin);
 						}
 						if (uniqueLeafsPerStep[i][j] != 0)
 						{
 							primaryLeafUniqueCount++;
+							primaryLeafUniqueMax = std::max(uniqueLeafsPerStep[i][j], primaryLeafUniqueMax);
+							primaryLeafUniqueMin = std::min(uniqueLeafsPerStep[i][j], primaryLeafUniqueMin);
 						}
 					}
 
@@ -883,10 +896,14 @@ private:
 						if (secondaryUniqueNodesPerStep[i][j] != 0)
 						{
 							secondaryNodeUniqueCount++;
+							secondaryNodeUniqueMax = std::max(secondaryUniqueNodesPerStep[i][j], secondaryNodeUniqueMax);
+							secondaryNodeUniqueMin = std::min(secondaryUniqueNodesPerStep[i][j], secondaryNodeUniqueMin);
 						}
 						if (secondaryUniqueLeafsPerStep[i][j] != 0)
 						{
 							secondaryLeafUniqueCount++;
+							secondaryLeafUniqueMax = std::max(secondaryUniqueLeafsPerStep[i][j], secondaryLeafUniqueMax);
+							secondaryLeafUniqueMin = std::min(secondaryUniqueLeafsPerStep[i][j], secondaryLeafUniqueMin);
 						}
 					}
 				}
@@ -897,6 +914,24 @@ private:
 				secondaryCount = std::max(secondaryCount, 1);
 				secondaryNodeUniqueCount = std::max(secondaryNodeUniqueCount, 1);
 				secondaryLeafUniqueCount = std::max(secondaryLeafUniqueCount, 1);
+
+				//set those min that didnt change 0:
+				if (primaryNodeUniqueMin == workGroupSquare + 1)
+				{
+					primaryNodeUniqueMin = 0;
+				}
+				if (primaryLeafUniqueMin == workGroupSquare + 1)
+				{
+					primaryLeafUniqueMin = 0;
+				}
+				if (secondaryNodeUniqueMin == workGroupSquare + 1)
+				{
+					secondaryNodeUniqueMin = 0;
+				}
+				if (secondaryLeafUniqueMin == workGroupSquare + 1)
+				{
+					secondaryLeafUniqueMin = 0;
+				}
 
 				//calculate average
 				nodeWorkPerStepAverage[j] /= (float)primaryCount;
@@ -927,12 +962,20 @@ private:
 				fileWorkGroup << leafWorkPerStepAverage[j] << ", ";
 				fileWorkGroup << uniqueLeafsPerStepAverage[j] << ", ";
 				fileWorkGroup << terminatedRaysStepAverage[j] << ", ";
+				fileWorkGroup << primaryNodeUniqueMax << ", ";
+				fileWorkGroup << primaryNodeUniqueMin << ", ";
+				fileWorkGroup << primaryLeafUniqueMax << ", ";
+				fileWorkGroup << primaryLeafUniqueMin << ", ";
 
 				fileWorkGroup << secondaryNodeWorkPerStepAverage[j] << ", ";
 				fileWorkGroup << secondaryUniqueNodesPerStepAverage[j] << ", ";
 				fileWorkGroup << secondaryLeafWorkPerStepAverage[j] << ", ";
 				fileWorkGroup << secondaryUniqueLeafsPerStepAverage[j] << ", ";
-				fileWorkGroup << secondaryTerminatedRaysStepAverage[j] << std::endl;
+				fileWorkGroup << secondaryTerminatedRaysStepAverage[j] << ", ";
+				fileWorkGroup << secondaryNodeUniqueMax << ", ";
+				fileWorkGroup << secondaryNodeUniqueMin << ", ";
+				fileWorkGroup << secondaryLeafUniqueMax << ", ";
+				fileWorkGroup << secondaryLeafUniqueMin << std::endl;
 			}
 			fileWorkGroup.close();
 		}
