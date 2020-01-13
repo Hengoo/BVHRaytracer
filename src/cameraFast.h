@@ -33,5 +33,5 @@ public:
 
 	template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 	std::tuple<float, float, float> renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager,
-		const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative);
+		const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative, bool outputDetailedRayTimings);
 };

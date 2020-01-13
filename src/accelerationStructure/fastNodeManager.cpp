@@ -858,7 +858,6 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 	return result;
 }
 
-
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(FastRay& ray, nanoSec& timeTriangleTest) const
 {

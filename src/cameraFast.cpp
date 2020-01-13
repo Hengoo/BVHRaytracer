@@ -53,7 +53,7 @@ macro5(gS, 16, wGS)\
 //macro5(gS, 56, wGS)\
 //macro5(gS, 64, wGS)
 
-#define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative);\
+#define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative, bool outputDetailedRayTimings);\
 template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute, const bool wideAlternative);
 
 //template class FastNodeManager<4, 4, 8>;
@@ -112,25 +112,29 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	std::vector<std::tuple<float, float, float>> results;
 	results.reserve(sampleCount);
 
+	//image render:
+	if (saveImage)
+	{
+		for (int cameraId = 0; cameraId < cameraCount; cameraId++)
+		{
+			//if image should be saved one first run to save the image. Just to be sure we still do one render we trough away before performance measurements
+			renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative, false);
+		}
+	}
+
 	//loop over the different camera positions
 	for (int cameraId = 0; cameraId < cameraCount; cameraId++)
 	{
-		//if image should be saved one first run to save the image. Just to be sure we still do one render we trough away before performance measurements
-		if (saveImage)
-		{
-			renderImage(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative);
-		}
-
 		//"first" render to load everything in cache
 		for (int i = 0; i < 1; i++)
 		{
-			renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative);
+			renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative, false);
 		}
 
 		//median. (median of overall time or of each individual time?
 		for (int i = 0; i < sampleCount; i++)
 		{
-			results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative));
+			results.push_back(renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative, false));
 		}
 		//calculate median
 		//this sorts by the first value of the tupel (the total raytracer time)
@@ -141,6 +145,15 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 		timeSumTriangle += std::get<2>(median);
 
 		results.clear();
+	}
+
+	//doDetailedTimings:
+	if (true)
+	{
+		for (int cameraId = 0; cameraId < cameraCount; cameraId++)
+		{
+			renderImage(false, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative, true);
+		}
 	}
 
 	totalTime /= (float)cameraCount;
@@ -158,7 +171,7 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	std::string workGroupName = "";
 	if (wideRender)
 	{
-		workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) +"_Version_" + std::to_string(wideAlternative);;
+		workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);;
 	}
 
 	std::ofstream myfile(path + "/" + workGroupName + "/" + name + problem + problemPrefix + "_Perf.txt");
@@ -185,7 +198,7 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager,
-	const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative)
+	const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative, bool outputDetailedRayTimings)
 {
 	//fillRenderInfo();
 	auto timeBeginRaytracer = getTime();
@@ -389,6 +402,50 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 	nanoSec totalTime = getTimeSpan(timeBeginRaytracer);
 	nanoSec timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), nanoSec(0));
 	nanoSec timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), nanoSec(0));
+
+	//for detailed timing analysis, save times of each ray.
+	if (outputDetailedRayTimings)
+	{
+		if (wideRender)
+		{
+			std::string timingFileName = path + "/" + name + "RayPerformanceWideV" + std::to_string(wideAlternative) + "_c" + std::to_string(cameraId) + ".txt";
+			std::ofstream file(timingFileName);
+			if (file.is_open())
+			{
+				file << "totalTime, nodeTime, leafTime" << std::endl;
+				for (int i = 0; i < (height / nonTemplateWorkGroupSize) * (width / nonTemplateWorkGroupSize); i++)
+				{
+					file << timesRay[i].count() / (float)workGroupSquare << ", ";
+					file << (timesRay[i] - timesTriangles[i]).count() / (float)workGroupSquare << ", ";
+					file << timesTriangles[i].count() / (float)workGroupSquare << std::endl;
+				}
+			}
+			else
+			{
+				std::cerr << "unable to open ray performance output file" << std::endl;
+			}
+		}
+		else
+		{
+			std::string timingFileName = path + "/" + name + "RayPerformance_c" + std::to_string(cameraId) + ".txt";
+			std::ofstream file(timingFileName);
+			if (file.is_open())
+			{
+				file << "totalTime, nodeTime, leafTime" << std::endl;
+				for (int i = 0; i < width * height; i++)
+				{
+					file << timesRay[i].count() << ", ";
+					file << (timesRay[i] - timesTriangles[i]).count() << ", ";
+					file << timesTriangles[i].count() << std::endl;
+				}
+			}
+			else
+			{
+				std::cerr << "unable to open ray performance output file" << std::endl;
+			}
+		}
+	}
+
 
 	if (saveImage)
 	{
