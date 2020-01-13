@@ -423,7 +423,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				int loopCount = getNodeLoopCount(node->bounds);
+				int	loopCount = getNodeLoopCount(node->bounds);
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
@@ -531,6 +531,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					}
 				}
 			}
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 
 		}
 		//prepare next loop:

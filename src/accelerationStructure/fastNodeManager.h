@@ -103,7 +103,7 @@ public:
 		std::array<int8_t, workGroupSquare>& triIndex, nanoSec& timeTriangleTest) const;
 	void  intersectSecondaryWide(std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t,
 		workGroupSquare>& result, nanoSec& timeTriangleTest) const;
-	
+
 	void intersectWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint32_t, workGroupSquare>& leafIndex,
 		std::array<int8_t, workGroupSquare>& triIndex, nanoSec& timeTriangleTest) const;
 	void  intersectSecondaryWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t,
@@ -128,6 +128,10 @@ public:
 	inline int getLeafLoopCount(const uint32_t leafIndex) const
 	{
 		//return leafMemory
+		if (leafMemory == gangSize)
+		{
+			return leafMemory;
+		}
 		int loopCount = leafMemory;
 		if (isnan(trianglePoints[leafIndex + leafMemory * 9 - 1]))
 		{
@@ -139,6 +143,10 @@ public:
 	inline int getNodeLoopCount(const std::array<float, nodeMemory * 6>& bounds) const
 	{
 		//return nodeMemory;
+		if constexpr (nodeMemory == gangSize)
+		{
+			return nodeMemory;
+		}
 		int loopCount = nodeMemory;
 		if (isnan(bounds[nodeMemory * 6 - 1]))
 		{
