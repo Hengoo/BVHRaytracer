@@ -454,6 +454,103 @@ def npArrayAnalysis(a, title):
 	#some analysis for me: min, max, std and variance, median, average
 	print(title +":  mean: " + str(a.mean()) + " median: " + str(np.median(a)) + " min: " + str(a.min()) + " max: " + str(a.max()) + " std: " + str(a.std()) + " var: " + str(a.var()))
 
+def rayTotalAnalysis():
+	plt.suptitle("General performance overview")
+	plt.figure(figsize=(12,8))
+	#overview of the 3 raytracer version, normal , wideV0 and wideV1 for N,L 4 to 16
+	(branch, leaf, totalTime) = np.loadtxt(inputFolder + "rayTotalTime.txt" , delimiter=',', unpack=True, skiprows = 1)
+	(branch, leaf, totalTimeV0) = np.loadtxt(inputFolder + "rayTotalTimeV0.txt" , delimiter=',', unpack=True, skiprows = 1)
+	(branch, leaf, totalTimeV1) = np.loadtxt(inputFolder + "rayTotalTimeV1.txt" , delimiter=',', unpack=True, skiprows = 1)
+
+	width = 1
+
+	#normalize by "smallest"
+	totalTimeV0 = (totalTimeV0 / totalTime) - 1
+	totalTimeV1 = (totalTimeV1 / totalTime) - 1
+
+	timeMin = min(totalTimeV0.min(), totalTimeV1.min())
+	timeMax = max(totalTimeV0.max(), totalTimeV1.max())
+	newyLim = ( timeMin + 1 + - (-timeMin + timeMax) * 0.05, timeMax + 1 + (-timeMin + timeMax) * 0.05)
+
+	plt.subplot(2,2,1)
+	branchSize = 4
+	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+
+	plt.xticks(np.arange(4, 20, step=4))
+	plt.title("Leafsize " + str(branchSize))
+	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.ylabel("time relative to non wide renderer")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+	
+	plt.subplot(2,2,2)
+	branchSize = 8
+	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+
+	plt.xticks(np.arange(4, 20, step=4))
+	plt.title("Leafsize " + str(branchSize))
+	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.subplot(2,2,3)
+	branchSize = 12
+	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+
+	plt.xticks(np.arange(4, 20, step=4))
+	plt.title("Leafsize " + str(branchSize))
+	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.ylabel("time relative to non wide renderer")
+	plt.xlabel("Nodesize")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.subplot(2,2,4)
+	branchSize = 16
+	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+
+	plt.xticks(np.arange(4, 20, step=4))
+	plt.title("Leafsize " + str(branchSize))
+	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.xlabel("Nodesize")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.savefig(outputFolder + "PerformanceOverview.pdf")
+	plt.savefig(outputFolder + "PerformanceOverview.pgf")
+	endPlot()
+
+
+
+
 #makePerfAnalysis(inputFolder + "amazonLumberyardInterior_4To16Table.txt", "Amazon Lumberyard Interior Sse", "AmazonLumberyardInterior_4To16Perf")
 #makeIntersectionAnalysis(inputFolder + "amazonLumberyardInterior_1To16Table.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
 
@@ -464,4 +561,6 @@ def npArrayAnalysis(a, title):
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
 
-perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
+#perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
+
+rayTotalAnalysis()

@@ -375,13 +375,35 @@ void RayTracer::run()
 					if (CreateDirectory(pathPerf.data(), NULL) ||
 						ERROR_ALREADY_EXISTS == GetLastError())
 					{
+
 						//create folders for the workGroup sizes we use:
-						std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);
-						if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
-							ERROR_ALREADY_EXISTS == GetLastError()))
+						if (!renderAllOptions)
 						{
-							std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+							std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);
+							if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+								ERROR_ALREADY_EXISTS == GetLastError()))
+							{
+								std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+							}
 						}
+						else
+						{
+							std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_0";
+							if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+								ERROR_ALREADY_EXISTS == GetLastError()))
+							{
+								std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+							}
+
+							pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_1";
+							if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+								ERROR_ALREADY_EXISTS == GetLastError()))
+							{
+								std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+							}
+						}
+						
+
 					}
 					else
 					{
@@ -641,13 +663,13 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				//renders all versions -> can resue bvh (~3.5 seconds for lumberyard)
 				wideRender = true;
 				wideAlternative = true;
-				std::cerr << std::endl << "Rendering Wide V1" << std::endl;
+				std::cout << std::endl << "Rendering Wide V1" << std::endl;
 				startPerfRender(gangSize, minBranchMemory, workGroupSize);
 				wideAlternative = false;
-				std::cerr << std::endl << "Rendering Wide V0" << std::endl;
+				std::cout << std::endl << "Rendering Wide V0" << std::endl;
 				startPerfRender(gangSize, minBranchMemory, workGroupSize);
 				wideRender = false;
-				std::cerr << std::endl << "Rendering normal" << std::endl;
+				std::cout << std::endl << "Rendering normal" << std::endl;
 				startPerfRender(gangSize, minBranchMemory, workGroupSize);
 			}
 
