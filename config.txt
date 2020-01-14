@@ -1,5 +1,11 @@
 #Config file for raytracer.
 
+#Resolution
+#xRes = 1920
+#yRes = 1088
+xRes = 3840
+yRes = 2176
+
 #Leafsize and Branching Factor to test:
 minLeafSize = 4
 maxLeafSize = 4
@@ -12,17 +18,18 @@ branchStep = 4
 workGroupSize = 16
 
 #What analysis to do:
-renderAnalysisImage = true
+renderAnalysisImage = false
 saveDepthDetailedImage = false
 bvhAnalysis = false
 saveBvhImage = false
 saveImage = true
-doWorkGroupAnalysis = true
+doWorkGroupAnalysis = false
 
 #Do performance Analysis: (this disables parallel execution)
-doPerformanceTest = false
+doPerformanceTest = true
 doLeafMemoryTests = false
 doNodeMemoryTests = false
+saveRayTimes = false
 
 #Number of samples for ambient occlusion
 ambientSampleCount = 1
@@ -51,9 +58,10 @@ renderType = 2
 #Save distance only for render type 2 and performance render
 saveDistance = false
 
-#Use wide renderer or not:
+#Use wide renderer / alternative wide renderer or not:
 wideRender = true
-wideAlternative = true
+wideAlternative = false
+renderAllOptions = true
 
 #Scenes:
 #	0 = lizard

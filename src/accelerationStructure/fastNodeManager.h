@@ -8,6 +8,9 @@
 #include "bvh.h"
 #include "../timing.h"
 
+//activates or deactives the timers for each ray
+#define doTimer false;
+
 
 class FastRay;
 

@@ -53,15 +53,15 @@ macro5(gS, 16, wGS)\
 //macro5(gS, 56, wGS)\
 //macro5(gS, 64, wGS)
 
-#define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative, bool outputDetailedRayTimings);\
-template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute, const bool wideAlternative);
+#define macro5(gS, mS, wGS) template std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative, bool saveRayTimes);\
+template void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gS, mS, wGS>& nodeManager, const unsigned ambientSampleCount, const float ambientDistance, const bool mute, const bool wideAlternative, bool saveRayTimes);
 
 //template class FastNodeManager<4, 4, 8>;
 macro1()
 
 CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize,
-	bool saveDistance, bool wideRender, std::vector<glm::vec3>& positions, std::vector<glm::vec3>& lookCenters, glm::vec3 upward, float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, nonTemplateWorkGroupSize, positions, lookCenters, upward, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance), wideRender(wideRender)
+	bool saveDistance, bool wideRender, std::vector<glm::vec3>& positions, std::vector<glm::vec3>& lookCenters, size_t width, size_t height, glm::vec3 upward, float focalLength)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, positions, lookCenters, width, height, upward, focalLength), problemPrefix(problemPrefix), saveDistance(saveDistance), wideRender(wideRender)
 {
 	image.resize(height * width * 4);
 	if (wideRender)
@@ -78,8 +78,8 @@ CameraFast::CameraFast(std::string path, std::string name, std::string problem, 
 }
 
 CameraFast::CameraFast(std::string path, std::string name, std::string problem, std::string problemPrefix, int nonTemplateWorkGroupSize,
-	bool saveDistance, bool wideRender, std::vector<glm::mat4>& transforms, float focalLength, size_t height, size_t width)
-	:Camera(path, name, problem, nonTemplateWorkGroupSize, transforms, focalLength, height, width), problemPrefix(problemPrefix), saveDistance(saveDistance), wideRender(wideRender)
+	bool saveDistance, bool wideRender, std::vector<glm::mat4>& transforms, size_t width, size_t height, float focalLength)
+	:Camera(path, name, problem, nonTemplateWorkGroupSize, transforms, width, height, focalLength), problemPrefix(problemPrefix), saveDistance(saveDistance), wideRender(wideRender)
 {
 	image.resize(height * width * 4);
 	if (wideRender)
@@ -98,7 +98,7 @@ CameraFast::CameraFast(std::string path, std::string name, std::string problem, 
 //renders 6 images, We take median of the last 5 renders
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager, const unsigned ambientSampleCount,
-	const float ambientDistance, const bool mute, bool wideAlternative)
+	const float ambientDistance, const bool mute, bool wideAlternative, bool saveRayTimes)
 {
 	int cameraCount = positions.size();
 	//all values we store:
@@ -148,7 +148,7 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 	}
 
 	//doDetailedTimings:
-	if (true)
+	if (saveRayTimes)
 	{
 		for (int cameraId = 0; cameraId < cameraCount; cameraId++)
 		{
@@ -198,7 +198,7 @@ void CameraFast::renderImages(const bool saveImage, const FastNodeManager<gangSi
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, const FastNodeManager<gangSize, nodeMemory, workGroupSize>& nodeManager,
-	const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative, bool outputDetailedRayTimings)
+	const unsigned ambientSampleCount, const float ambientDistance, int cameraId, bool wideAlternative, bool saveRayTimes)
 {
 	//fillRenderInfo();
 	auto timeBeginRaytracer = getTime();
@@ -222,8 +222,9 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
 					-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
 					i * workGroupSquare + j);
-
+#if doTimer
 				auto timeBeforeRay = getTime();
+#endif
 				nanoSec timeTriangleTest(0);
 				FastRay ray(positions[cameraId], getRayTargetPosition(info, cameraId));
 
@@ -271,7 +272,9 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				}
 				//important to override previous data since we do more than one run.
 				timesTriangles[info.index] = timeTriangleTest;
+#if doTimer
 				timesRay[info.index] = getTimeSpan(timeBeforeRay);
+#endif
 				//distance render version (for large scenes)
 				//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
 				//imageResult = (uint8_t)(distanceToCamera / 50.f);
@@ -300,8 +303,9 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 #pragma omp parallel for schedule(dynamic, 4)
 		for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 		{
+#if doTimer
 			auto timeBeforeRay = getTime();
-
+#endif
 			//prepare primary ray
 			std::array<FastRay, workGroupSquare > rays;
 			//initialization doesnt matter since we get hit result from triIndex
@@ -395,7 +399,9 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			}
 
 			//time for rays:
+#if doTimer
 			timesRay[i] = getTimeSpan(timeBeforeRay);
+#endif
 			timesTriangles[i] = timeTriangleTest;
 		}
 	}
@@ -404,7 +410,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 	nanoSec timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), nanoSec(0));
 
 	//for detailed timing analysis, save times of each ray.
-	if (outputDetailedRayTimings)
+	if (saveRayTimes)
 	{
 		if (wideRender)
 		{
@@ -449,7 +455,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 
 	if (saveImage)
 	{
-		//reorder image before we can save it.
+		//reorder image before we save it.
 		std::vector<uint8_t> imageCorrect;
 		imageCorrect.resize(height * width * 4);
 

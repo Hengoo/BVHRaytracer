@@ -197,6 +197,9 @@ def makeWorkGroupWiskerPlots(filePath, title, workGroupSize, outputName):
 	filePath = filePath[0] + str(workGroupSize) + filePath[1]
 	title = title + str(workGroupSize)
 
+	
+	#This needs a fix
+
 	#load:
 	y, z, a, b, c = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows =1)
 
@@ -243,10 +246,9 @@ def mask(array):
 		maskArray [-1] = np.ma.masked
 	return maskArray
 
-def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
+def makeWorkGroupAnalysis(filePath, workGroupSize, outputName):
 
 	filePath = filePath[0] + str(workGroupSize) + filePath[1]
-	title = title + str(workGroupSize)
 	outputName = outputName[0] + str(workGroupSize) + outputName[1]
 
 	(stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique,
@@ -356,11 +358,101 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 	plt.ylim(newyLim)
 	plt.legend()
 
-
-
 	plt.savefig(outputFolder + outputName + "_Unique.pdf")
 	plt.savefig(outputFolder + outputName + "_Unique.pgf")
 	endPlot()
+
+def perRayPlot(filePath):
+	
+	plt.suptitle("N4L4 workGroup 16")
+	plt.figure(figsize=(15,7))
+
+	tmpFilePath = filePath + "WideV0_c0.txt"
+	(totalTimeV0, nodeTimeV0, leafTimeV0) = np.loadtxt(tmpFilePath , delimiter=',', unpack=True, skiprows = 1)
+	tmpFilePath = filePath + "WideV1_c0.txt"
+	(totalTimeV1, nodeTimeV1, leafTimeV1) = np.loadtxt(tmpFilePath , delimiter=',', unpack=True, skiprows = 1)
+	x = np.arange(totalTimeV0.size)
+	#calculate max value of totalTimeV0 and totalTimveV1 so all plots use same scope
+	yMax = max(totalTimeV0.max() , totalTimeV1.max())
+	newyLim = ( 0 - yMax * 0.05, yMax *1.05)
+
+	#sort array by total time:
+	p = totalTimeV0.argsort()
+	totalTimeV0 = totalTimeV0[p]
+	nodeTimeV0 = nodeTimeV0[p]
+	leafTimeV0 = leafTimeV0[p]
+
+	p = totalTimeV1.argsort()
+	totalTimeV1 = totalTimeV1[p]
+	nodeTimeV1 = nodeTimeV1[p]
+	leafTimeV1 = leafTimeV1[p]
+
+	plt.subplot(2,2,1)
+	plt.title("V0 camrea0")
+	plt.axhline(linewidth=1, color='0.5')
+	#plt.plot(x , totalTimeV0, label = "total Ray Time")
+	plt.plot(x , nodeTimeV0, label = "node Time")
+	plt.plot(x , leafTimeV0, label = "leaf Time")
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.subplot(2,2,3)
+	plt.title("V1 camrea0")
+	plt.axhline(linewidth=1, color='0.5')
+	#plt.plot(x , totalTimeV1, label = "total Ray Time")
+	plt.plot(x , nodeTimeV1, label = "node Time")
+	plt.plot(x , leafTimeV1, label = "leaf Time")
+	plt.ylim(newyLim)
+	plt.legend()
+
+	npArrayAnalysis(totalTimeV0, "V0C0")
+	npArrayAnalysis(totalTimeV1, "V1C0")
+
+	tmpFilePath = filePath + "WideV0_c1.txt"
+	(totalTimeV0, nodeTimeV0, leafTimeV0) = np.loadtxt(tmpFilePath , delimiter=',', unpack=True, skiprows = 1)
+	tmpFilePath = filePath + "WideV1_c1.txt"
+	(totalTimeV1, nodeTimeV1, leafTimeV1) = np.loadtxt(tmpFilePath , delimiter=',', unpack=True, skiprows = 1)
+	#calculate max value of totalTimeV0 and totalTimveV1 so all plots use same scope
+	yMax = max(totalTimeV0.max() , totalTimeV1.max())
+	newyLim = ( 0 - yMax * 0.05, yMax *1.05)
+
+	#sort array by total time:
+	p = totalTimeV0.argsort()
+	totalTimeV0 = totalTimeV0[p]
+	nodeTimeV0 = nodeTimeV0[p]
+	leafTimeV0 = leafTimeV0[p]
+
+	p = totalTimeV1.argsort()
+	totalTimeV1 = totalTimeV1[p]
+	nodeTimeV1 = nodeTimeV1[p]
+	leafTimeV1 = leafTimeV1[p]
+
+	plt.subplot(2,2,2)
+	plt.title("V0 camrea1")
+	plt.axhline(linewidth=1, color='0.5')
+	#plt.plot(x , totalTimeV0, label = "total Ray Time")
+	plt.plot(x , nodeTimeV0, label = "node Time")
+	plt.plot(x , leafTimeV0, label = "leaf Time")
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.subplot(2,2,4)
+	plt.title("V1 camrea1")
+	plt.axhline(linewidth=1, color='0.5')
+	#plt.plot(x , totalTimeV1, label = "total Ray Time")
+	plt.plot(x , nodeTimeV1, label = "node Time")
+	plt.plot(x , leafTimeV1, label = "leaf Time")
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.savefig(outputFolder + 'rayTimingAnalysis.pdf')
+	plt.savefig(outputFolder + 'rayTimingAnalysis.pgf')
+
+	endPlot()
+
+def npArrayAnalysis(a, title):
+	#some analysis for me: min, max, std and variance, median, average
+	print(title +":  mean: " + str(a.mean()) + " median: " + str(np.median(a)) + " min: " + str(a.min()) + " max: " + str(a.max()) + " std: " + str(a.std()) + " var: " + str(a.var()))
 
 #makePerfAnalysis(inputFolder + "amazonLumberyardInterior_4To16Table.txt", "Amazon Lumberyard Interior Sse", "AmazonLumberyardInterior_4To16Perf")
 #makeIntersectionAnalysis(inputFolder + "amazonLumberyardInterior_1To16Table.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
@@ -369,5 +461,7 @@ def makeWorkGroupAnalysis(filePath, title, workGroupSize, outputName):
 
 #makeWorkGroupWiskerPlots((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
 
-makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
-makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
+#makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
+#makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
+
+perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")

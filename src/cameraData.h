@@ -77,17 +77,17 @@ public:
 
 	bool wideRender;
 
-	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, bool wideRender, std::vector<glm::vec3>& positions,
-		std::vector<glm::vec3>& lookCenters, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
-		:Camera(path, name, problem, workGroupSize, positions, lookCenters, upward, focalLength, height, width), wideRender(wideRender)
+	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, bool wideRender,
+ std::vector<glm::vec3>& positions,	std::vector<glm::vec3>& lookCenters, size_t width = 1920, size_t height = 1088, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f)
+		:Camera(path, name, problem, workGroupSize, positions, lookCenters, width, height, upward, focalLength), wideRender(wideRender)
 	{
 		image.resize(height * width * 4);
 		initializeVariables();
 	}
 
 	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, bool wideRender, std::vector<glm::mat4>& transforms,
-		float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
-		:Camera(path, name, problem, workGroupSize, transforms, focalLength, height, width), wideRender(wideRender)
+		size_t width = 1920, size_t height = 1088, float focalLength = 0.866f)
+		:Camera(path, name, problem, workGroupSize, transforms, width, height, focalLength), wideRender(wideRender)
 	{
 		image.resize(height * width * 4);
 		initializeVariables();

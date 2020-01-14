@@ -89,8 +89,8 @@ if constexpr (gangS == 4)												\
 #define startPerfRender5(gangS, branchMem, workGroupS) 	{												\
 	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
 	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory);								\
-	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, wideRender, cameraPositions, cameraTargets);			\
-	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute, wideAlternative);						\
+	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, wideRender, cameraPositions, cameraTargets, xRes, yRes);			\
+	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute, wideAlternative, saveRayTimes);						\
 }
 
 
@@ -632,7 +632,25 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 		for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
 		{
 			//macro that manages the calling of the right renderer (thx templates...)
-			startPerfRender(gangSize, minBranchMemory, workGroupSize);
+			if (!renderAllOptions)
+			{
+				startPerfRender(gangSize, minBranchMemory, workGroupSize);
+			}
+			else
+			{
+				//renders all versions -> can resue bvh (~3.5 seconds for lumberyard)
+				wideRender = true;
+				wideAlternative = true;
+				std::cerr << std::endl << "Rendering Wide V0" << std::endl;
+				startPerfRender(gangSize, minBranchMemory, workGroupSize);
+				wideAlternative = false;
+				std::cerr << std::endl << "Rendering Wide V1" << std::endl;
+				startPerfRender(gangSize, minBranchMemory, workGroupSize);
+				wideRender = false;
+				std::cerr << std::endl << "Rendering normal" << std::endl;
+				startPerfRender(gangSize, minBranchMemory, workGroupSize);
+			}
+
 		}
 	}
 
@@ -657,7 +675,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			{
 				CompactNodeManager<CompactNodeV3> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
+				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets, xRes, yRes);
 				c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
 					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideAlternative);
 			}
@@ -665,7 +683,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			{
 				CompactNodeManager<CompactNodeV2> manager(bvh, compactNodeOrder);
 				//create camera and render image
-				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
+				CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets, xRes, yRes);
 				c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
 					ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideAlternative);
 			}
@@ -679,7 +697,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 			}
 			CompactNodeManager<CompactNodeV0> manager(bvh, compactNodeOrder);
 			//create camera and render image
-			CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets);
+			CameraData c(path, name, problem, workGroupSize, wideRender, cameraPositions, cameraTargets, xRes, yRes);
 			c.renderImages(saveImage, saveDepthDetailedImage, manager, bvh, lights, ambientSampleCount,
 				ambientDistance, castShadows, renderType, mute, doWorkGroupAnalysis, wideAlternative);
 		}
@@ -729,6 +747,9 @@ void RayTracer::readConfig()
 				readInt(line, "workGroupSize", workGroupSize);
 				readInt(line, "leafSplitOption", leafSplitOption);
 
+				readInt(line, "xRes", xRes);
+				readInt(line, "yRes", yRes);
+
 				//scenario has an int for each scenario.
 				auto res = line.find("scenario", 0);
 				if (res != std::string::npos)
@@ -759,10 +780,12 @@ void RayTracer::readConfig()
 				readBool(line, "doPerformanceTest", doPerformanceTest);
 				readBool(line, "doNodeMemoryTest", doNodeMemoryTest);
 				readBool(line, "doLeafMemoryTest", doLeafMemoryTest);
+				readBool(line, "saveRayTimes", saveRayTimes);
 				readBool(line, "doWorkGroupAnalysis", doWorkGroupAnalysis);
 				readBool(line, "saveDistance", saveDistance);
 				readBool(line, "wideRender", wideRender);
 				readBool(line, "wideAlternative", wideAlternative);
+				readBool(line, "renderAllOptions", renderAllOptions);
 			}
 		}
 	}

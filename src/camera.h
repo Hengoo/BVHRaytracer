@@ -46,7 +46,7 @@ public:
 	float focalLength;
 
 	Camera(std::string path, std::string name, std::string problem, int nonTemplateWorkGroupSize, std::vector<glm::vec3>& positions,
-		std::vector<glm::vec3>& lookCenters, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
+		std::vector<glm::vec3>& lookCenters, size_t width = 1920, size_t height = 1088, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f)
 		: path(path), name(name), problem(problem), nonTemplateWorkGroupSize(nonTemplateWorkGroupSize), positions(positions), focalLength(focalLength), height(height), width(width)
 	{
 		transforms.reserve(positions.size());
@@ -58,7 +58,7 @@ public:
 	}
 
 	Camera(std::string path, std::string name, std::string problem, int nonTemplateWorkGroupSize,
-		std::vector<glm::mat4>& transforms, float focalLength = 0.866f, size_t height = 1088, size_t width = 1920)
+		std::vector<glm::mat4>& transforms, size_t width = 1920, size_t height = 1088, float focalLength = 0.866f)
 		: path(path), name(name), problem(problem), nonTemplateWorkGroupSize(nonTemplateWorkGroupSize), transforms(transforms), focalLength(focalLength), height(height), width(width)
 	{
 		positions.reserve(transforms.size());

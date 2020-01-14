@@ -21,6 +21,8 @@ class RayTracer
 	unsigned minBranch;
 	unsigned maxBranch;
 	unsigned branchStep;
+	unsigned xRes;
+	unsigned yRes;
 
 	bool renderAnalysisImage;
 	bool saveImage;
@@ -33,6 +35,7 @@ class RayTracer
 	bool doPerformanceTest;
 	bool doNodeMemoryTest;
 	bool doLeafMemoryTest;
+	bool saveRayTimes;
 
 	//true -> take new axis and sort for each split. False -> only do it once in the beginning
 	bool sortEachSplit;
@@ -42,6 +45,7 @@ class RayTracer
 	bool saveDistance;
 	bool wideRender;
 	bool wideAlternative;
+	bool renderAllOptions;
 
 	//0 = bvh tree traversal, 1 = compact node, 2 = compact node immediate
 	unsigned renderType;

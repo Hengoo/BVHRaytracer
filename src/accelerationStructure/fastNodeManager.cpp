@@ -51,7 +51,6 @@ macro5(gS, 16, wGS)\
 
 macro1()
 
-
 //macros to call ispc methods (it adds the number after the function name to call the code generated function)
 
 //calls the function with a number behind, depending on the memoryName.
@@ -69,13 +68,18 @@ else if (memoryName == 8 ) {ispcResult = functionName##8 (__VA_ARGS__);}		\
 else if (memoryName == 12) {ispcResult = functionName##12(__VA_ARGS__);}		\
 else {ispcResult = functionName##16(__VA_ARGS__);}			\
 
+
+//if true: tests all leafs of the stack
+#define doAllLeafs false;
+
+
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::array<FastRay, workGroupSquare>& rays,
 	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<int8_t, workGroupSquare>& triIndex,
 	nanoSec& timeTriangleTest) const
 {
 	//stack for each ray. 32 is current max stack size
-	std::vector< std::array<int32_t, workGroupSquare>> stack(40);
+	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
 	std::array< uint8_t, workGroupSquare>stackIndex;
 	for (int i = 0; i < workGroupSquare; i++)
 	{
@@ -188,8 +192,9 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 		if (leafRays != 0)
 			//if (leafRays >= 8 || nodeRays <= 8)
 		{
+#if doTimer
 			auto timeBeforeTriangleTest = getTime();
-
+#endif
 			for (int i = 0; i < leafRays; i++)
 			{
 				auto rayId = leafWork[i];
@@ -220,11 +225,17 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 					else
 					{
 						//leaf
+#if doAllLeafs
+						i--;
+#else
 						leafWork[leafRaysNext++] = rayId;
+#endif
 					}
 				}
 			}
+#if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
 		}
@@ -237,7 +248,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 {
 	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
 	//id 0 is root node
-	std::vector< std::array<int32_t, workGroupSquare>> stack(40);
+	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
 	stack[0].fill(0);
 
 	//ray id list to keep track of what rays we need to do.
@@ -330,8 +341,9 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 		if (leafRays != 0)
 			//if (leafRays >= 8 || nodeRays <= 8)
 		{
+#if doTimer
 			auto timeBeforeTriangleTest = getTime();
-
+#endif
 			for (int i = 0; i < leafRays; i++)
 			{
 				auto rayId = leafWork[i];
@@ -363,11 +375,17 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					else
 					{
 						//leaf
+#if doAllLeafs
+						i--;
+#else
 						leafWork[leafRaysNext++] = rayId;
+#endif
 					}
 				}
 			}
+#if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
 		}
@@ -381,7 +399,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 	nanoSec& timeTriangleTest) const
 {
 	//stack for each ray. 32 is current max stack size
-	std::vector< std::array<int32_t, workGroupSquare>> stack(40);
+	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
 	std::array< uint8_t, workGroupSquare>stackIndex;
 	for (int i = 0; i < workGroupSquare; i++)
 	{
@@ -495,7 +513,9 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 		if (leafRays != 0)
 			//if (leafRays >= 8 || nodeRays <= 8)
 		{
+#if doTimer
 			auto timeBeforeTriangleTest = getTime();
+#endif
 
 			for (int i = 0; i < leafRays; i++)
 			{
@@ -527,12 +547,17 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					else
 					{
 						//leaf
+#if doAllLeafs
+						i--;
+#else
 						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
+#endif
 					}
 				}
 			}
+#if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
-
+#endif
 		}
 		//prepare next loop:
 		leafRays = leafRaysNext;
@@ -551,7 +576,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 {
 	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
 	//id 0 is root node
-	std::vector< std::array<int32_t, workGroupSquare>> stack(40);
+	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
 	stack[0].fill(0);
 
 	//ray id list to keep track of what rays we need to do.
@@ -644,8 +669,9 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 		if (leafRays != 0)
 			//if (leafRays >= 8 || nodeRays <= 8)
 		{
+#if doTimer
 			auto timeBeforeTriangleTest = getTime();
-
+#endif
 			for (int i = 0; i < leafRays; i++)
 			{
 				auto rayId = (*currentWork)[workGroupSquare - 1 - i];
@@ -677,11 +703,17 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					else
 					{
 						//leaf
+#if doAllLeafs
+						i--;
+#else
 						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
+#endif
 					}
 				}
 			}
+#if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
 		}
 		//prepare next loop:
 		leafRays = leafRaysNext;
@@ -723,8 +755,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 
 		if (isnan(node->bounds[0]))
 		{
+#if doTimer
 			auto timeBeforeTriangleTest = getTime();
-
+#endif
 			int ispcResult;
 			int loopCount = getLeafLoopCount(node->primIdBegin);
 			callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
@@ -735,7 +768,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 				leafIndex = node->primIdBegin;
 				triIndex = ispcResult;
 			}
+#if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
 		}
 		else
 		{
@@ -802,7 +837,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 
 		if (isnan(node->bounds[0]))
 		{
+#if doTimer
 			auto timeBeforeTriangleTest = getTime();
+#endif
 
 			int ispcResult;
 			int loopCount = getLeafLoopCount(node->primIdBegin);
@@ -814,7 +851,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 				leafIndex = node->primIdBegin;
 				triIndex = ispcResult;
 			}
+#if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
 		}
 		else
 		{
@@ -882,17 +921,23 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 
 		if (isnan(node->bounds[0]))
 		{
+#if doTimer
 			auto timeBeforeTriangleTest = getTime();
+#endif
 			bool ispcResult;
 			int loopCount = getLeafLoopCount(node->primIdBegin);
 			callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
 			if (ispcResult)
 			{
 				//we dont care about exact result for shadowrays (could do other ispc intersection for it
+#if doTimer
 				timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
 				return true;
 			}
+#if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
 		}
 		else
 		{
