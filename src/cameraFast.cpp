@@ -228,7 +228,6 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				nanoSec timeTriangleTest(0);
 				FastRay ray(positions[cameraId], getRayTargetPosition(info, cameraId));
 
-				uint8_t imageResult = 0;
 				uint32_t leafIndex = 0;
 				uint8_t triIndex = 0;
 				//shoot primary ray.
@@ -242,6 +241,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					result = nodeManager.intersect(ray, leafIndex, triIndex, timeTriangleTest);
 				}
 
+				uint8_t imageResult = 0;
 				if (result)
 				{
 					//shoot secondary ray:
@@ -252,8 +252,8 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					glm::vec3 surfacePosition(0);
 					nodeManager.getSurfaceNormalPosition(ray, surfaceNormal, surfacePosition, leafIndex, triIndex);
 					ray.pos = surfacePosition + surfaceNormal * 0.001f;
-					//glm::vec3 surfacePosition = ray.pos + ray.direction * (ray.tMax);
 					//nodeManager.getSurfaceNormalTri(ray, surfaceNormal);
+
 					for (size_t i = 0; i < ambientSampleCount; i++)
 					{
 						//deterministic random direction
@@ -354,9 +354,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				}
 				else
 				{
-					//no primary hit -> in the end it will spawn a ray with a spawn position that 
-					//is outside of what i would expect as a scene so it never hits anything.
-					//and i also dont expect no primary hits to happen often.
+					//no hit for primary ray, deosnt happen that often.
 					rays[j].pos = glm::vec3(NAN);
 					surfaceNormal[j] = glm::vec3(1.f);
 				}
@@ -364,11 +362,11 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 
 			for (int a = 0; a < ambientSampleCount; a++)
 			{
-				//final prepare of rays
+				//final preparation of secondary rays
 				for (int j = 0; j < workGroupSquare; j++)
 				{
 					int index = i * workGroupSquare + j;
-					//get surface normal and position from triangle index info.
+					//get deterministic random direction from ray index
 					auto direction = getAmbientDirection(index, surfaceNormal[j], a);
 					rays[j].updateDirection(direction);
 					rays[j].tMax = ambientDistance;
@@ -384,6 +382,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					nodeManager.intersectSecondaryWide(rays, ambientResult, timeTriangleTest);
 				}
 			}
+			
 			for (int j = 0; j < workGroupSquare; j++)
 			{
 				int index = i * workGroupSquare + j;

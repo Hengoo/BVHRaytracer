@@ -78,20 +78,17 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<int8_t, workGroupSquare>& triIndex,
 	nanoSec& timeTriangleTest) const
 {
-	//stack for each ray. 32 is current max stack size
+	//stack for each ray. 40 is current max stack size
 	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
 	std::array< uint8_t, workGroupSquare>stackIndex;
-	for (int i = 0; i < workGroupSquare; i++)
-	{
-		stack[0][i] = 0;
-		stackIndex[i] = 1;
-	}
+
+	stack[0].fill(0);
+	stackIndex.fill(1);
 
 	//ray id list to keep track of what rays we need to do.
 	std::array<uint16_t, workGroupSquare> nodeWork;
 	std::iota(nodeWork.begin(), nodeWork.end(), 0);
 	std::array<uint16_t, workGroupSquare> leafWork;
-
 
 	//number of noderays and leafrays so we know what ids to read.
 	uint16_t nodeRays = workGroupSquare;
@@ -115,32 +112,32 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				int loopCount = getNodeLoopCount(node->bounds);
-				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				int loopCount = getNodeLoopCount(node.bounds);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
 					int code = maxAbsDimension(ray.direction);
 					bool reverse = ray.direction[code] <= 0;
 					if (reverse)
 					{
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].begin(), node.traverseOrderEachAxis[code].end(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
 								{
-									if (node->childType[cId])
+									if (node.childType[cId])
 									{
 										//next is node
-										stack[stackIndex[rayId]++][rayId] = (int32_t)node->childIdBegin + cId;
+										stack[stackIndex[rayId]++][rayId] = (int32_t)node.childIdBegin + cId;
 									}
 									else
 									{
 										//next is leaf
-										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 									}
 									aabbDistances[cId] = NAN;
 								}
@@ -149,20 +146,20 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 					else
 					{
 						//reverse order
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].rbegin(), node.traverseOrderEachAxis[code].rend(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
 								{
-									if (node->childType[cId])
+									if (node.childType[cId])
 									{
 										//next is node
-										stack[stackIndex[rayId]++][rayId] = node->childIdBegin + cId;
+										stack[stackIndex[rayId]++][rayId] = node.childIdBegin + cId;
 									}
 									else
 									{
 										//next is leaf
-										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 									}
 									aabbDistances[cId] = NAN;
 								}
@@ -201,16 +198,16 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[-stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				int ispcResult;
-				int loopCount = getLeafLoopCount(node->primIdBegin);
-				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+				int loopCount = getLeafLoopCount(node.primIdBegin);
+				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult != -1)
 				{
-					leafIndex[rayId] = node->primIdBegin;
+					leafIndex[rayId] = node.primIdBegin;
 					triIndex[rayId] = ispcResult;
 				}
 
@@ -238,7 +235,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-		}
+			}
 	}
 }
 
@@ -246,19 +243,19 @@ template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWide(
 	std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest) const
 {
-	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
+	//next nodeId for each ray. 40 is current max stack size. Negative id means leaf
 	//id 0 is root node
 	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+	//id of the current element in the stack we have to work on. 0 means we are finished
+	std::array< uint8_t, workGroupSquare>stackIndex;
+
 	stack[0].fill(0);
+	stackIndex.fill(1);
 
 	//ray id list to keep track of what rays we need to do.
 	//this could be uint8 for workGroupSize of 16 and smaller
 	std::array<uint16_t, workGroupSquare> nodeWork;
 	std::array<uint16_t, workGroupSquare> leafWork;
-
-	//id of the current element in the stack we have to work on. 0 means we are finished
-	std::array< uint8_t, workGroupSquare>stackIndex;
-	stackIndex.fill(1);
 
 	int counter = 0;
 	for (int i = 0; i < workGroupSquare; i++)
@@ -292,12 +289,12 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				int loopCount = getNodeLoopCount(node->bounds);
-				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				int loopCount = getNodeLoopCount(node.bounds);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
 					//this loop is faster with constant (nodememory) than with branching factor for N4L4.
@@ -305,15 +302,15 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					{
 						if (!isnan(aabbDistances[cId]))
 						{
-							if (node->childType[cId])
+							if (node.childType[cId])
 							{
 								//next is node
-								stack[stackIndex[rayId]++][rayId] = node->childIdBegin + cId;
+								stack[stackIndex[rayId]++][rayId] = node.childIdBegin + cId;
 							}
 							else
 							{
 								//next is leaf
-								stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+								stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 							}
 							aabbDistances[cId] = NAN;
 						}
@@ -350,12 +347,12 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[-stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				int loopCount = getLeafLoopCount(node->primIdBegin);
-				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+				int loopCount = getLeafLoopCount(node.primIdBegin);
+				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult)
 				{
@@ -388,7 +385,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-		}
+			}
 	}
 }
 
@@ -398,14 +395,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<int8_t, workGroupSquare>& triIndex,
 	nanoSec& timeTriangleTest) const
 {
-	//stack for each ray. 32 is current max stack size
+	//stack for each ray. 40 is current max stack size
 	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
 	std::array< uint8_t, workGroupSquare>stackIndex;
-	for (int i = 0; i < workGroupSquare; i++)
-	{
-		stack[0][i] = 0;
-		stackIndex[i] = 1;
-	}
+	stack[0].fill(0);
+	stackIndex.fill(1);
 
 	//ray id list to keep track of what rays we need to do.
 	std::array<uint16_t, workGroupSquare> work1;
@@ -437,32 +431,32 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				int	loopCount = getNodeLoopCount(node->bounds);
-				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				int	loopCount = getNodeLoopCount(node.bounds);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
 					int code = maxAbsDimension(ray.direction);
 					bool reverse = ray.direction[code] <= 0;
 					if (reverse)
 					{
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].begin(), node.traverseOrderEachAxis[code].end(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
 								{
-									if (node->childType[cId])
+									if (node.childType[cId])
 									{
 										//next is node
-										stack[stackIndex[rayId]++][rayId] = (int32_t)node->childIdBegin + cId;
+										stack[stackIndex[rayId]++][rayId] = (int32_t)node.childIdBegin + cId;
 									}
 									else
 									{
 										//next is leaf
-										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 									}
 									aabbDistances[cId] = NAN;
 								}
@@ -471,20 +465,20 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					else
 					{
 						//reverse order
-						std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].rbegin(), node.traverseOrderEachAxis[code].rend(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
 								{
-									if (node->childType[cId])
+									if (node.childType[cId])
 									{
 										//next is node
-										stack[stackIndex[rayId]++][rayId] = node->childIdBegin + cId;
+										stack[stackIndex[rayId]++][rayId] = node.childIdBegin + cId;
 									}
 									else
 									{
 										//next is leaf
-										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 									}
 									aabbDistances[cId] = NAN;
 								}
@@ -523,16 +517,16 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[-stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				int ispcResult;
-				int loopCount = getLeafLoopCount(node->primIdBegin);
-				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+				int loopCount = getLeafLoopCount(node.primIdBegin);
+				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult != -1)
 				{
-					leafIndex[rayId] = node->primIdBegin;
+					leafIndex[rayId] = node.primIdBegin;
 					triIndex[rayId] = ispcResult;
 				}
 
@@ -558,7 +552,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -577,6 +571,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
 	//id 0 is root node
 	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+
+	//id of the current element in the stack we have to work on. 0 means we are finished
+	std::array< uint8_t, workGroupSquare>stackIndex;
+
+	stackIndex.fill(1);
 	stack[0].fill(0);
 
 	//ray id list to keep track of what rays we need to do.
@@ -586,9 +585,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 	std::array<uint16_t, workGroupSquare>* currentWork = &work1;
 	std::array<uint16_t, workGroupSquare>* nextWork = &work2;
 
-	//id of the current element in the stack we have to work on. 0 means we are finished
-	std::array< uint8_t, workGroupSquare>stackIndex;
-	stackIndex.fill(1);
+
 
 	int counter = 0;
 	for (int i = 0; i < workGroupSquare; i++)
@@ -622,12 +619,12 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				int loopCount = getNodeLoopCount(node->bounds);
-				callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				int loopCount = getNodeLoopCount(node.bounds);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
 					//this loop is faster with constant (nodememory) than with branching factor for N4L4.
@@ -635,15 +632,15 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					{
 						if (!isnan(aabbDistances[cId]))
 						{
-							if (node->childType[cId])
+							if (node.childType[cId])
 							{
 								//next is node
-								stack[stackIndex[rayId]++][rayId] = node->childIdBegin + cId;
+								stack[stackIndex[rayId]++][rayId] = node.childIdBegin + cId;
 							}
 							else
 							{
 								//next is leaf
-								stack[stackIndex[rayId]++][rayId] = -(int32_t)(node->childIdBegin + cId);
+								stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 							}
 							aabbDistances[cId] = NAN;
 						}
@@ -678,12 +675,12 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				auto& ray = rays[rayId];
 
 				//get current id (most recently added because we do depth first)
-				const FastNode<nodeMemory>* node = &compactNodes[-stack[--stackIndex[rayId]][rayId]];
+				const FastNode<nodeMemory>& node = compactNodes[-stack[--stackIndex[rayId]][rayId]];
 				//test ray against NodeId and write result in correct array
 
 				bool ispcResult;
-				int loopCount = getLeafLoopCount(node->primIdBegin);
-				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+				int loopCount = getLeafLoopCount(node.primIdBegin);
+				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult)
 				{
@@ -714,7 +711,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -751,27 +748,27 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 		{
 			continue;
 		}
-		const FastNode<nodeMemory>* node = &compactNodes[std::get<0>(tup)];
+		const FastNode<nodeMemory>& node = compactNodes[std::get<0>(tup)];
 
-		if (isnan(node->bounds[0]))
+		if (isnan(node.bounds[0]))
 		{
 #if doTimer
 			auto timeBeforeTriangleTest = getTime();
 #endif
 			int ispcResult;
-			int loopCount = getLeafLoopCount(node->primIdBegin);
-			callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+			int loopCount = getLeafLoopCount(node.primIdBegin);
+			callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 			//it returns the hit id -> -1 = no hit
 			if (ispcResult != -1)
 			{
 				result = true;
-				leafIndex = node->primIdBegin;
+				leafIndex = node.primIdBegin;
 				triIndex = ispcResult;
 			}
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		else
 		{
 			//child tests: 
@@ -780,29 +777,29 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 			bool ispcResult;
-			int loopCount = getNodeLoopCount(node->bounds);
-			callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+			int loopCount = getNodeLoopCount(node.bounds);
+			callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 			{
 				if (reverse)
 				{
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+					std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].begin(), node.traverseOrderEachAxis[code].end(),
 						[&](auto& cId)
 						{
 							if (!isnan(aabbDistances[cId]))
 							{
-								nodeStack[stackIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
+								nodeStack[stackIndex++] = std::make_tuple(node.childIdBegin + cId, aabbDistances[cId]);
 								aabbDistances[cId] = NAN;
 							}
 						});
 				}
 				else
 				{
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+					std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].rbegin(), node.traverseOrderEachAxis[code].rend(),
 						[&](auto& cId)
 						{
 							if (!isnan(aabbDistances[cId]))
 							{
-								nodeStack[stackIndex++] = std::make_tuple(node->childIdBegin + cId, aabbDistances[cId]);
+								nodeStack[stackIndex++] = std::make_tuple(node.childIdBegin + cId, aabbDistances[cId]);
 								aabbDistances[cId] = NAN;
 							}
 						});
@@ -833,28 +830,28 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 	while (stackIndex != 0)
 	{
 		//get current id (most recently added because we do depth first)
-		const FastNode<nodeMemory>* node = &compactNodes[nodeStack[--stackIndex]];
+		const FastNode<nodeMemory>& node = compactNodes[nodeStack[--stackIndex]];
 
-		if (isnan(node->bounds[0]))
+		if (isnan(node.bounds[0]))
 		{
 #if doTimer
 			auto timeBeforeTriangleTest = getTime();
 #endif
 
 			int ispcResult;
-			int loopCount = getLeafLoopCount(node->primIdBegin);
-			callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+			int loopCount = getLeafLoopCount(node.primIdBegin);
+			callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 			//it returns the hit id -> -1 = no hit
 			if (ispcResult != -1)
 			{
 				result = true;
-				leafIndex = node->primIdBegin;
+				leafIndex = node.primIdBegin;
 				triIndex = ispcResult;
 			}
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		else
 		{
 			//child tests: 
@@ -863,30 +860,30 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 			bool ispcResult;
-			int loopCount = getNodeLoopCount(node->bounds);
-			callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+			int loopCount = getNodeLoopCount(node.bounds);
+			callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 			if (ispcResult)
 			{
 				if (reverse)
 				{
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].begin(), node->traverseOrderEachAxis[code].end(),
+					std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].begin(), node.traverseOrderEachAxis[code].end(),
 						[&](auto& cId)
 						{
 							if (!isnan(aabbDistances[cId]))
 							{
-								nodeStack[stackIndex++] = node->childIdBegin + cId;
+								nodeStack[stackIndex++] = node.childIdBegin + cId;
 								aabbDistances[cId] = NAN;
 							}
 						});
 				}
 				else
 				{
-					std::for_each(std::execution::seq, node->traverseOrderEachAxis[code].rbegin(), node->traverseOrderEachAxis[code].rend(),
+					std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].rbegin(), node.traverseOrderEachAxis[code].rend(),
 						[&](auto& cId)
 						{
 							if (!isnan(aabbDistances[cId]))
 							{
-								nodeStack[stackIndex++] = node->childIdBegin + cId;
+								nodeStack[stackIndex++] = node.childIdBegin + cId;
 								aabbDistances[cId] = NAN;
 							}
 						});
@@ -917,16 +914,16 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 		//get current id (most recently added because we do depth first)
 		uint32_t id = nodeStack[--stackIndex];
 
-		const FastNode<nodeMemory>* node = &compactNodes[id];
+		const FastNode<nodeMemory>& node = compactNodes[id];
 
-		if (isnan(node->bounds[0]))
+		if (isnan(node.bounds[0]))
 		{
 #if doTimer
 			auto timeBeforeTriangleTest = getTime();
 #endif
 			bool ispcResult;
-			int loopCount = getLeafLoopCount(node->primIdBegin);
-			callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node->primIdBegin, reinterpret_cast<float*>(&ray));
+			int loopCount = getLeafLoopCount(node.primIdBegin);
+			callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 			if (ispcResult)
 			{
 				//we dont care about exact result for shadowrays (could do other ispc intersection for it
@@ -938,7 +935,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		else
 		{
 			//child tests: 
@@ -948,15 +945,15 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
 
 			bool ispcResult;
-			int loopCount = getNodeLoopCount(node->bounds);
-			callIspcTemplateNotConst(aabbIntersect, loopCount, node->bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+			int loopCount = getNodeLoopCount(node.bounds);
+			callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 			if (ispcResult)
 			{
 				for (int i = 0; i < nodeMemory; i++)
 				{
 					if (!isnan(aabbDistances[i]))
 					{
-						nodeStack[stackIndex++] = node->childIdBegin + i;
+						nodeStack[stackIndex++] = node.childIdBegin + i;
 						aabbDistances[i] = NAN;
 					}
 				}
