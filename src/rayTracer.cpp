@@ -641,10 +641,10 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 				//renders all versions -> can resue bvh (~3.5 seconds for lumberyard)
 				wideRender = true;
 				wideAlternative = true;
-				std::cerr << std::endl << "Rendering Wide V0" << std::endl;
+				std::cerr << std::endl << "Rendering Wide V1" << std::endl;
 				startPerfRender(gangSize, minBranchMemory, workGroupSize);
 				wideAlternative = false;
-				std::cerr << std::endl << "Rendering Wide V1" << std::endl;
+				std::cerr << std::endl << "Rendering Wide V0" << std::endl;
 				startPerfRender(gangSize, minBranchMemory, workGroupSize);
 				wideRender = false;
 				std::cerr << std::endl << "Rendering normal" << std::endl;

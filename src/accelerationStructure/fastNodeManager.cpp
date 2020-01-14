@@ -90,6 +90,23 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 	std::iota(nodeWork.begin(), nodeWork.end(), 0);
 	std::array<uint16_t, workGroupSquare> leafWork;
 
+	//precalculate the code for node traversal.
+	//the first bit signales if its reverse or not, and the number resulting from (code >> 1) is the axis
+	std::array<uint8_t, workGroupSquare > rayMajorAxis;
+	for (int i = 0; i < workGroupSquare; i++)
+	{
+		uint8_t code = maxAbsDimension(rays[i].direction);
+		if (rays[i].direction[code] <= 0)
+		{
+			code = (code << 1) + 1;
+		}
+		else
+		{
+			code = (code << 1);
+		}
+		rayMajorAxis[i] = code;
+	}
+
 	//number of noderays and leafrays so we know what ids to read.
 	uint16_t nodeRays = workGroupSquare;
 	uint16_t leafRays = 0;
@@ -120,11 +137,9 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
-					int code = maxAbsDimension(ray.direction);
-					bool reverse = ray.direction[code] <= 0;
-					if (reverse)
+					if (rayMajorAxis[rayId] & 1)
 					{
-						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].begin(), node.traverseOrderEachAxis[code].end(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].begin(), node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].end(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
@@ -146,7 +161,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 					else
 					{
 						//reverse order
-						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].rbegin(), node.traverseOrderEachAxis[code].rend(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].rbegin(), node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].rend(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
@@ -406,6 +421,23 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 	std::iota(work1.begin(), work1.end(), 0);
 	std::array<uint16_t, workGroupSquare> work2;
 
+	//precalculate the code for node traversal.
+	//the first bit signales if its reverse or not, and the number resulting from (code >> 1) is the axis
+	std::array<uint8_t, workGroupSquare > rayMajorAxis;
+	for (int i = 0; i < workGroupSquare; i++)
+	{
+		uint8_t code = maxAbsDimension(rays[i].direction);
+		if (rays[i].direction[code] <= 0)
+		{
+			code = (code << 1) + 1;
+		}
+		else
+		{
+			code = (code << 1);
+		}
+		rayMajorAxis[i] = code;
+	}
+
 	std::array<uint16_t, workGroupSquare>* currentWork = &work1;
 	std::array<uint16_t, workGroupSquare>* nextWork = &work2;
 
@@ -439,11 +471,9 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if (ispcResult)
 				{
-					int code = maxAbsDimension(ray.direction);
-					bool reverse = ray.direction[code] <= 0;
-					if (reverse)
+					if (rayMajorAxis[rayId] & 1)
 					{
-						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].begin(), node.traverseOrderEachAxis[code].end(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].begin(), node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].end(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
@@ -465,7 +495,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					else
 					{
 						//reverse order
-						std::for_each(std::execution::seq, node.traverseOrderEachAxis[code].rbegin(), node.traverseOrderEachAxis[code].rend(),
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].rbegin(), node.traverseOrderEachAxis[rayMajorAxis[i] >> 1].rend(),
 							[&](auto& cId)
 							{
 								if (!isnan(aabbDistances[cId]))
@@ -681,7 +711,6 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				bool ispcResult;
 				int loopCount = getLeafLoopCount(node.primIdBegin);
 				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
-				//it returns the hit id -> -1 = no hit
 				if (ispcResult)
 				{
 					result[rayId] ++;
@@ -689,7 +718,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					continue;
 				}
 
-				//depending on next element in stack. put this ray in node or leaf
+				//depending on next element in stack. put this ray in node or leaf stack
 				if (stackIndex[rayId] != 0)
 				{
 					if (stack[stackIndex[rayId] - 1][rayId] >= 0)
@@ -774,8 +803,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 			//child tests: 
 			//ispc version:
 
-			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
-			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
+			//call ispc method that returns an array of min distances. if minDist = Nan -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != Nan to queue (in right order)
 			bool ispcResult;
 			int loopCount = getNodeLoopCount(node.bounds);
 			callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
@@ -857,8 +886,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 			//child tests: 
 			//ispc version:
 
-			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
-			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
+			//call ispc method that returns an array of min distances. if minDist = Nan -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != Nan to queue (in right order)
 			bool ispcResult;
 			int loopCount = getNodeLoopCount(node.bounds);
 			callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
@@ -912,9 +941,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 	while (stackIndex != 0)
 	{
 		//get current id (most recently added because we do depth first)
-		uint32_t id = nodeStack[--stackIndex];
-
-		const FastNode<nodeMemory>& node = compactNodes[id];
+		const FastNode<nodeMemory>& node = compactNodes[nodeStack[--stackIndex]];
 
 		if (isnan(node.bounds[0]))
 		{
@@ -941,8 +968,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 			//child tests: 
 			//ispc version:
 
-			//call ispc method that returns an array of min distances. if minDist = 0 -> no hit otherwise hit.
-			//go trough traverseOrder and add those childs with distance != 0 to queue (in right order)
+			//call ispc method that returns an array of min distances. if minDist = Nan -> no hit otherwise hit.
+			//go trough traverseOrder and add those childs with distance != Nan to queue (in right order)
 
 			bool ispcResult;
 			int loopCount = getNodeLoopCount(node.bounds);
@@ -1115,7 +1142,7 @@ FastNodeManager<gangSize, nodeMemory, workGroupSize>::FastNodeManager(Bvh& bvh, 
 				pTmp += leafRealSize;
 			}
 			//in theory this could be removed and the space for a leaf could be smaller
-			//IF!! i save tri number and get the correct size tot he pos and normal calculation
+			//IF!! i save tri number and get the correct size to the pos and normal calculation
 			trianglePoints.resize(pBegin + leafMemory * 9);
 			if (leafRealSize != leafMemory)
 			{
