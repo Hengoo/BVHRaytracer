@@ -92,9 +92,9 @@ export uniform int triIntersect{{leafMemory}}(const uniform float tri[], uniform
 	foreach(index = 0 ... {{leafMemory}})
 	{
 		//fast read:
-		float3 p0 = { tri[triId + index                     ], tri[triId + index + {{leafMemory}}    ], tri[triId + index + {{leafMemory}} * 2] };
-		float3 p1 = { tri[triId + index + {{leafMemory}} * 3], tri[triId + index + {{leafMemory}} * 4], tri[triId + index + {{leafMemory}} * 5] };
-		float3 p2 = { tri[triId + index + {{leafMemory}} * 6], tri[triId + index + {{leafMemory}} * 7], tri[triId + index + {{leafMemory}} * 8] };
+		float3 p0 = { tri[(triId + index                      ) * {{padding}}], tri[(triId + index + {{leafMemory}}     ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 2) * {{padding}}] };
+		float3 p1 = { tri[(triId + index + {{leafMemory}} * 3 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 4 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 5) * {{padding}}] };
+		float3 p2 = { tri[(triId + index + {{leafMemory}} * 6 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 7 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 8) * {{padding}}] };
 		
 		//print positions:
 		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
@@ -175,9 +175,9 @@ export uniform bool triAnyHit{{leafMemory}}(const uniform float tri[], uniform u
 	foreach(index = 0 ... {{leafMemory}} )
 	{
 		//fast read:
-		float3 p0 = { tri[triId + index                     ], tri[triId + index + {{leafMemory}}    ], tri[triId + index + {{leafMemory}} * 2] };
-		float3 p1 = { tri[triId + index + {{leafMemory}} * 3], tri[triId + index + {{leafMemory}} * 4], tri[triId + index + {{leafMemory}} * 5] };
-		float3 p2 = { tri[triId + index + {{leafMemory}} * 6], tri[triId + index + {{leafMemory}} * 7], tri[triId + index + {{leafMemory}} * 8] };
+		float3 p0 = { tri[(triId + index                      ) * {{padding}}], tri[(triId + index + {{leafMemory}}     ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 2) * {{padding}}] };
+		float3 p1 = { tri[(triId + index + {{leafMemory}} * 3 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 4 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 5) * {{padding}}] };
+		float3 p2 = { tri[(triId + index + {{leafMemory}} * 6 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 7 ) * {{padding}}], tri[(triId + index + {{leafMemory}} * 8) * {{padding}}] };
 		
 		//print positions:
 		//print("p0 = %, %, % \n", p0.x, p0.y, p0.z);
@@ -234,8 +234,8 @@ export uniform bool aabbIntersect{{nodeMemory}}(const uniform float bounds[], un
 	foreach(index = 0 ... {{nodeMemory}})
 	{
 		//load bounds:
-		float3 boundMin = { bounds[index                     ], bounds[index + {{nodeMemory}}    ], bounds[index + {{nodeMemory}} * 2] };
-		float3 boundMax = { bounds[index + {{nodeMemory}} * 3], bounds[index + {{nodeMemory}} * 4], bounds[index + {{nodeMemory}} * 5] };
+		float3 boundMin = { bounds[(index                     ) * {{padding}}], bounds[(index + {{nodeMemory}}    ) * {{padding}}], bounds[(index + {{nodeMemory}} * 2) * {{padding}}] };
+		float3 boundMax = { bounds[(index + {{nodeMemory}} * 3) * {{padding}}], bounds[(index + {{nodeMemory}} * 4) * {{padding}}], bounds[(index + {{nodeMemory}} * 5) * {{padding}}] };
 
 		//its faster to just compute trough it with 0,0,0 and 0,0,0 ...
 		//if(index >= nodeSize)

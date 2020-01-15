@@ -7,7 +7,7 @@ template = templateEnv.get_template(TEMPLATE_FILE)
 
 nodeNumbers = {4,8,12,16}
 leafNumbers = {4,8,12,16}
-outputText = template.render( nodeNumbers = nodeNumbers, leafNumbers = leafNumbers)  # this is where to put args to the template renderer
+outputText = template.render( nodeNumbers = nodeNumbers, leafNumbers = leafNumbers, padding = 1)  # this is where to put args to the template renderer
 
 #print(outputText)
 

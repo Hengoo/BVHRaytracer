@@ -70,7 +70,8 @@ else {ispcResult = functionName##16(__VA_ARGS__);}			\
 
 
 //if true: tests all leafs of the stack
-#define doAllLeafs false;
+#define doAllLeafs false
+
 
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
@@ -250,7 +251,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-			}
+		}
 	}
 }
 
@@ -400,7 +401,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-			}
+		}
 	}
 }
 
@@ -582,7 +583,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+		}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -740,7 +741,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+		}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -797,7 +798,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+		}
 		else
 		{
 			//child tests: 
@@ -880,7 +881,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+		}
 		else
 		{
 			//child tests: 
@@ -962,7 +963,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+		}
 		else
 		{
 			//child tests: 
@@ -1150,11 +1151,25 @@ FastNodeManager<gangSize, nodeMemory, workGroupSize>::FastNodeManager(Bvh& bvh, 
 				trianglePoints[pBegin + leafMemory * 9 - 1] = NAN;
 			}
 			bounds[0] = NAN;
+
 		}
 		//Aabb* aabb = static_cast<Aabb*>(n->node);
 
 		compactNodes.push_back(FastNode<nodeMemory>(cBegin, nodeRealSize, pBegin, leafRealSize, bounds, n->node->traverseOrderEachAxis, childType));
 	}
+
+	//bloat memory:
+	//after each float we add and additional float
+#if nodeLeafPadding != 1
+	int origTriSize = trianglePoints.size();
+	trianglePoints.resize(origTriSize * nodeLeafPadding);
+	for (int i = origTriSize - 1; i >= 0; i--)
+	{
+		trianglePoints[i * nodeLeafPadding] = trianglePoints[i];
+	}
+#endif // padding
+
+
 }
 
 //first add all children of node, then recusion for each child
@@ -1176,11 +1191,8 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::customTreeOrder(NodeA
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 inline void FastNodeManager<gangSize, nodeMemory, workGroupSize>::getSurfaceNormalTri(const FastRay& ray, glm::vec3& surfaceNormal, const uint32_t leafIndex, const uint8_t triIndex) const
 {
-	int loopCount = getLeafLoopCount(leafIndex);
-	//we need the 3 positions of the triangle
-	glm::vec3 p0(trianglePoints[triIndex + leafIndex], trianglePoints[triIndex + leafIndex + loopCount], trianglePoints[triIndex + leafIndex + loopCount * 2]);
-	glm::vec3 p1(trianglePoints[triIndex + leafIndex + loopCount * 3], trianglePoints[triIndex + leafIndex + loopCount * 4], trianglePoints[triIndex + leafIndex + loopCount * 5]);
-	glm::vec3 p2(trianglePoints[triIndex + leafIndex + loopCount * 6], trianglePoints[triIndex + leafIndex + loopCount * 7], trianglePoints[triIndex + leafIndex + loopCount * 8]);
+	glm::vec3 p0, p1, p2;
+	getTriPoints(p0, p1, p2, leafIndex, triIndex);
 	surfaceNormal = computeNormal(p0, p1, p2);
 }
 
@@ -1188,16 +1200,64 @@ inline void FastNodeManager<gangSize, nodeMemory, workGroupSize>::getSurfaceNorm
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 inline void FastNodeManager<gangSize, nodeMemory, workGroupSize>::getSurfaceNormalPosition(const FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition, const uint32_t leafIndex, const uint8_t triIndex) const
 {
-	int loopCount = getLeafLoopCount(leafIndex);
-	//we need the 3 positions of the triangle
-	glm::vec3 p0(trianglePoints[triIndex + leafIndex], trianglePoints[triIndex + leafIndex + loopCount], trianglePoints[triIndex + leafIndex + loopCount * 2]);
-	glm::vec3 p1(trianglePoints[triIndex + leafIndex + loopCount * 3], trianglePoints[triIndex + leafIndex + loopCount * 4], trianglePoints[triIndex + leafIndex + loopCount * 5]);
-	glm::vec3 p2(trianglePoints[triIndex + leafIndex + loopCount * 6], trianglePoints[triIndex + leafIndex + loopCount * 7], trianglePoints[triIndex + leafIndex + loopCount * 8]);
+	glm::vec3 p0, p1, p2;
+	getTriPoints(p0, p1, p2, leafIndex, triIndex);
+
 	surfaceNormal = computeNormal(p0, p1, p2);
 
-	//calculating t a bit more accurate. (im not sure why the calcualtion in ispc is that wrong?)
+	//calculating t a bit more accurate. (im not sure why the calcualtion in ispc is that different?)
 	float denom = glm::dot(surfaceNormal, ray.direction);
 	glm::vec3 p0l0 = p0 - ray.pos;
 	float t = glm::dot(p0l0, surfaceNormal) / denom;
 	surfacePosition = ray.pos + ray.direction * t;
+}
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+inline void FastNodeManager<gangSize, nodeMemory, workGroupSize>::getTriPoints(glm::vec3& p0, glm::vec3& p1, glm::vec3& p2, const uint32_t leafIndex, const uint8_t triIndex) const
+{
+	int loopCount = getLeafLoopCount(leafIndex);
+	uint32_t triId = triIndex + leafIndex;
+	//adjust for padding
+	loopCount *= nodeLeafPadding;
+	triId *= nodeLeafPadding;
+	p0 = glm::vec3(trianglePoints[triId], trianglePoints[triId + loopCount], trianglePoints[triId + loopCount * 2]);
+	p1 = glm::vec3(trianglePoints[triId + loopCount * 3], trianglePoints[triId + loopCount * 4], trianglePoints[triId + loopCount * 5]);
+	p2 = glm::vec3(trianglePoints[triId + loopCount * 6], trianglePoints[triId + loopCount * 7], trianglePoints[triId + loopCount * 8]);
+}
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+inline int FastNodeManager<gangSize, nodeMemory, workGroupSize>::getLeafLoopCount(const uint32_t leafIndex) const
+{
+	//return leafMemory
+	if (leafMemory == gangSize)
+	{
+		return leafMemory;
+	}
+	int loopCount = leafMemory;
+	int triEndId = leafIndex + leafMemory * 9;
+
+	if (isnan(trianglePoints[triEndId * nodeLeafPadding - 1]))
+	{
+		loopCount = trianglePoints[triEndId * nodeLeafPadding - nodeLeafPadding - 1];
+	}
+
+
+	return loopCount;
+}
+
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+inline int FastNodeManager<gangSize, nodeMemory, workGroupSize>::getNodeLoopCount(const std::array<float, nodeMemory * 6 * nodeLeafPadding>& bounds) const
+{
+	//return nodeMemory;
+	if constexpr (nodeMemory == gangSize)
+	{
+		return nodeMemory;
+	}
+	int loopCount = nodeMemory;
+
+	if (isnan(bounds[nodeMemory * 6 * nodeLeafPadding - 1]))
+	{
+		loopCount = bounds[nodeMemory * 6 * nodeLeafPadding - 2];
+	}
+	return loopCount;
 }

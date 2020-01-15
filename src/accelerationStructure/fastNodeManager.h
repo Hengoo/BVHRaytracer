@@ -16,12 +16,14 @@ class FastRay;
 
 #define workGroupSquare (workGroupSize * workGroupSize)
 
-template  <unsigned nodeMemory>
-struct alignas(32) FastNode
-{
+//padding. padding of 1 means no padding, 2 doubles everything, and so on
+#define nodeLeafPadding 1
 
+template  <unsigned nodeMemory>
+struct alignas(64) FastNode
+{
 	//aabbs
-	std::array<float, nodeMemory * 6> bounds;
+	std::array< float, nodeMemory * 6 * nodeLeafPadding> bounds;
 
 	union
 	{
@@ -38,7 +40,7 @@ struct alignas(32) FastNode
 
 	FastNode(uint32_t childIdBegin, uint32_t childCount, uint32_t primIdBegin, uint32_t primCount, std::array<float, nodeMemory * 6> bounds
 		, std::array<std::vector<int8_t>, 3> traverseOrderEachAxis, std::bitset<nodeMemory> childType)
-		: bounds(bounds), childType(childType)
+		: childType(childType)
 	{
 		if (childCount != 0)
 		{
@@ -68,22 +70,15 @@ struct alignas(32) FastNode
 				}
 			}
 		}
-	}
-};
-
-struct FastTriangle
-{
-	//transformed point coordinates. I
-	//TODO: shoud try vec4 to get 16 align (and respective thing on ispc
-	std::array<glm::vec4, 3> points = {};
-
-	//pad to 64 byte
-	//padding doesnt seem to change performance?
-	uint32_t pad3[4];
-
-	FastTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2)
-	{
-		points = { glm::vec4(p0,0),glm::vec4(p1,0) ,glm::vec4(p2,0) };
+#if nodeLeafPadding != 1
+		//fix bounds array
+		for (int i = nodeMemory * 6 - 1; i >= 0; i--)
+		{
+			this->bounds[i * nodeLeafPadding] = bounds[i];
+		}
+#else}
+		this->bounds = bounds;
+#endif
 	}
 };
 
@@ -128,33 +123,9 @@ public:
 	//calculates the surface normal and position
 	inline void getSurfaceNormalPosition(const FastRay& ray, glm::vec3& surfaceNormal, glm::vec3& surfacePosition, const uint32_t leafIndex, const uint8_t triIndex) const;
 
-	inline int getLeafLoopCount(const uint32_t leafIndex) const
-	{
-		//return leafMemory
-		if (leafMemory == gangSize)
-		{
-			return leafMemory;
-		}
-		int loopCount = leafMemory;
-		if (isnan(trianglePoints[leafIndex + leafMemory * 9 - 1]))
-		{
-			loopCount = trianglePoints[leafIndex + leafMemory * 9 - 2];
-		}
-		return loopCount;
-	}
+	inline int getLeafLoopCount(const uint32_t leafIndex) const;
 
-	inline int getNodeLoopCount(const std::array<float, nodeMemory * 6>& bounds) const
-	{
-		//return nodeMemory;
-		if constexpr (nodeMemory == gangSize)
-		{
-			return nodeMemory;
-		}
-		int loopCount = nodeMemory;
-		if (isnan(bounds[nodeMemory * 6 - 1]))
-		{
-			loopCount = bounds[nodeMemory * 6 - 2];
-		}
-		return loopCount;
-	}
+	inline int getNodeLoopCount(const std::array<float, nodeMemory * 6 * nodeLeafPadding>& bounds) const;
+
+	inline void getTriPoints(glm::vec3& p0, glm::vec3& p1, glm::vec3& p2, const uint32_t leafIndex, const uint8_t triIndex) const;
 };
