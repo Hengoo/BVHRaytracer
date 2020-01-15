@@ -51,7 +51,7 @@ class storageType:
 
 class everything:
 
-	def __init__(self):
+	def __init__(self, wideVersion):
 		#the folder all the scene folders are in: (leave empty if no folder)
 		#self.folder = "SavesSortedEarlyStop/"
 		self.folder = "ResultsStorage/"
@@ -69,11 +69,12 @@ class everything:
 		self.outputPrefix = ""
 
 		self.workGroupSize = 16
-		self.wideVersion = -1
+		#Version -1 = not wide, 0 = old version, 1 = new version
+		self.wideVersion = wideVersion
 		if self.wideVersion == -1:
 			self.intermediateFolderName = ""
 		else:
-			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Version_" + str(self.wideVersion)
+			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Version_" + str(self.wideVersion) + "/"
 		
 
 
@@ -84,7 +85,7 @@ class everything:
 		self.minBranchingFactor = 4
 		self.maxBranchingFactor = 16
 		self.minLeafSize = 4
-		self.maxLeafSize = 16
+		self.maxLeafSize = 4
 
 		self.branchStep = 4
 		self.leafStep = 4
@@ -178,7 +179,7 @@ class everything:
 
 		#folder to the performance files. For now its the laptop per files
 		if(self.subdivisionRange[1] == 0):
-			self.perfFolder = "ResultsStorage/"
+			self.perfFolder = "ResultsStorage/PaddingTests/Pad21/"
 		else:
 			self.perfFolder = "ResultsStorage/"
 
@@ -223,7 +224,7 @@ class everything:
 						if(self.subdivisionRange[1] == 0):
 							fileName  = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
-							fileName3 = self.perfFolder + name + self.gangName[self.gangType] +"Perf" + self.prefix + "/" + self.intermediateFolderName + "/"+ name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
+							fileName3 = self.perfFolder + name + self.gangName[self.gangType] +"Perf" + self.prefix + "/" + self.intermediateFolderName + name + "_b" + str(branch) + "_l" + str(leaf) + "_mb" + str(branch) + "_ml" + str(leaf) + "_Perf.txt"
 						else:
 							fileName  = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_Info.txt"
 							fileName2 = self.folder + name + "Sub" + str(s) + self.prefix + "/" + name + "_b" + str(branch) + "_l" + str(leaf) + "_BVHInfo.txt"
@@ -251,7 +252,6 @@ class everything:
 								self.gatherPerf(storagePerSubdivision, f)
 								anyFileExists = True
 						
-
 						if anyFileExists:
 							self.storage[loopId].subdivisions[s].append(storagePerSubdivision)
 
@@ -289,7 +289,8 @@ class everything:
 						#i calculate the cost for one node intersection and for one leaf intersection
 						nodeCost = configStorage.nodeTime / (configStorage.variableValues[0] + configStorage.variableValues[2])
 						leafCost = configStorage.leafTime / (configStorage.variableValues[1] + configStorage.variableValues[3])
-						sahNodeFactor = nodeCost / leafCost
+						if(leafCost != 0):
+							sahNodeFactor = nodeCost / leafCost
 
 					line += ", " + self.makeLine([fixNone(configStorage.totalTime), fixNone(configStorage.nodeTime), fixNone(configStorage.leafTime), fixNone(nodeCost), fixNone(leafCost), fixNone(sahNodeFactor)])
 
@@ -403,5 +404,9 @@ class everything:
 					pass
 		return False, 0
 
-e = everything()
+e = everything(wideVersion = -1)
+e.run()
+e = everything(wideVersion = 0)
+e.run()
+e = everything(wideVersion = 1)
 e.run()

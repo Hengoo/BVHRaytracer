@@ -473,16 +473,16 @@ def rayTotalAnalysis():
 	newyLim = ( timeMin + 1 + - (-timeMin + timeMax) * 0.05, timeMax + 1 + (-timeMin + timeMax) * 0.05)
 
 	plt.subplot(2,2,1)
-	branchSize = 4
-	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
-	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
-	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	leafSize = 4
+	maskV0 = np.ma.masked_where(leaf != leafSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != leafSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != leafSize, branch)
 	maskV0 = maskV0.compressed()
 	maskV1 = maskV1.compressed()
 	maskBranch = maskBranch.compressed()
 
 	plt.xticks(np.arange(4, 20, step=4))
-	plt.title("Leafsize " + str(branchSize))
+	plt.title("Leafsize " + str(leafSize))
 	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
 	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
 	plt.ylabel("time relative to non wide renderer")
@@ -491,16 +491,16 @@ def rayTotalAnalysis():
 	plt.legend()
 	
 	plt.subplot(2,2,2)
-	branchSize = 8
-	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
-	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
-	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	leafSize = 8
+	maskV0 = np.ma.masked_where(leaf != leafSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != leafSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != leafSize, branch)
 	maskV0 = maskV0.compressed()
 	maskV1 = maskV1.compressed()
 	maskBranch = maskBranch.compressed()
 
 	plt.xticks(np.arange(4, 20, step=4))
-	plt.title("Leafsize " + str(branchSize))
+	plt.title("Leafsize " + str(leafSize))
 	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
 	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
 	plt.axhline(linewidth=1, y = 1, color='0.5')
@@ -508,16 +508,16 @@ def rayTotalAnalysis():
 	plt.legend()
 
 	plt.subplot(2,2,3)
-	branchSize = 12
-	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
-	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
-	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	leafSize = 12
+	maskV0 = np.ma.masked_where(leaf != leafSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != leafSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != leafSize, branch)
 	maskV0 = maskV0.compressed()
 	maskV1 = maskV1.compressed()
 	maskBranch = maskBranch.compressed()
 
 	plt.xticks(np.arange(4, 20, step=4))
-	plt.title("Leafsize " + str(branchSize))
+	plt.title("Leafsize " + str(leafSize))
 	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
 	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
 	plt.ylabel("time relative to non wide renderer")
@@ -527,16 +527,16 @@ def rayTotalAnalysis():
 	plt.legend()
 
 	plt.subplot(2,2,4)
-	branchSize = 16
-	maskV0 = np.ma.masked_where(leaf != branchSize, totalTimeV0)
-	maskV1 = np.ma.masked_where(leaf != branchSize, totalTimeV1)
-	maskBranch = np.ma.masked_where(leaf != branchSize, branch)
+	leafSize = 16
+	maskV0 = np.ma.masked_where(leaf != leafSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(leaf != leafSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(leaf != leafSize, branch)
 	maskV0 = maskV0.compressed()
 	maskV1 = maskV1.compressed()
 	maskBranch = maskBranch.compressed()
 
 	plt.xticks(np.arange(4, 20, step=4))
-	plt.title("Leafsize " + str(branchSize))
+	plt.title("Leafsize " + str(leafSize))
 	plt.bar(maskBranch - width / 2, maskV0, width = width, bottom = 1, label = "V0")
 	plt.bar(maskBranch + width / 2, maskV1, width = width, bottom = 1, label = "V1")
 	plt.xlabel("Nodesize")
@@ -548,7 +548,109 @@ def rayTotalAnalysis():
 	plt.savefig(outputFolder + "PerformanceOverview.pgf")
 	endPlot()
 
+def rayTotalAnalysisPadding():
+	(padding, branch, leaf, totalTime) = np.loadtxt(inputFolder + "PaddingResults/PadSummary_rayTotalTime.txt" , delimiter=',', unpack=True, skiprows = 1)
+	(padding, branch, leaf, totalTimeV0) = np.loadtxt(inputFolder + "PaddingResults/PadSummary_rayTotalTimeV0.txt" , delimiter=',', unpack=True, skiprows = 1)
+	(padding, branch, leaf, totalTimeV1) = np.loadtxt(inputFolder + "PaddingResults/PadSummary_rayTotalTimeV1.txt" , delimiter=',', unpack=True, skiprows = 1)
 
+	width = 0.3
+
+	#normalize by "smallest"
+	totalTimeV0 = (totalTimeV0 / totalTime) - 1
+	totalTimeV1 = (totalTimeV1 / totalTime) - 1
+
+	timeMin = min(totalTimeV0.min(), totalTimeV1.min())
+	timeMax = max(totalTimeV0.max(), totalTimeV1.max())
+	newyLim = ( timeMin + 1 + - (-timeMin + timeMax) * 0.05, timeMax + 1 + (-timeMin + timeMax) * 0.05)
+
+
+	plt.figure(figsize=(12,8))
+
+	plt.subplot(2,2,1)
+	plt.suptitle("Performance effect of padding")
+	branchSize = 4
+	maskV0 = np.ma.masked_where(branch != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(branch != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(branch != branchSize, branch)
+	maskPadding = np.ma.masked_where(branch != branchSize, padding)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+	maskPadding = maskPadding.compressed()
+
+	plt.xticks((0,1,2,5,10,20))
+	plt.title("NodeSize " + str(branchSize))
+	plt.bar(maskPadding - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskPadding + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.ylabel("time relative to single ray traversal")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+	
+	plt.subplot(2,2,2)
+	branchSize = 8
+	maskV0 = np.ma.masked_where(branch != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(branch != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(branch != branchSize, branch)
+	maskPadding = np.ma.masked_where(branch != branchSize, padding)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+	maskPadding = maskPadding.compressed()
+
+	plt.xticks((0,1,2,5,10,20))
+	plt.title("NodeSize " + str(branchSize))
+	plt.bar(maskPadding - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskPadding + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.subplot(2,2,3)
+	branchSize = 12
+	maskV0 = np.ma.masked_where(branch != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(branch != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(branch != branchSize, branch)
+	maskPadding = np.ma.masked_where(branch != branchSize, padding)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+	maskPadding = maskPadding.compressed()
+
+	plt.xticks((0,1,2,5,10,20))
+	plt.title("NodeSize " + str(branchSize))
+	plt.bar(maskPadding - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskPadding + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.ylabel("time relative to single ray traversal")
+	plt.xlabel("Padding")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.subplot(2,2,4)
+	branchSize = 16
+	maskV0 = np.ma.masked_where(branch != branchSize, totalTimeV0)
+	maskV1 = np.ma.masked_where(branch != branchSize, totalTimeV1)
+	maskBranch = np.ma.masked_where(branch != branchSize, branch)
+	maskPadding = np.ma.masked_where(branch != branchSize, padding)
+	maskV0 = maskV0.compressed()
+	maskV1 = maskV1.compressed()
+	maskBranch = maskBranch.compressed()
+	maskPadding = maskPadding.compressed()
+
+	plt.xticks((0,1,2,5,10,20))
+	plt.title("NodeSize " + str(branchSize))
+	plt.bar(maskPadding - width / 2, maskV0, width = width, bottom = 1, label = "V0")
+	plt.bar(maskPadding + width / 2, maskV1, width = width, bottom = 1, label = "V1")
+	plt.xlabel("Padding")
+	plt.axhline(linewidth=1, y = 1, color='0.5')
+	plt.ylim(newyLim)
+	plt.legend()
+
+	plt.savefig(outputFolder + "PerformanceOverviewPadding.pdf")
+	plt.savefig(outputFolder + "PerformanceOverviewPadding.pgf")
+
+	endPlot()
 
 
 #makePerfAnalysis(inputFolder + "amazonLumberyardInterior_4To16Table.txt", "Amazon Lumberyard Interior Sse", "AmazonLumberyardInterior_4To16Perf")
@@ -563,4 +665,5 @@ def rayTotalAnalysis():
 
 #perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
 
-rayTotalAnalysis()
+#rayTotalAnalysis()
+rayTotalAnalysisPadding()
