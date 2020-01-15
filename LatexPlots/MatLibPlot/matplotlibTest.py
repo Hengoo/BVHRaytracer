@@ -388,7 +388,7 @@ def perRayPlot(filePath):
 	leafTimeV1 = leafTimeV1[p]
 
 	plt.subplot(2,2,1)
-	plt.title("V0 camrea0")
+	plt.title("V0 camera0")
 	plt.axhline(linewidth=1, color='0.5')
 	#plt.plot(x , totalTimeV0, label = "total Ray Time")
 	plt.plot(x , nodeTimeV0, label = "node Time")
@@ -397,7 +397,7 @@ def perRayPlot(filePath):
 	plt.legend()
 
 	plt.subplot(2,2,3)
-	plt.title("V1 camrea0")
+	plt.title("V1 camera0")
 	plt.axhline(linewidth=1, color='0.5')
 	#plt.plot(x , totalTimeV1, label = "total Ray Time")
 	plt.plot(x , nodeTimeV1, label = "node Time")
@@ -428,7 +428,7 @@ def perRayPlot(filePath):
 	leafTimeV1 = leafTimeV1[p]
 
 	plt.subplot(2,2,2)
-	plt.title("V0 camrea1")
+	plt.title("V0 camera1")
 	plt.axhline(linewidth=1, color='0.5')
 	#plt.plot(x , totalTimeV0, label = "total Ray Time")
 	plt.plot(x , nodeTimeV0, label = "node Time")
@@ -437,7 +437,7 @@ def perRayPlot(filePath):
 	plt.legend()
 
 	plt.subplot(2,2,4)
-	plt.title("V1 camrea1")
+	plt.title("V1 camera1")
 	plt.axhline(linewidth=1, color='0.5')
 	#plt.plot(x , totalTimeV1, label = "total Ray Time")
 	plt.plot(x , nodeTimeV1, label = "node Time")
