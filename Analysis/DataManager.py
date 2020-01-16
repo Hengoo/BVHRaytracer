@@ -54,7 +54,7 @@ class everything:
 	def __init__(self, wideVersion):
 		#the folder all the scene folders are in: (leave empty if no folder)
 		#self.folder = "SavesSortedEarlyStop/"
-		self.folder = "ResultsStorage/"
+		self.folder = "ResultsStorage/Office_15_1/"
 		self.outputFolder = "Summary/"
 
 		#names of the sceneFolders
@@ -85,7 +85,7 @@ class everything:
 		self.minBranchingFactor = 4
 		self.maxBranchingFactor = 16
 		self.minLeafSize = 4
-		self.maxLeafSize = 4
+		self.maxLeafSize = 16
 
 		self.branchStep = 4
 		self.leafStep = 4
@@ -179,7 +179,7 @@ class everything:
 
 		#folder to the performance files. For now its the laptop per files
 		if(self.subdivisionRange[1] == 0):
-			self.perfFolder = "ResultsStorage/PaddingTests/Pad21/"
+			self.perfFolder = "ResultsStorage/Office_15_1/"
 		else:
 			self.perfFolder = "ResultsStorage/"
 

@@ -56,6 +56,6 @@ def work(tableInput, tableOutput):
 		print("problem finding file")
 
 
-work("amazonLumberyardInteriorTable.txt",   "Pad20_rayTotalTime.txt")
-work("amazonLumberyardInteriorTableV1.txt", "Pad20_rayTotalTimeV1.txt")
-work("amazonLumberyardInteriorTableV0.txt", "Pad20_rayTotalTimeV0.txt")
+work("amazonLumberyardInteriorTable.txt",   "rayTotalTime.txt")
+work("amazonLumberyardInteriorTableV1.txt", "rayTotalTimeV1.txt")
+work("amazonLumberyardInteriorTableV0.txt", "rayTotalTimeV0.txt")
