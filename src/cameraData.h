@@ -47,7 +47,7 @@ public:
 	std::vector<uint64_t> shadowNodeIntersectionPerDepthCount;
 	std::vector<uint64_t> shadowLeafIntersectionPerDepthCount;
 
-	//per workGroup per step:
+	//per workGroup per step: (those are the only arrays that are reset for every camera)
 	std::vector<std::vector<uint32_t>> nodeWorkPerStep;
 	std::vector<std::vector<uint32_t>> leafWorkPerStep;
 	std::vector<std::vector<uint32_t>> terminationsPerStep;
@@ -59,6 +59,12 @@ public:
 	std::vector<std::vector<uint32_t>> secondaryTerminationsPerStep;
 	std::vector<std::vector<uint32_t>> secondaryUniqueNodesPerStep;
 	std::vector<std::vector<uint32_t>> secondaryUniqueLeafsPerStep;
+
+	//extra counter to calculate per camrea values from other counter
+	std::vector<uint32_t> nodeIntersectionPerPixelCountCameraSum;
+	std::vector<uint32_t> shadowNodeIntersectionPerPixelCountCameraSum;
+	std::vector<uint32_t> leafIntersectionPerPixelCountCameraSum;
+	std::vector<uint32_t> shadowLeafIntersectionPerPixelCountCameraSum;
 
 	//normal counter
 	uint64_t nodeIntersectionCount;
@@ -78,7 +84,7 @@ public:
 	bool wideRender;
 
 	CameraData(std::string path, std::string name, std::string problem, int workGroupSize, bool wideRender,
- std::vector<glm::vec3>& positions,	std::vector<glm::vec3>& lookCenters, size_t width = 1920, size_t height = 1088, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f)
+		std::vector<glm::vec3>& positions, std::vector<glm::vec3>& lookCenters, size_t width = 1920, size_t height = 1088, glm::vec3 upward = glm::vec3(0, 1, 0), float focalLength = 0.866f)
 		:Camera(path, name, problem, workGroupSize, positions, lookCenters, width, height, upward, focalLength), wideRender(wideRender)
 	{
 		image.resize(height * width * 4);
@@ -186,21 +192,33 @@ public:
 			}
 		}
 
-		leafIntersectionCount = std::accumulate(leafIntersectionPerDepthCount.begin(), leafIntersectionPerDepthCount.end(), 0);
-		nodeIntersectionCount = std::accumulate(nodeIntersectionPerDepthCount.begin(), nodeIntersectionPerDepthCount.end(), 0);
+		nodeIntersectionCount = 0;
+		leafIntersectionCount = 0;
+		primitiveIntersections = 0;
+		shadowPrimitiveIntersections = 0;
+		successfulPrimitiveIntersections = 0;
+		successfulAabbIntersections = 0;
+		aabbIntersections = 0;
+		shadowSuccessfulAabbIntersections = 0;
+		shadowAabbIntersections = 0;
+		shadowSuccessfulPrimitiveIntersections = 0;
+		shadowRayCount = 0;
 
-		shadowLeafIntersectionCount = std::accumulate(shadowLeafIntersectionPerDepthCount.begin(), shadowLeafIntersectionPerDepthCount.end(), 0);
-		shadowNodeIntersectionCount = std::accumulate(shadowNodeIntersectionPerDepthCount.begin(), shadowNodeIntersectionPerDepthCount.end(), 0);
+		leafIntersectionCount = std::accumulate(leafIntersectionPerDepthCount.begin(), leafIntersectionPerDepthCount.end(), leafIntersectionCount);
+		nodeIntersectionCount = std::accumulate(nodeIntersectionPerDepthCount.begin(), nodeIntersectionPerDepthCount.end(), nodeIntersectionCount);
 
-		primitiveIntersections = std::accumulate(primitiveIntersectionsPerPixel.begin(), primitiveIntersectionsPerPixel.end(), 0);
-		successfulPrimitiveIntersections = std::accumulate(successfulPrimitiveIntersectionsPerPixel.begin(), successfulPrimitiveIntersectionsPerPixel.end(), 0);
-		successfulAabbIntersections = std::accumulate(successfulAabbIntersectionsPerPixel.begin(), successfulAabbIntersectionsPerPixel.end(), 0);
-		aabbIntersections = std::accumulate(aabbIntersectionsPerPixel.begin(), aabbIntersectionsPerPixel.end(), 0);
-		shadowRayCount = std::accumulate(shadowRayCounter.begin(), shadowRayCounter.end(), 0);
-		shadowSuccessfulPrimitiveIntersections = std::accumulate(shadowSuccessfulPrimitiveIntersectionsPerPixel.begin(), shadowSuccessfulPrimitiveIntersectionsPerPixel.end(), 0);
-		shadowSuccessfulAabbIntersections = std::accumulate(shadowSuccessfulAabbIntersectionsPerPixel.begin(), shadowSuccessfulAabbIntersectionsPerPixel.end(), 0);
-		shadowAabbIntersections = std::accumulate(shadowAabbIntersectionsPerPixel.begin(), shadowAabbIntersectionsPerPixel.end(), 0);
-		shadowPrimitiveIntersections = std::accumulate(shadowPrimitiveIntersectionsPerPixel.begin(), shadowPrimitiveIntersectionsPerPixel.end(), 0);
+		shadowLeafIntersectionCount = std::accumulate(shadowLeafIntersectionPerDepthCount.begin(), shadowLeafIntersectionPerDepthCount.end(), shadowLeafIntersectionCount);
+		shadowNodeIntersectionCount = std::accumulate(shadowNodeIntersectionPerDepthCount.begin(), shadowNodeIntersectionPerDepthCount.end(), shadowNodeIntersectionCount);
+
+		primitiveIntersections = std::accumulate(primitiveIntersectionsPerPixel.begin(), primitiveIntersectionsPerPixel.end(), primitiveIntersections);
+		successfulPrimitiveIntersections = std::accumulate(successfulPrimitiveIntersectionsPerPixel.begin(), successfulPrimitiveIntersectionsPerPixel.end(), successfulPrimitiveIntersections);
+		successfulAabbIntersections = std::accumulate(successfulAabbIntersectionsPerPixel.begin(), successfulAabbIntersectionsPerPixel.end(), successfulAabbIntersections);
+		aabbIntersections = std::accumulate(aabbIntersectionsPerPixel.begin(), aabbIntersectionsPerPixel.end(), (uint64_t)aabbIntersections);
+		shadowRayCount = std::accumulate(shadowRayCounter.begin(), shadowRayCounter.end(), shadowRayCount);
+		shadowSuccessfulPrimitiveIntersections = std::accumulate(shadowSuccessfulPrimitiveIntersectionsPerPixel.begin(), shadowSuccessfulPrimitiveIntersectionsPerPixel.end(), shadowSuccessfulPrimitiveIntersections);
+		shadowSuccessfulAabbIntersections = std::accumulate(shadowSuccessfulAabbIntersectionsPerPixel.begin(), shadowSuccessfulAabbIntersectionsPerPixel.end(), shadowSuccessfulAabbIntersections);
+		shadowAabbIntersections = std::accumulate(shadowAabbIntersectionsPerPixel.begin(), shadowAabbIntersectionsPerPixel.end(), shadowAabbIntersections);
+		shadowPrimitiveIntersections = std::accumulate(shadowPrimitiveIntersectionsPerPixel.begin(), shadowPrimitiveIntersectionsPerPixel.end(), shadowPrimitiveIntersections);
 
 		//normalize by ray
 		int primaryRayCount = width * height * cameraCount;
@@ -666,13 +684,13 @@ private:
 			int median;
 			int min;
 			int max;
-			float lowerSd;
-			float upperSd;
+			float avg;
+			float sd;
 			StorageStruct()
 			{
 			}
-			StorageStruct(int median, int min, int max, float lowerSd, float upperSd)
-				:median(median), min(min), max(max), lowerSd(lowerSd), upperSd(upperSd)
+			StorageStruct(int median, int min, int max, float avg, float sd)
+				:median(median), min(min), max(max), avg(avg), sd(sd)
 			{
 			}
 
@@ -696,8 +714,6 @@ private:
 		if (fileWorkGroup0.is_open() && fileWorkGroup1.is_open())
 		{
 			int medianId = workGroupSquare * 0.5f;
-			//int lowerQuartileId = workGroupSquare * 0.25f;
-			//int upperQuartileId = workGroupSquare * 0.75f;
 			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 			{
 				std::vector<int> primaryDepth;
@@ -771,9 +787,9 @@ private:
 				int secondaryMax = secondaryDepth[workGroupSquare - 1];
 
 				primaryStorage[i] = StorageStruct(primaryDepth[medianId], primaryDepth[0],
-					primaryMax, primaryWorkAverage - primarySd, primaryWorkAverage + primarySd);
+					primaryMax, primaryWorkAverage, primarySd);
 				secondaryStorage[i] = StorageStruct(secondaryDepth[medianId], secondaryDepth[0],
-					secondaryMax, secondaryWorkAverage - secondarySd, secondaryWorkAverage + secondarySd);
+					secondaryMax, secondaryWorkAverage, secondarySd);
 			}
 			std::sort(primaryStorage.begin(), primaryStorage.end());
 			std::sort(secondaryStorage.begin(), secondaryStorage.end());
@@ -786,14 +802,14 @@ private:
 				fileWorkGroup0 << primaryStorage[i].median << ", ";
 				fileWorkGroup0 << primaryStorage[i].min << ", ";
 				fileWorkGroup0 << primaryStorage[i].max << ", ";
-				fileWorkGroup0 << primaryStorage[i].lowerSd << ", ";
-				fileWorkGroup0 << primaryStorage[i].upperSd << std::endl;
+				fileWorkGroup0 << primaryStorage[i].avg << ", ";
+				fileWorkGroup0 << primaryStorage[i].sd << std::endl;
 
 				fileWorkGroup1 << secondaryStorage[i].median << ", ";
 				fileWorkGroup1 << secondaryStorage[i].min << ", ";
 				fileWorkGroup1 << secondaryStorage[i].max << ", ";
-				fileWorkGroup1 << secondaryStorage[i].lowerSd << ", ";
-				fileWorkGroup1 << secondaryStorage[i].upperSd << std::endl;
+				fileWorkGroup1 << secondaryStorage[i].avg << ", ";
+				fileWorkGroup1 << secondaryStorage[i].sd << std::endl;
 			}
 			fileWorkGroup0.close();
 			fileWorkGroup1.close();
@@ -981,6 +997,123 @@ private:
 		}
 		else std::cerr << "Unable to open file for work group analysis" << std::endl;
 
+		//now ammount of unique nodes and leafs loaded per workgroup + average and min maxof what would have been loaded without wide
+		std::ofstream fileUniqueWork(path + "/" + sizeName + "/" + name + problem + cameraName + "_WorkGroupUniqueWork.txt");
+		if (fileUniqueWork.is_open())
+		{
+			//IMPORTANT: those values are average PER ray for each workgroup
+			fileUniqueWork << "loadedPrimaryNodes, loadedPrimaryLeafs, loadedPrimaryNodesMax, loadedPrimaryLeafsMax, loadedPrimaryNodesMin, loadedPrimaryLeafsMin, ";
+			fileUniqueWork << "loadedSecondaryNodes, loadedSecondaryLeafs, loadedSecondaryNodesMax, loadedSecondaryLeafsMax, loadedSecondaryNodesMin, loadedSecondaryLeafsMin, ";
+			fileUniqueWork << "loadedWidePrimaryNodes, loadedWidePrimaryLeafs, loadedWideSecondaryNodes, loadedWideSecondaryLeafs" << std::endl;
+
+			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+			{
+				float loadedPrimaryNodes = 0;
+				float loadedPrimaryLeafs = 0;
+				int loadedPrimaryNodesMax = 0;
+				int loadedPrimaryLeafsMax = 0;
+				int loadedPrimaryNodesMin = 1000;
+				int loadedPrimaryLeafsMin = 1000;
+
+				float loadedSecondaryNodes = 0;
+				float loadedSecondaryLeafs = 0;
+				int loadedSecondaryNodesMax = 0;
+				int loadedSecondaryLeafsMax = 0;
+				int loadedSecondaryNodesMin = 1000;
+				int loadedSecondaryLeafsMin = 1000;
+
+				float loadedWidePrimaryNodes = std::accumulate(uniqueNodesPerStep[i].begin(), uniqueNodesPerStep[i].end(), 0);
+				float loadedWidePrimaryLeafs = std::accumulate(uniqueLeafsPerStep[i].begin(), uniqueLeafsPerStep[i].end(), 0);
+
+				float loadedWideSecondaryNodes = std::accumulate(secondaryUniqueNodesPerStep[i].begin(), secondaryUniqueNodesPerStep[i].end(), 0);
+				float loadedWideSecondaryLeafs = std::accumulate(secondaryUniqueLeafsPerStep[i].begin(), secondaryUniqueLeafsPerStep[i].end(), 0);
+
+				//loop over single rays for how many node and leafs have been intersected (-> loaded nodes)
+				for (int j = 0; j < workGroupSquare; j++)
+				{
+					int index = (i * workGroupSize) % width + (j % workGroupSize) + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width;
+					int realIndex = i * workGroupSquare + j;
+
+					int tmp0 = std::accumulate(nodeIntersectionPerPixelCount[index].begin(), nodeIntersectionPerPixelCount[index].end(), 0);
+					tmp0 -= nodeIntersectionPerPixelCountCameraSum[index];
+					loadedPrimaryNodes += tmp0;
+					loadedPrimaryNodesMax = std::max(tmp0, loadedPrimaryNodesMax);
+					loadedPrimaryNodesMin = std::min(tmp0, loadedPrimaryNodesMin);
+
+					int tmp1 = std::accumulate(shadowNodeIntersectionPerPixelCount[index].begin(), shadowNodeIntersectionPerPixelCount[index].end(), 0);
+					tmp1 -= shadowNodeIntersectionPerPixelCountCameraSum[index];
+					loadedSecondaryNodes += tmp1;
+					loadedSecondaryNodesMax = std::max(tmp1, loadedSecondaryNodesMax);
+					loadedSecondaryNodesMin = std::min(tmp1, loadedSecondaryNodesMin);
+
+					int tmp2 = std::accumulate(leafIntersectionPerPixelCount[index].begin(), leafIntersectionPerPixelCount[index].end(), 0);
+					tmp2 -= leafIntersectionPerPixelCountCameraSum[index];
+					loadedPrimaryLeafs += tmp2;
+					loadedPrimaryLeafsMax = std::max(tmp2, loadedPrimaryLeafsMax);
+					loadedPrimaryLeafsMin = std::min(tmp2, loadedPrimaryLeafsMin);
+
+					int tmp3 = std::accumulate(shadowLeafIntersectionPerPixelCount[index].begin(), shadowLeafIntersectionPerPixelCount[index].end(), 0);
+					tmp3 -= shadowLeafIntersectionPerPixelCountCameraSum[index];
+					loadedSecondaryLeafs += tmp3;
+					loadedSecondaryLeafsMax = std::max(tmp3, loadedSecondaryLeafsMax);
+					loadedSecondaryLeafsMin = std::min(tmp3, loadedSecondaryLeafsMin);
+
+					nodeIntersectionPerPixelCountCameraSum[index] += tmp0;
+					shadowNodeIntersectionPerPixelCountCameraSum[index] += tmp1;
+					leafIntersectionPerPixelCountCameraSum[index] += tmp2;
+					shadowLeafIntersectionPerPixelCountCameraSum[index] += tmp3;
+				}
+
+				//set the min values that didnt have any values to 0
+				if (loadedPrimaryNodesMin == 1000)
+				{
+					loadedPrimaryNodesMin = 0;
+				}
+				if (loadedPrimaryLeafsMin == 1000)
+				{
+					loadedPrimaryLeafsMin = 0;
+				}
+				if (loadedSecondaryNodesMin == 1000)
+				{
+					loadedSecondaryNodesMin = 0;
+				}
+				if (loadedSecondaryLeafsMin == 1000)
+				{
+					loadedSecondaryLeafsMin = 0;
+				}
+
+				loadedPrimaryNodes /= workGroupSquare;
+				loadedPrimaryLeafs /= workGroupSquare;
+				loadedSecondaryNodes /= workGroupSquare;
+				loadedSecondaryLeafs /= workGroupSquare;
+
+				loadedWidePrimaryNodes /= workGroupSquare;
+				loadedWidePrimaryLeafs /= workGroupSquare;
+				loadedWideSecondaryNodes /= workGroupSquare;
+				loadedWideSecondaryLeafs /= workGroupSquare;
+
+				fileUniqueWork << loadedPrimaryNodes << ", ";
+				fileUniqueWork << loadedPrimaryLeafs << ", ";
+				fileUniqueWork << loadedPrimaryNodesMax << ", ";
+				fileUniqueWork << loadedPrimaryLeafsMax << ", ";
+				fileUniqueWork << loadedPrimaryNodesMin << ", ";
+				fileUniqueWork << loadedPrimaryLeafsMin << ", ";
+
+				fileUniqueWork << loadedSecondaryNodes << ", ";
+				fileUniqueWork << loadedSecondaryLeafs << ", ";
+				fileUniqueWork << loadedSecondaryNodesMax << ", ";
+				fileUniqueWork << loadedSecondaryLeafsMax << ", ";
+				fileUniqueWork << loadedSecondaryNodesMin << ", ";
+				fileUniqueWork << loadedSecondaryLeafsMin << ", ";
+
+				fileUniqueWork << loadedWidePrimaryNodes << ", ";
+				fileUniqueWork << loadedWidePrimaryLeafs << ", ";
+				fileUniqueWork << loadedWideSecondaryNodes << ", ";
+				fileUniqueWork << loadedWideSecondaryLeafs << std::endl;
+			}
+
+			fileUniqueWork.close();
+		}
 	}
 
 	void initializeVariables()
@@ -1012,6 +1145,16 @@ private:
 		shadowAabbIntersections = 0;
 		shadowSuccessfulPrimitiveIntersections = 0;
 		shadowRayCount = 0;
+		shadowLeafIntersectionCount = 0;
+		shadowNodeIntersectionCount = 0;
+
+		if (wideRender)
+		{
+			nodeIntersectionPerPixelCountCameraSum.resize(height * width);
+			shadowNodeIntersectionPerPixelCountCameraSum.resize(height * width);
+			leafIntersectionPerPixelCountCameraSum.resize(height * width);
+			shadowLeafIntersectionPerPixelCountCameraSum.resize(height * width);
+		}
 
 		//wide render data is initialized and reset in camrea loop since its only needed inside loop
 	}

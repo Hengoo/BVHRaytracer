@@ -362,6 +362,69 @@ def makeWorkGroupAnalysis(filePath, workGroupSize, outputName):
 	plt.savefig(outputFolder + outputName + "_Unique.pgf")
 	endPlot()
 
+def makeWorkGroupUniqueAnalysis(filePath, workGroupSize):
+
+	#additional analysis about unique nodes per workgroup, not per step:
+	(loadedPrimaryNodes, loadedPrimaryLeafs, loadedPrimaryNodesMax, loadedPrimaryLeafsMax, loadedPrimaryNodesMin,
+		loadedPrimaryLeafsMin, loadedSecondaryNodes, loadedSecondaryLeafs, loadedSecondaryNodesMax, loadedSecondaryLeafsMax,
+		loadedSecondaryNodesMin, loadedSecondaryLeafsMin, loadedWidePrimaryNodes, loadedWidePrimaryLeafs, loadedWideSecondaryNodes,
+		loadedWideSecondaryLeafs) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+	x = np.arange(len(loadedPrimaryNodes))
+
+	#sort everything by ??
+	#best look would be if i sort the wide and the single seperately, but thats kidna "wrong"?
+	p = (loadedPrimaryNodes).argsort()
+	loadedPrimaryNodes = loadedPrimaryNodes[p]
+	loadedPrimaryNodesMax = loadedPrimaryNodesMax[p]
+	loadedPrimaryNodesMin = loadedPrimaryNodesMin[p]
+	loadedWidePrimaryNodes = loadedWidePrimaryNodes[p]
+	npArrayAnalysis(loadedPrimaryNodes, "loadedPrimaryNodes")
+	npArrayAnalysis(loadedWidePrimaryNodes, "loadedWidePrimaryNodes")
+
+	p = (loadedPrimaryLeafs).argsort()
+	loadedPrimaryLeafs = loadedPrimaryLeafs[p]
+	loadedPrimaryLeafsMax = loadedPrimaryLeafsMax[p]
+	loadedPrimaryLeafsMin = loadedPrimaryLeafsMin[p]
+	loadedWidePrimaryLeafs = loadedWidePrimaryLeafs[p]
+
+	p = (loadedSecondaryNodes).argsort()
+	loadedSecondaryNodes = loadedSecondaryNodes[p]
+	loadedSecondaryNodesMin = loadedSecondaryNodesMin[p]
+	loadedSecondaryNodesMax = loadedSecondaryNodesMax[p]
+	loadedWideSecondaryNodes = loadedWideSecondaryNodes[p]
+
+	npArrayAnalysis(loadedSecondaryNodes, "loadedSecondaryNodes")
+	npArrayAnalysis(loadedWideSecondaryNodes, "loadedWideSecondaryNodes")
+
+	p = (loadedSecondaryLeafs).argsort()
+	loadedSecondaryLeafs = loadedSecondaryLeafs[p]
+	loadedSecondaryLeafsMax = loadedSecondaryLeafsMax[p]
+	loadedSecondaryLeafsMin = loadedSecondaryLeafsMin[p]
+	loadedWideSecondaryLeafs = loadedWideSecondaryLeafs[p]
+
+	#sort the wide arrays by themself so we can at least see anything
+	loadedWidePrimaryNodes.sort()
+	loadedWidePrimaryLeafs.sort()
+	loadedWideSecondaryNodes.sort()
+	loadedWideSecondaryLeafs.sort()
+
+	#title -> workgroup size
+
+	plt.fill_between(x, loadedPrimaryNodesMin, loadedPrimaryNodesMax, label="min max unique Nodes", color=(0.9,0.5,0.13, 0.5), zorder=-1)
+	plt.plot(x, loadedPrimaryNodes, color=(0.9, 0.5, 0.13, 1), label="unique Nodes")
+	
+	plt.plot(x, loadedWidePrimaryNodes, label = "unique Nodes in wideRenderer")
+	
+	endPlot()
+
+	plt.fill_between(x, loadedPrimaryLeafsMin, loadedPrimaryLeafsMax, label = "min max unique Leafs", color=(0.13,0.5,0.9, 0.5), zorder=-1)
+	plt.plot(x, loadedPrimaryLeafs, color=(0.13, 0.5, 0.9, 1), label="Unique Leafs")
+	
+	plt.plot(x, loadedWidePrimaryLeafs, label = "unique Leafs in wideRenderer")
+
+	plt.legend()
+	endPlot()
+
 def perRayPlot(filePath):
 	plt.figure(figsize=(15,7))
 	plt.suptitle("N4L4 workGroup 16")
@@ -442,8 +505,8 @@ def perRayPlot(filePath):
 	endPlot()
 
 def npArrayAnalysis(a, title):
-	#some analysis for me: min, max, std and variance, median, average
-	print(title +":  mean: " + str(a.mean()) + " median: " + str(np.median(a)) + " min: " + str(a.min()) + " max: " + str(a.max()) + " std: " + str(a.std()) + " var: " + str(a.var()))
+	#some analysis for me: min, max, sd and variance, median, average
+	print(title +":  mean: " + str(a.mean()) + " median: " + str(np.median(a)) + " min: " + str(a.min()) + " max: " + str(a.max()) + " sd: " + str(a.std()) + " var: " + str(a.var()))
 
 def rayTotalAnalysis():
 	def rayTotalAnalysisHelperComparison(ax, totalTimeV0, totalTimeV1, leaf, branch, leafSize, width):
@@ -642,8 +705,14 @@ def rayTotalAnalysisPadding():
 
 #makeWorkGroupWiskerPlots((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
 
+#Analysis about workgroup per step stuff and
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
+
+#general workgroup unique node analysis (comparison to single ray traversal)
+makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", 16)
+makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", 16)
+
 
 #perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
 
