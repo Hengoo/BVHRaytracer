@@ -192,33 +192,21 @@ public:
 			}
 		}
 
-		nodeIntersectionCount = 0;
-		leafIntersectionCount = 0;
-		primitiveIntersections = 0;
-		shadowPrimitiveIntersections = 0;
-		successfulPrimitiveIntersections = 0;
-		successfulAabbIntersections = 0;
-		aabbIntersections = 0;
-		shadowSuccessfulAabbIntersections = 0;
-		shadowAabbIntersections = 0;
-		shadowSuccessfulPrimitiveIntersections = 0;
-		shadowRayCount = 0;
+		leafIntersectionCount = std::accumulate(leafIntersectionPerDepthCount.begin(), leafIntersectionPerDepthCount.end(), 0ULL);
+		nodeIntersectionCount = std::accumulate(nodeIntersectionPerDepthCount.begin(), nodeIntersectionPerDepthCount.end(), 0ULL);
 
-		leafIntersectionCount = std::accumulate(leafIntersectionPerDepthCount.begin(), leafIntersectionPerDepthCount.end(), leafIntersectionCount);
-		nodeIntersectionCount = std::accumulate(nodeIntersectionPerDepthCount.begin(), nodeIntersectionPerDepthCount.end(), nodeIntersectionCount);
+		shadowLeafIntersectionCount = std::accumulate(shadowLeafIntersectionPerDepthCount.begin(), shadowLeafIntersectionPerDepthCount.end(), 0ULL);
+		shadowNodeIntersectionCount = std::accumulate(shadowNodeIntersectionPerDepthCount.begin(), shadowNodeIntersectionPerDepthCount.end(), 0ULL);
 
-		shadowLeafIntersectionCount = std::accumulate(shadowLeafIntersectionPerDepthCount.begin(), shadowLeafIntersectionPerDepthCount.end(), shadowLeafIntersectionCount);
-		shadowNodeIntersectionCount = std::accumulate(shadowNodeIntersectionPerDepthCount.begin(), shadowNodeIntersectionPerDepthCount.end(), shadowNodeIntersectionCount);
-
-		primitiveIntersections = std::accumulate(primitiveIntersectionsPerPixel.begin(), primitiveIntersectionsPerPixel.end(), primitiveIntersections);
-		successfulPrimitiveIntersections = std::accumulate(successfulPrimitiveIntersectionsPerPixel.begin(), successfulPrimitiveIntersectionsPerPixel.end(), successfulPrimitiveIntersections);
-		successfulAabbIntersections = std::accumulate(successfulAabbIntersectionsPerPixel.begin(), successfulAabbIntersectionsPerPixel.end(), successfulAabbIntersections);
-		aabbIntersections = std::accumulate(aabbIntersectionsPerPixel.begin(), aabbIntersectionsPerPixel.end(), (uint64_t)aabbIntersections);
-		shadowRayCount = std::accumulate(shadowRayCounter.begin(), shadowRayCounter.end(), shadowRayCount);
-		shadowSuccessfulPrimitiveIntersections = std::accumulate(shadowSuccessfulPrimitiveIntersectionsPerPixel.begin(), shadowSuccessfulPrimitiveIntersectionsPerPixel.end(), shadowSuccessfulPrimitiveIntersections);
-		shadowSuccessfulAabbIntersections = std::accumulate(shadowSuccessfulAabbIntersectionsPerPixel.begin(), shadowSuccessfulAabbIntersectionsPerPixel.end(), shadowSuccessfulAabbIntersections);
-		shadowAabbIntersections = std::accumulate(shadowAabbIntersectionsPerPixel.begin(), shadowAabbIntersectionsPerPixel.end(), shadowAabbIntersections);
-		shadowPrimitiveIntersections = std::accumulate(shadowPrimitiveIntersectionsPerPixel.begin(), shadowPrimitiveIntersectionsPerPixel.end(), shadowPrimitiveIntersections);
+		primitiveIntersections = std::accumulate(primitiveIntersectionsPerPixel.begin(), primitiveIntersectionsPerPixel.end(), 0ULL);
+		successfulPrimitiveIntersections = std::accumulate(successfulPrimitiveIntersectionsPerPixel.begin(), successfulPrimitiveIntersectionsPerPixel.end(), 0ULL);
+		successfulAabbIntersections = std::accumulate(successfulAabbIntersectionsPerPixel.begin(), successfulAabbIntersectionsPerPixel.end(), 0ULL);
+		aabbIntersections = std::accumulate(aabbIntersectionsPerPixel.begin(), aabbIntersectionsPerPixel.end(), 0ULL);
+		shadowRayCount = std::accumulate(shadowRayCounter.begin(), shadowRayCounter.end(), 0ULL);
+		shadowSuccessfulPrimitiveIntersections = std::accumulate(shadowSuccessfulPrimitiveIntersectionsPerPixel.begin(), shadowSuccessfulPrimitiveIntersectionsPerPixel.end(), 0ULL);
+		shadowSuccessfulAabbIntersections = std::accumulate(shadowSuccessfulAabbIntersectionsPerPixel.begin(), shadowSuccessfulAabbIntersectionsPerPixel.end(), 0ULL);
+		shadowAabbIntersections = std::accumulate(shadowAabbIntersectionsPerPixel.begin(), shadowAabbIntersectionsPerPixel.end(), 0ULL);
+		shadowPrimitiveIntersections = std::accumulate(shadowPrimitiveIntersectionsPerPixel.begin(), shadowPrimitiveIntersectionsPerPixel.end(), 0ULL);
 
 		//normalize by ray
 		int primaryRayCount = width * height * cameraCount;
@@ -1082,15 +1070,17 @@ private:
 					loadedSecondaryLeafsMin = 0;
 				}
 
-				loadedPrimaryNodes /= workGroupSquare;
-				loadedPrimaryLeafs /= workGroupSquare;
-				loadedSecondaryNodes /= workGroupSquare;
-				loadedSecondaryLeafs /= workGroupSquare;
+				/*
+				loadedPrimaryNodes /= (float)workGroupSquare;
+				loadedPrimaryLeafs /= (float)workGroupSquare;
+				loadedSecondaryNodes /= (float)workGroupSquare;
+				loadedSecondaryLeafs /= (float)workGroupSquare;
 
-				loadedWidePrimaryNodes /= workGroupSquare;
-				loadedWidePrimaryLeafs /= workGroupSquare;
-				loadedWideSecondaryNodes /= workGroupSquare;
-				loadedWideSecondaryLeafs /= workGroupSquare;
+				loadedWidePrimaryNodes /= (float)workGroupSquare;
+				loadedWidePrimaryLeafs /= (float)workGroupSquare;
+				loadedWideSecondaryNodes /= (float)workGroupSquare;
+				loadedWideSecondaryLeafs /= (float)workGroupSquare;
+				*/
 
 				fileUniqueWork << loadedPrimaryNodes << ", ";
 				fileUniqueWork << loadedPrimaryLeafs << ", ";

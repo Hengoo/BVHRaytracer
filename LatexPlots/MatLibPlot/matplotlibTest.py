@@ -362,8 +362,9 @@ def makeWorkGroupAnalysis(filePath, workGroupSize, outputName):
 	plt.savefig(outputFolder + outputName + "_Unique.pgf")
 	endPlot()
 
-def makeWorkGroupUniqueAnalysis(filePath, workGroupSize):
-
+def makeWorkGroupUniqueAnalysis(filePath, outName, workGroupSize):
+	print("workGroup unique analysis")
+	workSquare = workGroupSize * workGroupSize
 	#additional analysis about unique nodes per workgroup, not per step:
 	(loadedPrimaryNodes, loadedPrimaryLeafs, loadedPrimaryNodesMax, loadedPrimaryLeafsMax, loadedPrimaryNodesMin,
 		loadedPrimaryLeafsMin, loadedSecondaryNodes, loadedSecondaryLeafs, loadedSecondaryNodesMax, loadedSecondaryLeafsMax,
@@ -377,7 +378,7 @@ def makeWorkGroupUniqueAnalysis(filePath, workGroupSize):
 	loadedPrimaryNodes = loadedPrimaryNodes[p]
 	loadedPrimaryNodesMax = loadedPrimaryNodesMax[p]
 	loadedPrimaryNodesMin = loadedPrimaryNodesMin[p]
-	loadedWidePrimaryNodes = loadedWidePrimaryNodes[p]
+	#loadedWidePrimaryNodes = loadedWidePrimaryNodes[p]
 	npArrayAnalysis(loadedPrimaryNodes, "loadedPrimaryNodes")
 	npArrayAnalysis(loadedWidePrimaryNodes, "loadedWidePrimaryNodes")
 
@@ -385,13 +386,15 @@ def makeWorkGroupUniqueAnalysis(filePath, workGroupSize):
 	loadedPrimaryLeafs = loadedPrimaryLeafs[p]
 	loadedPrimaryLeafsMax = loadedPrimaryLeafsMax[p]
 	loadedPrimaryLeafsMin = loadedPrimaryLeafsMin[p]
-	loadedWidePrimaryLeafs = loadedWidePrimaryLeafs[p]
+	#loadedWidePrimaryLeafs = loadedWidePrimaryLeafs[p]
+	npArrayAnalysis(loadedPrimaryLeafs, "loadedPrimaryLeafs")
+	npArrayAnalysis(loadedWidePrimaryLeafs, "loadedWidePrimaryLeafs")
 
 	p = (loadedSecondaryNodes).argsort()
 	loadedSecondaryNodes = loadedSecondaryNodes[p]
 	loadedSecondaryNodesMin = loadedSecondaryNodesMin[p]
 	loadedSecondaryNodesMax = loadedSecondaryNodesMax[p]
-	loadedWideSecondaryNodes = loadedWideSecondaryNodes[p]
+	#loadedWideSecondaryNodes = loadedWideSecondaryNodes[p]
 
 	npArrayAnalysis(loadedSecondaryNodes, "loadedSecondaryNodes")
 	npArrayAnalysis(loadedWideSecondaryNodes, "loadedWideSecondaryNodes")
@@ -400,7 +403,9 @@ def makeWorkGroupUniqueAnalysis(filePath, workGroupSize):
 	loadedSecondaryLeafs = loadedSecondaryLeafs[p]
 	loadedSecondaryLeafsMax = loadedSecondaryLeafsMax[p]
 	loadedSecondaryLeafsMin = loadedSecondaryLeafsMin[p]
-	loadedWideSecondaryLeafs = loadedWideSecondaryLeafs[p]
+	#loadedWideSecondaryLeafs = loadedWideSecondaryLeafs[p]
+	npArrayAnalysis(loadedSecondaryLeafs, "loadedSecondaryLeafs")
+	npArrayAnalysis(loadedWideSecondaryLeafs, "loadedWideSecondaryLeafs")
 
 	#sort the wide arrays by themself so we can at least see anything
 	loadedWidePrimaryNodes.sort()
@@ -408,21 +413,71 @@ def makeWorkGroupUniqueAnalysis(filePath, workGroupSize):
 	loadedWideSecondaryNodes.sort()
 	loadedWideSecondaryLeafs.sort()
 
+	plt.figure(figsize=(15, 9))
+	plt.suptitle("Loaded nodes and leafs.")
 	#title -> workgroup size
+	ax0 = plt.subplot(2, 2, 1)
+	plt.axhline(linewidth=1, color='0.5')
+	plt.fill_between(x, loadedPrimaryNodesMin, loadedPrimaryNodesMax, label="min - max unique Nodes", color=(0.9,0.5,0.13, 0.5), zorder=-1)
+	plt.plot(x, loadedPrimaryNodes / workSquare, color=(0.9, 0.5, 0.13, 1), label="unique Nodes")
+	plt.plot(x, loadedWidePrimaryNodes / workSquare, label = "unique Nodes in wideRenderer")
+	plt.legend(loc='upper left')
+	plt.title("Primary ray Nodes")
+	plt.ylabel("avg per ray loaded Nodes")
+	plt.tick_params(
+		axis='x',		# changes apply to the x-axis
+		which='both',	# both major and minor ticks are affected
+		bottom=False,	# ticks along the bottom edge are off
+		top=False,		# ticks along the top edge are off
+		labelbottom=False) # labels along the bottom edge are off
 
-	plt.fill_between(x, loadedPrimaryNodesMin, loadedPrimaryNodesMax, label="min max unique Nodes", color=(0.9,0.5,0.13, 0.5), zorder=-1)
-	plt.plot(x, loadedPrimaryNodes, color=(0.9, 0.5, 0.13, 1), label="unique Nodes")
-	
-	plt.plot(x, loadedWidePrimaryNodes, label = "unique Nodes in wideRenderer")
-	
-	endPlot()
+	ax1 = plt.subplot(2, 2, 2)
+	plt.axhline(linewidth=1, color='0.5')
+	plt.fill_between(x, loadedPrimaryLeafsMin, loadedPrimaryLeafsMax, label = "min - max unique Leafs", color=(0.9,0.5,0.13, 0.5), zorder=-1)
+	plt.plot(x, loadedPrimaryLeafs / workSquare, color=(0.9, 0.5, 0.13, 1), label="Unique Leafs")
+	plt.plot(x, loadedWidePrimaryLeafs / workSquare, label="unique Leafs in wideRenderer")
+	plt.legend(loc='upper left')
+	plt.title("Primary ray Leafs")
+	plt.ylabel("avg per ray loaded Leafs")
+	plt.tick_params(
+		axis='x',		# changes apply to the x-axis
+		which='both',	# both major and minor ticks are affected
+		bottom=False,	# ticks along the bottom edge are off
+		top=False,		# ticks along the top edge are off
+		labelbottom=False) # labels along the bottom edge are off
 
-	plt.fill_between(x, loadedPrimaryLeafsMin, loadedPrimaryLeafsMax, label = "min max unique Leafs", color=(0.13,0.5,0.9, 0.5), zorder=-1)
-	plt.plot(x, loadedPrimaryLeafs, color=(0.13, 0.5, 0.9, 1), label="Unique Leafs")
-	
-	plt.plot(x, loadedWidePrimaryLeafs, label = "unique Leafs in wideRenderer")
+	ax1 = plt.subplot(2, 2, 3)
+	plt.axhline(linewidth=1, color='0.5')
+	plt.fill_between(x, loadedSecondaryNodesMin, loadedSecondaryNodesMax, label="min - max unique Nodes", color=(0.9,0.5,0.13, 0.5), zorder=-1)
+	plt.plot(x, loadedSecondaryNodes / workSquare, color=(0.9, 0.5, 0.13, 1), label="unique Nodes")
+	plt.plot(x, loadedWideSecondaryNodes / workSquare, label = "unique Nodes in wideRenderer")
+	plt.legend(loc='upper left')
+	plt.title("Secondary ray Nodes")
+	plt.ylabel("avg per ray loaded Nodes")
+	plt.tick_params(
+	axis='x',		# changes apply to the x-axis
+		which='both',	# both major and minor ticks are affected
+		bottom=False,	# ticks along the bottom edge are off
+		top=False,		# ticks along the top edge are off
+		labelbottom=False) # labels along the bottom edge are off
 
-	plt.legend()
+
+	ax1 = plt.subplot(2, 2, 4)
+	plt.axhline(linewidth=1, color='0.5')
+	plt.fill_between(x, loadedSecondaryLeafsMin, loadedSecondaryLeafsMax, label = "min - max unique Leafs", color=(0.9,0.5,0.13, 0.5), zorder=-1)
+	plt.plot(x, loadedSecondaryLeafs / workSquare, color=(0.9, 0.5, 0.13, 1), label="Unique Leafs")
+	plt.plot(x, loadedWideSecondaryLeafs / workSquare, label="unique Leafs in wideRenderer")
+	plt.legend(loc='upper left')
+	plt.title("Secondary ray Leafs")
+	plt.ylabel("avg per ray loaded Leafs")
+	plt.tick_params(
+		axis='x',		# changes apply to the x-axis
+		which='both',	# both major and minor ticks are affected
+		bottom=False,	# ticks along the bottom edge are off
+		top=False,		# ticks along the top edge are off
+		labelbottom=False) # labels along the bottom edge are off
+	plt.savefig(outputFolder + "UniqueLoadedAnalysis" + outName + "s"+ str(workGroupSize) + ".pdf")
+	plt.savefig(outputFolder + "UniqueLoadedAnalysis" + outName + "s"+ str(workGroupSize) + ".pgf")
 	endPlot()
 
 def perRayPlot(filePath):
@@ -710,8 +765,8 @@ def rayTotalAnalysisPadding():
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
 
 #general workgroup unique node analysis (comparison to single ray traversal)
-makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", 16)
-makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", 16)
+makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", "c0", 16)
+makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", "c1", 16)
 
 
 #perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
