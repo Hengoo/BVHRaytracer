@@ -18,6 +18,8 @@
 #include <numeric>
 // std::accumulate
 
+#include <omp.h>
+
 //macros to tell cpp what template this class is used for.
 
 //we need all version of gangsize, branchmemory, workGroupSize
@@ -203,6 +205,8 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 	//fillRenderInfo();
 	auto timeBeginRaytracer = getTime();
 
+	bool wideRefill = true;
+
 	//similar performance compared to openMp versions, but openMp is more consistent (large difference)
 	//	std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
 	//		[&](auto& info)
@@ -297,7 +301,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			}
 		}
 	}
-	else
+	else if (!wideRefill)
 	{
 		//ultra wide version
 #pragma omp parallel for schedule(dynamic, 4)
@@ -382,7 +386,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					nodeManager.intersectSecondaryWide(rays, ambientResult, timeTriangleTest);
 				}
 			}
-			
+
 			for (int j = 0; j < workGroupSquare; j++)
 			{
 				int index = i * workGroupSquare + j;
@@ -402,6 +406,140 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 			timesRay[i] = getTimeSpan(timeBeforeRay);
 #endif
 			timesTriangles[i] = timeTriangleTest;
+		}
+	}
+	else
+	{
+		//frist "lazy" version, work for each thread is predetermined determined by threadId and max threadCount
+		int maxThreadCount = omp_get_max_threads();
+#pragma omp parallel
+		{
+			//TODO: remove debug prints
+			int tId = omp_get_thread_num();
+			int threadSum = (width / workGroupSize) * (height / workGroupSize);
+			int beginId = threadSum / maxThreadCount * tId;
+			int endId = threadSum / maxThreadCount * (tId + 1);
+			if (tId == maxThreadCount - 1)
+			{
+				endId = threadSum;
+			}
+			int currentId = beginId;
+
+
+			RefillStructure<nodeMemory, workGroupSize> dataStruct;
+
+			int tmp0 = ((currentId * workGroupSize) / width) * workGroupSize - height / 2;
+			int tmp1 = ((currentId * workGroupSize) % width - width / 2);
+			for (int j = 0; j < workGroupSquare; j++)
+			{
+				glm::vec3 targetPos = getRayTargetPosition(
+					(-tmp0 - (j / workGroupSize)),
+					(tmp1 + (j % workGroupSize)), cameraId);
+				dataStruct.rays[j] = FastRay(positions[cameraId], targetPos);
+				dataStruct.rayId[j] = currentId * workGroupSquare + j;
+			}
+			dataStruct.fillRayMajorAxis();
+
+			currentId++;
+			//half tells if we already have loaded half of the current block
+			bool half = false;
+			bool lastRun = false;
+			//primary rays:
+			while (true)
+			{
+				//structure:
+				//call traversal, traversal stops when it reaches 50% utilization -> we refill here and start next traversal
+
+				//for refill we need to save the result of finished rays and then fill in the new rays.
+				//could also reorder unfinished rays but i dont think that is necessary
+
+				//in order to store results i need to keep track of ray id. (will do this with a separate array)
+				
+				if (currentId > endId && half)
+				{
+					lastRun = true;
+				}
+				nodeManager.intersectRefillWideAlternative(dataStruct, lastRun);
+
+				//refill dataStruct
+
+				int tmp0 = ((currentId * workGroupSize) / width) * workGroupSize - height / 2;
+				int tmp1 = ((currentId * workGroupSize) % width - width / 2);
+				int fillCount = 0;
+				for (int j = 0; j < workGroupSquare; j++)
+				{
+					if (isnan(dataStruct.rays[j].tMax))
+					{
+						//read hit info
+						if (dataStruct.triIndex[j] >= 0)
+						{
+							image[dataStruct.rayId[j] * 4 + 0] = 255 * (currentId / (float)endId);
+							image[dataStruct.rayId[j] * 4 + 1] = 255 * (tId / (float)maxThreadCount);
+							image[dataStruct.rayId[j] * 4 + 2] = 255;
+							image[dataStruct.rayId[j] * 4 + 3] = 255;
+							dataStruct.triIndex[j] = -1;
+						}
+						else
+						{
+							image[dataStruct.rayId[j] * 4 + 0] = 0;
+							image[dataStruct.rayId[j] * 4 + 1] = 0;
+							image[dataStruct.rayId[j] * 4 + 2] = 0;
+							image[dataStruct.rayId[j] * 4 + 3] = 0;
+							dataStruct.triIndex[j] = -1;
+						}
+
+						if (!lastRun)
+						{
+							//reset ray:
+							int rayId = fillCount;
+							if (half) rayId += workGroupSquare / 2;
+							glm::vec3 targetPos = getRayTargetPosition(
+								(-tmp0 - (rayId / workGroupSize)),
+								(tmp1 + (rayId % workGroupSize)), cameraId);
+							dataStruct.rays[j] = FastRay(positions[cameraId], targetPos);
+							dataStruct.rayId[j] = currentId * workGroupSquare + rayId;
+							dataStruct.stack[0][j] = 0;
+							dataStruct.stackIndex[j] = 1;
+							(*dataStruct.currentWork)[dataStruct.nodeRays++] = j;
+
+							fillCount++;
+							if (fillCount == workGroupSquare / 2)
+							{
+								break;
+							}
+						}
+					}
+				}
+				if (lastRun)
+				{
+					break;
+				}
+
+				//TODO: this recomputes the axis for all.
+				dataStruct.fillRayMajorAxis();
+
+				if (fillCount != workGroupSquare / 2)
+				{
+					std::cerr << "was not able to refill correct ammount of rays" << std::endl;
+				}
+
+				half = !half;
+				if (!half)
+				{
+					currentId++;
+				}
+
+			}
+			if (dataStruct.nodeRays != 0)
+			{
+				std::cerr << "didnt finish all rays" << std::endl;
+			}
+
+			//secondary rays:
+			//while (true)
+			//{
+			//
+			//}
 		}
 	}
 	nanoSec totalTime = getTimeSpan(timeBeginRaytracer);

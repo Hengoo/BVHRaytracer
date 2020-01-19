@@ -72,7 +72,172 @@ else {ispcResult = functionName##16(__VA_ARGS__);}			\
 //if true: tests all leafs of the stack
 #define doAllLeafs false
 
+template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
+void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectRefillWideAlternative(RefillStructure<nodeMemory, workGroupSize>& data, bool lastRun) const
+{
+	//do normal intersection until we only have 50% of our rays left. Then return to refill
 
+	//memory for aabb result (NAN if no hit
+	std::array<float, nodeMemory> aabbDistances;
+	aabbDistances.fill(NAN);
+
+	while (data.nodeRays != 0 || data.leafRays != 0)
+	{
+		//loop over nodes
+		if (data.nodeRays != 0)
+		{
+			for (int i = 0; i < data.nodeRays; i++)
+			{
+				auto rayId = (*data.currentWork)[i];
+				auto& ray = data.rays[rayId];
+
+				//get current id (most recently added because we do depth first)
+				const FastNode<nodeMemory>& node = compactNodes[data.stack[--data.stackIndex[rayId]][rayId]];
+				//test ray against NodeId and write result in correct array
+
+				bool ispcResult;
+				int	loopCount = getNodeLoopCount(node.bounds);
+				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
+				if (ispcResult)
+				{
+					if (data.rayMajorAxis[rayId] & 1)
+					{
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[data.rayMajorAxis[i] >> 1].begin(), node.traverseOrderEachAxis[data.rayMajorAxis[i] >> 1].end(),
+							[&](auto& cId)
+							{
+								if (!isnan(aabbDistances[cId]))
+								{
+									if (node.childType[cId])
+									{
+										//next is node
+										data.stack[data.stackIndex[rayId]++][rayId] = (int32_t)node.childIdBegin + cId;
+									}
+									else
+									{
+										//next is leaf
+										data.stack[data.stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
+									}
+									aabbDistances[cId] = NAN;
+								}
+							});
+					}
+					else
+					{
+						//reverse order
+						std::for_each(std::execution::seq, node.traverseOrderEachAxis[data.rayMajorAxis[i] >> 1].rbegin(), node.traverseOrderEachAxis[data.rayMajorAxis[i] >> 1].rend(),
+							[&](auto& cId)
+							{
+								if (!isnan(aabbDistances[cId]))
+								{
+									if (node.childType[cId])
+									{
+										//next is node
+										data.stack[data.stackIndex[rayId]++][rayId] = node.childIdBegin + cId;
+									}
+									else
+									{
+										//next is leaf
+										data.stack[data.stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
+									}
+									aabbDistances[cId] = NAN;
+								}
+							});
+					}
+				}
+				//depending on next element in stack. put this ray in node or leaf
+				if (data.stackIndex[rayId] != 0)
+				{
+					if (data.stack[data.stackIndex[rayId] - 1][rayId] >= 0)
+					{
+						//node
+						(*data.nextWork)[data.nodeRaysNext++] = rayId;
+					}
+					else
+					{
+						//leaf
+						(*data.nextWork)[workGroupSquare - 1 - (data.leafRaysNext++)] = rayId;
+					}
+				}
+				else
+				{
+					data.rays[rayId].tMax = NAN;
+				}
+			}
+
+		}
+
+		//loop over triangles
+		if (data.leafRays != 0)
+			//if (leafRays >= 8 || nodeRays <= 8)
+		{
+#if doTimer
+			auto timeBeforeTriangleTest = getTime();
+#endif
+
+			for (int i = 0; i < data.leafRays; i++)
+			{
+				auto rayId = (*data.currentWork)[workGroupSquare - 1 - i];
+				auto& ray = data.rays[rayId];
+
+				//get current id (most recently added because we do depth first)
+				const FastNode<nodeMemory>& node = compactNodes[-data.stack[--data.stackIndex[rayId]][rayId]];
+				//test ray against NodeId and write result in correct array
+
+				int ispcResult;
+				int loopCount = getLeafLoopCount(node.primIdBegin);
+				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
+				//it returns the hit id -> -1 = no hit
+				if (ispcResult != -1)
+				{
+					data.leafIndex[rayId] = node.primIdBegin;
+					data.triIndex[rayId] = ispcResult;
+				}
+
+				//depending on next element in stack. put this ray in node or leaf
+				if (data.stackIndex[rayId] != 0)
+				{
+					if (data.stack[data.stackIndex[rayId] - 1][rayId] >= 0)
+					{
+						//node
+						(*data.nextWork)[data.nodeRaysNext++] = rayId;
+					}
+					else
+					{
+						//leaf
+#if doAllLeafs
+						i--;
+#else
+						(*data.nextWork)[workGroupSquare - 1 - (data.leafRaysNext++)] = rayId;
+#endif
+					}
+				}
+				else
+				{
+					data.rays[rayId].tMax = NAN;
+				}
+			}
+#if doTimer
+			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
+#endif
+		}
+		//prepare next loop:
+		data.leafRays = data.leafRaysNext;
+		data.leafRaysNext = 0;
+
+		data.nodeRays = data.nodeRaysNext;
+		data.nodeRaysNext = 0;
+
+		std::swap(data.currentWork, data.nextWork);
+
+		if (data.nodeRays + data.leafRays < workGroupSquare / 2)
+		{
+			if (!lastRun)
+			{
+				return;
+			}
+		}
+	}
+}
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::array<FastRay, workGroupSquare>& rays,

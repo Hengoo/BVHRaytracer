@@ -8,6 +8,8 @@
 #include "bvh.h"
 #include "../timing.h"
 
+#include "../glmUtil.h"
+
 //activates or deactives the timers for each ray
 #define doTimer false;
 
@@ -79,6 +81,72 @@ struct alignas(64) FastNode
 #else}
 		this->bounds = bounds;
 #endif
+}
+};
+
+template <unsigned nodeMemory, uint16_t workGroupSize >
+struct RefillStructure
+{
+	//this struct stores everything needed to start a wide intersection.
+	//the main purpose is to allow refilling the ray work list.
+
+	std::array<FastRay, workGroupSquare> rays;
+	//the pixel id of the rays in the "rays" array
+	std::array<uint32_t, workGroupSquare> rayId;
+	//result storage: triIndex is negative if nothing is hit
+	std::array<uint32_t, workGroupSquare> leafIndex;
+	std::array<int8_t, workGroupSquare> triIndex;
+
+	nanoSec timeTriangleTest;
+
+	//next nodeId for each ray. 40 is current max stack size. Negative id means leaf
+	//id 0 is root node
+	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+	//id of the current element in the stack we have to work on. 0 means we are finished
+	std::array< uint8_t, workGroupSquare>stackIndex;
+
+	//ray id list to keep track of what rays we need to do.
+	std::array<uint16_t, workGroupSquare> work1;
+	std::array<uint16_t, workGroupSquare> work2;
+
+	//precalculate the code for node traversal.
+	//the first bit signales if its reverse or not, and the number resulting from (code >> 1) is the axis
+	std::array<uint8_t, workGroupSquare > rayMajorAxis;
+
+	//number of noderays and leafrays so we how much to read in nodeWork and leafWork	
+	uint16_t nodeRays = workGroupSquare;
+	uint16_t leafRays = 0;
+	//same as above but for the next iteration.
+	uint16_t nodeRaysNext = 0;
+	uint16_t leafRaysNext = 0;
+
+	std::array<uint16_t, workGroupSquare>* currentWork = &work1;
+	std::array<uint16_t, workGroupSquare>* nextWork = &work2;
+
+	RefillStructure()
+	{
+		triIndex.fill(-1);
+		timeTriangleTest = nanoSec(0);
+		stack[0].fill(0);
+		stackIndex.fill(1);
+		std::iota(work1.begin(), work1.end(), 0);
+	}
+
+	void fillRayMajorAxis()
+	{
+		for (int i = 0; i < workGroupSquare; i++)
+		{
+			uint8_t code = maxAbsDimension(rays[i].direction);
+			if (rays[i].direction[code] <= 0)
+			{
+				code = (code << 1) + 1;
+			}
+			else
+			{
+				code = (code << 1);
+			}
+			rayMajorAxis[i] = code;
+		}
 	}
 };
 
@@ -104,8 +172,11 @@ public:
 
 	void intersectWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint32_t, workGroupSquare>& leafIndex,
 		std::array<int8_t, workGroupSquare>& triIndex, nanoSec& timeTriangleTest) const;
-	void  intersectSecondaryWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t,
+	void intersectSecondaryWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t,
 		workGroupSquare>& result, nanoSec& timeTriangleTest) const;
+
+	void intersectRefillWideAlternative(RefillStructure<nodeMemory, workGroupSize>& data, bool lastRun) const;
+	//void intersectRefillSecondaryWideAlternative(RefillStructure<nodeMemory, workGroupSquare>& data) const;
 
 	float averageBvhDepth;
 	uint32_t triangleCount;

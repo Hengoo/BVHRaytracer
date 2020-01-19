@@ -12,7 +12,7 @@ class FastRay
 {
 public:
 
-	//float distance;
+	//float distance;  refill renderer sets tMax to Nan if ray is finished
 	float tMax;
 
 	//ray : pos + time * distance
