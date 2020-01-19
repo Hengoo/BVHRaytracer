@@ -78,10 +78,10 @@ struct alignas(64) FastNode
 		{
 			this->bounds[i * nodeLeafPadding] = bounds[i];
 		}
-#else}
+#else
 		this->bounds = bounds;
 #endif
-}
+	}
 };
 
 template <unsigned nodeMemory, uint16_t workGroupSize >
