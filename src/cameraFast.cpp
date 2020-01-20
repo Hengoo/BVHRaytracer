@@ -205,7 +205,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 	//fillRenderInfo();
 	auto timeBeginRaytracer = getTime();
 
-	bool wideRefill = true;
+	bool wideRefill = false;
 
 	//similar performance compared to openMp versions, but openMp is more consistent (large difference)
 	//	std::for_each(std::execution::par_unseq, renderInfos.begin(), renderInfos.end(),
@@ -410,12 +410,15 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 	}
 	else
 	{
-		//frist "lazy" version, work for each thread is predetermined determined by threadId and max threadCount
+		//first "lazy" version, work for each thread is predetermined determined by threadId and max threadCount
 		int maxThreadCount = omp_get_max_threads();
+
+		//not sure if i use openMp correctly. It might be possible that it doesnt spawn max threads?
+		//in debug it also only uses thread 0...
 #pragma omp parallel
 		{
 			//TODO: remove debug prints
-			int tId = omp_get_thread_num();
+			int tId = omp_get_thread_num(); //<- this implementation doesnt work in debug because tId is always  0
 			int threadSum = (width / workGroupSize) * (height / workGroupSize);
 			int beginId = threadSum / maxThreadCount * tId;
 			int endId = threadSum / maxThreadCount * (tId + 1);
@@ -442,7 +445,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 
 			currentId++;
 			//half tells if we already have loaded half of the current block
-			bool half = false;
+			uint8_t half = 0;
 			bool lastRun = false;
 			//primary rays:
 			while (true)
@@ -454,11 +457,12 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				//could also reorder unfinished rays but i dont think that is necessary
 
 				//in order to store results i need to keep track of ray id. (will do this with a separate array)
-				
-				if (currentId > endId && half)
+
+				if (currentId >= endId && !half)
 				{
 					lastRun = true;
 				}
+
 				nodeManager.intersectRefillWideAlternative(dataStruct, lastRun);
 
 				//refill dataStruct
@@ -470,6 +474,11 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 				{
 					if (isnan(dataStruct.rays[j].tMax))
 					{
+						//check if not already written
+						if (image[dataStruct.rayId[j] * 4 + 0] != 0)
+						{
+							std::cerr << "why" << std::endl;
+						}
 						//read hit info
 						if (dataStruct.triIndex[j] >= 0)
 						{
@@ -491,8 +500,7 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 						if (!lastRun)
 						{
 							//reset ray:
-							int rayId = fillCount;
-							if (half) rayId += workGroupSquare / 2;
+							int rayId = fillCount + half * (workGroupSquare / 2);
 							glm::vec3 targetPos = getRayTargetPosition(
 								(-tmp0 - (rayId / workGroupSize)),
 								(tmp1 + (rayId % workGroupSize)), cameraId);
@@ -523,11 +531,8 @@ std::tuple<float, float, float> CameraFast::renderImage(const bool saveImage, co
 					std::cerr << "was not able to refill correct ammount of rays" << std::endl;
 				}
 
-				half = !half;
-				if (!half)
-				{
-					currentId++;
-				}
+				currentId += half;
+				half = (half + 1) % 2;
 
 			}
 			if (dataStruct.nodeRays != 0)
