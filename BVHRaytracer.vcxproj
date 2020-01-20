@@ -40,6 +40,7 @@
     <ClInclude Include="src\accelerationStructure\fastNodeManager.h" />
     <ClInclude Include="src\accelerationStructure\node.h" />
     <ClInclude Include="src\accelerationStructure\nodeAnalysis.h" />
+    <ClInclude Include="src\cacheSimulator.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\cameraData.h" />
     <ClInclude Include="src\color.h" />
