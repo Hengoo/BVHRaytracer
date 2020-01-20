@@ -985,11 +985,11 @@ private:
 		}
 		else std::cerr << "Unable to open file for work group analysis" << std::endl;
 
-		//now ammount of unique nodes and leafs loaded per workgroup + average and min maxof what would have been loaded without wide
+		//now ammount of unique nodes and leafs loaded per workgroup + average and min max of what would have been loaded without wide
 		std::ofstream fileUniqueWork(path + "/" + sizeName + "/" + name + problem + cameraName + "_WorkGroupUniqueWork.txt");
 		if (fileUniqueWork.is_open())
 		{
-			//IMPORTANT: those values are average PER ray for each workgroup
+			//The values are per workGroup
 			fileUniqueWork << "loadedPrimaryNodes, loadedPrimaryLeafs, loadedPrimaryNodesMax, loadedPrimaryLeafsMax, loadedPrimaryNodesMin, loadedPrimaryLeafsMin, ";
 			fileUniqueWork << "loadedSecondaryNodes, loadedSecondaryLeafs, loadedSecondaryNodesMax, loadedSecondaryLeafsMax, loadedSecondaryNodesMin, loadedSecondaryLeafsMin, ";
 			fileUniqueWork << "loadedWidePrimaryNodes, loadedWidePrimaryLeafs, loadedWideSecondaryNodes, loadedWideSecondaryLeafs" << std::endl;

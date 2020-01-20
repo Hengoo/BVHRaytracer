@@ -379,16 +379,16 @@ def makeWorkGroupUniqueAnalysis(filePath, outName, workGroupSize):
 	loadedPrimaryNodesMax = loadedPrimaryNodesMax[p]
 	loadedPrimaryNodesMin = loadedPrimaryNodesMin[p]
 	#loadedWidePrimaryNodes = loadedWidePrimaryNodes[p]
-	npArrayAnalysis(loadedPrimaryNodes, "loadedPrimaryNodes")
-	npArrayAnalysis(loadedWidePrimaryNodes, "loadedWidePrimaryNodes")
+	npArrayAnalysis(loadedPrimaryNodes, "loadedPrimaryNodes	")
+	npArrayAnalysis(loadedWidePrimaryNodes, "loadedWidePrimaryNodes	")
 
 	p = (loadedPrimaryLeafs).argsort()
 	loadedPrimaryLeafs = loadedPrimaryLeafs[p]
 	loadedPrimaryLeafsMax = loadedPrimaryLeafsMax[p]
 	loadedPrimaryLeafsMin = loadedPrimaryLeafsMin[p]
 	#loadedWidePrimaryLeafs = loadedWidePrimaryLeafs[p]
-	npArrayAnalysis(loadedPrimaryLeafs, "loadedPrimaryLeafs")
-	npArrayAnalysis(loadedWidePrimaryLeafs, "loadedWidePrimaryLeafs")
+	npArrayAnalysis(loadedPrimaryLeafs, "loadedPrimaryLeafs	")
+	npArrayAnalysis(loadedWidePrimaryLeafs, "loadedWidePrimaryLeafs	")
 
 	p = (loadedSecondaryNodes).argsort()
 	loadedSecondaryNodes = loadedSecondaryNodes[p]
@@ -396,7 +396,7 @@ def makeWorkGroupUniqueAnalysis(filePath, outName, workGroupSize):
 	loadedSecondaryNodesMax = loadedSecondaryNodesMax[p]
 	#loadedWideSecondaryNodes = loadedWideSecondaryNodes[p]
 
-	npArrayAnalysis(loadedSecondaryNodes, "loadedSecondaryNodes")
+	npArrayAnalysis(loadedSecondaryNodes, "loadedSecondaryNodes	")
 	npArrayAnalysis(loadedWideSecondaryNodes, "loadedWideSecondaryNodes")
 
 	p = (loadedSecondaryLeafs).argsort()
@@ -404,7 +404,7 @@ def makeWorkGroupUniqueAnalysis(filePath, outName, workGroupSize):
 	loadedSecondaryLeafsMax = loadedSecondaryLeafsMax[p]
 	loadedSecondaryLeafsMin = loadedSecondaryLeafsMin[p]
 	#loadedWideSecondaryLeafs = loadedWideSecondaryLeafs[p]
-	npArrayAnalysis(loadedSecondaryLeafs, "loadedSecondaryLeafs")
+	npArrayAnalysis(loadedSecondaryLeafs, "loadedSecondaryLeafs	")
 	npArrayAnalysis(loadedWideSecondaryLeafs, "loadedWideSecondaryLeafs")
 
 	#sort the wide arrays by themself so we can at least see anything
@@ -561,7 +561,8 @@ def perRayPlot(filePath):
 
 def npArrayAnalysis(a, title):
 	#some analysis for me: min, max, sd and variance, median, average
-	print(title +":  mean: " + str(a.mean()) + " median: " + str(np.median(a)) + " min: " + str(a.min()) + " max: " + str(a.max()) + " sd: " + str(a.std()) + " var: " + str(a.var()))
+	text = ':	mean: {:0.3f}	median: {:1.3f}	min: {:2.3f}	max: {:3.3f}	sd: {:4.3f}	var: {:5.3f}'.format(a.mean(), np.median(a), a.min(),a.max(), a.std(), a.var())
+	print(title + text)
 
 def rayTotalAnalysis():
 	def rayTotalAnalysisHelperComparison(ax, totalTimeV0, totalTimeV1, leaf, branch, leafSize, width):
@@ -760,13 +761,13 @@ def rayTotalAnalysisPadding():
 
 #makeWorkGroupWiskerPlots((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), "Primary N4L4S", 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
 
-#Analysis about workgroup per step stuff and
+#Analysis about workgroup per step stuff and  -> per step unique loaded nodes is not that usefull since i average over alive rays. not sure what to do else
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_Old"))
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
 
 #general workgroup unique node analysis (comparison to single ray traversal)
-makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", "c0", 16)
-makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", "c1", 16)
+makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", "c0", 16)
+makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", "c1", 16)
 
 
 #perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
