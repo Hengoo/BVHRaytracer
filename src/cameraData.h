@@ -812,8 +812,8 @@ private:
 			//when what work is done, and the number of unique nodes / leafs that are used. For primary and secondary ray each
 			//in addition also how many rays terminate at each step(avg).
 
-			fileWorkGroup << "stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique, avgPrimaryRayTermination, primaryNodeWorkMax, primaryNodeWorkMin, primaryLeafWorkMax, primaryLeafWorkMin"
-				<< " avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination, secondaryNodeWorkMax, secondaryNodeWorkMin, secondaryLeafWorkMax, secondaryLeafWorkMin" << std::endl;
+			fileWorkGroup << "stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique, avgPrimaryRayTermination, primaryNodeWorkMax, primaryNodeWorkMin, primaryLeafWorkMax, primaryLeafWorkMin, "
+				<< "avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork, avgSecondaryLeafUnique, avgSecondaryRayTermination, secondaryNodeWorkMax, secondaryNodeWorkMin, secondaryLeafWorkMax, secondaryLeafWorkMin" << std::endl;
 
 			//get max size of nodeWorkPerStep:
 			int maxSize = 0;

@@ -480,6 +480,105 @@ def makeWorkGroupUniqueAnalysis(filePath, outName, workGroupSize):
 	plt.savefig(outputFolder + "UniqueLoadedAnalysis" + outName + "s"+ str(workGroupSize) + ".pgf")
 	endPlot()
 
+def workGroupUniqueLoadedCachelines():
+	filePath0 = inputFolder + "WorkGroups/WorkGroupSize_16_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt"
+	filePath1 = inputFolder + "WorkGroups/WorkGroupSize_16_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"
+	workGroupSize = 16
+	workSquare = workGroupSize * workGroupSize
+	#additional analysis about unique nodes per workgroup, not per step:
+	(loadedPrimaryNodes, loadedPrimaryLeafs, loadedPrimaryNodesMax, loadedPrimaryLeafsMax, loadedPrimaryNodesMin,
+		loadedPrimaryLeafsMin, loadedSecondaryNodes, loadedSecondaryLeafs, loadedSecondaryNodesMax, loadedSecondaryLeafsMax,
+		loadedSecondaryNodesMin, loadedSecondaryLeafsMin, loadedWidePrimaryNodes, loadedWidePrimaryLeafs, loadedWideSecondaryNodes,
+		loadedWideSecondaryLeafs) = np.loadtxt(filePath0, delimiter=',', unpack=True, skiprows=1)
+	x = np.arange(len(loadedPrimaryNodes))
+
+	#Those values are hardcoded:
+	nodeCachelines = 2
+	leafCachelines = nodeCachelines + 3
+
+	primaryLoadedCachelines = (loadedPrimaryNodes * nodeCachelines + loadedPrimaryLeafs * leafCachelines).mean() / workSquare
+	secondaryLoadedCachelines = (loadedSecondaryNodes * nodeCachelines + loadedSecondaryLeafs * leafCachelines).mean() / workSquare
+
+	print("Single ray traveral, cachelines loaded per ray")
+	print("average primary loaded Cachelines " + str(primaryLoadedCachelines))
+	print("average secondary loaded Cachelines " + str(secondaryLoadedCachelines))
+
+	maxPrimaryLoadedCachelines = (loadedPrimaryNodesMax * nodeCachelines + loadedPrimaryLeafsMax * leafCachelines).max()
+	maxSecondaryLoadedCachelines = (loadedSecondaryNodesMax * nodeCachelines + loadedSecondaryLeafsMax * leafCachelines).max()
+	
+	print("Max primary loaded Cachelines " + str(maxPrimaryLoadedCachelines))
+	print("Max secondary loaded Cachelines " + str(maxSecondaryLoadedCachelines))
+
+	print("Wide ray traveral, cachelines loaded workgroup Per step")
+
+	widePrimaryLoadedCachelines = loadedWidePrimaryNodes * nodeCachelines + loadedWidePrimaryLeafs * leafCachelines
+	wideSecondaryLoadedCachelines = loadedWideSecondaryNodes * nodeCachelines + loadedWideSecondaryLeafs * leafCachelines
+
+	#npArrayAnalysis(widePrimaryLoadedCachelines, "widePrimaryLoadedCachelines")
+	#npArrayAnalysis(wideSecondaryLoadedCachelines, "secondaryWideLoadedCachelines")
+	(stepId, avgPrimaryNodeWork, avgPrimaryNodeUnique, avgPrimaryLeafWork, avgPrimaryLeafUnique,
+		avgPrimaryRayTermination, primaryNodeWorkMax, primaryNodeWorkMin, primaryLeafWorkMax,
+		primaryLeafWorkMin, avgSecondaryNodeWork, avgSecondaryNodeUnique, avgSecondaryLeafWork,
+		avgSecondaryLeafUnique, avgSecondaryRayTermination, secondaryNodeWorkMax,
+		secondaryNodeWorkMin, secondaryLeafWorkMax, secondaryLeafWorkMin) = np.loadtxt(filePath1, delimiter=',', unpack=True, skiprows=1)
+	
+	#plot should show how many cachelines are loaded per step.
+
+	avgPrimaryNodeLoadedCachelines = avgPrimaryNodeUnique * nodeCachelines
+	avgPrimaryLeafLoadedCachelines = avgPrimaryLeafUnique * leafCachelines
+	avgSecondaryNodeLoadedCachelines = avgSecondaryNodeUnique * nodeCachelines
+	avgSecondaryLeafLoadedCachelines = avgSecondaryLeafUnique * leafCachelines
+
+	maxPrimaryNodeLoadedCachelines = primaryNodeWorkMax * nodeCachelines 
+	maxPrimaryLeafLoadedCachelines =  primaryLeafWorkMax * leafCachelines
+	maxSecondaryNodeLoadedCachelines = secondaryNodeWorkMax * nodeCachelines
+	maxSecondaryLeafLoadedCachelines =  secondaryLeafWorkMax * leafCachelines
+
+	maxAvgPrim = max(avgPrimaryNodeLoadedCachelines.max() , avgPrimaryLeafLoadedCachelines.max())
+	maxAvgSec = max(avgSecondaryNodeLoadedCachelines.max() , avgSecondaryLeafLoadedCachelines.max())
+
+	maxPrim = max(maxPrimaryNodeLoadedCachelines.max() , maxPrimaryLeafLoadedCachelines.max())
+	maxSec = max(maxSecondaryNodeLoadedCachelines.max() , maxSecondaryLeafLoadedCachelines.max())
+
+	print("Wide: Average Max primary loaded Cachelines " + str(maxAvgPrim))
+	print("Wide: Average Max secondary loaded Cachelines " + str(maxAvgSec))
+
+	print("Wide: Max primary loaded Cachelines " + str(maxPrim))
+	print("Wide: Max secondary loaded Cachelines " + str(maxSec))
+
+	# plot to show how many cachelines are loaded for what.
+	# add single traversal per ray average as reference line?
+
+	plt.plot(stepId, avgPrimaryNodeLoadedCachelines, label = "Avg Primary Node loaded cachelines")
+	plt.plot(stepId, avgPrimaryLeafLoadedCachelines, label = "Avg Primary Leaf loaded cachelines")
+	plt.plot(stepId, avgSecondaryNodeLoadedCachelines, label = "Avg Secondary Node loaded cachelines")
+	plt.plot(stepId, avgSecondaryLeafLoadedCachelines, label = "Avg Secondary Leaf loaded cachelines")
+	plt.axhline(linewidth=1, color='0.5')
+
+	plt.ylabel("loaded cachelines")
+	plt.xlabel("steps")
+
+	plt.axhline(y=primaryLoadedCachelines, linewidth=1, color='0.1')
+	plt.axhline(y=secondaryLoadedCachelines, linewidth=1, color='0')
+
+	plt.legend()
+	endPlot()
+
+	plt.plot(stepId, maxPrimaryNodeLoadedCachelines, label = "Max Primary Node loaded cachelines")
+	plt.plot(stepId, maxPrimaryLeafLoadedCachelines, label = "Max Primary Leaf loaded cachelines")
+	plt.plot(stepId, maxSecondaryNodeLoadedCachelines, label = "Max Secondary Node loaded cachelines")
+	plt.plot(stepId, maxSecondaryLeafLoadedCachelines, label = "Max Secondary Leaf loaded cachelines")
+	plt.axhline(linewidth=1, color='0.5')
+	
+	plt.ylabel("loaded cachelines")
+	plt.xlabel("steps")
+
+	plt.axhline(y=maxPrimaryLoadedCachelines, linewidth=1, color='0.1')
+	plt.axhline(y=maxSecondaryLoadedCachelines, linewidth=1, color='0')
+
+	plt.legend()
+	endPlot()
+
 def perRayPlot(filePath):
 	plt.figure(figsize=(15,7))
 	plt.suptitle("N4L4 workGroup 16")
@@ -766,9 +865,10 @@ def rayTotalAnalysisPadding():
 #makeWorkGroupAnalysis((inputFolder + "WorkGroups/WorkGroupSize_" , "_Version_1/amazonLumberyardInterior_b4_l4_c0_WorkGroupData.txt"), 16, ("N4L4S" ,"WorkGroupAnalysisC0_New"))
 
 #general workgroup unique node analysis (comparison to single ray traversal)
-makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", "c0", 16)
-makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", "c1", 16)
+#makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", "c0", 16)
+#makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", "c1", 16)
 
+workGroupUniqueLoadedCachelines()
 
 #perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
 

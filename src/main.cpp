@@ -5,7 +5,7 @@
 //currently for fastnode sizeof. remove later when im finished with fastNode
 #include "accelerationStructure/fastNodeManager.h"
 
-//#include "primitives/triangle.h"
+#include "cacheSimulator.h"
 
 /*
 	general performance things / todo:
@@ -34,6 +34,31 @@ static void testIspc()
 
 }*/
 
+bool cacheTests()
+{
+	CacheSimulator cache = CacheSimulator(256);
+
+	int extraCount = 500000;
+	for (int i = 0; i < 256 * 100; i++)
+	{
+		if (i % 100 == 0)
+		{
+			std::cout << "step: " << i << ", hitRatio: " << (float)cache.cacheHits[0] / cache.loads[0] << std::endl;
+			cache.clearCounter();
+		}
+
+		extraCount++;
+		int loadId = i % 100;
+		cache.load((void*)(64 * loadId));
+		int randId = rand() % 512;
+		cache.load((void*)(64 * randId));
+		//if (i % 2 == 0)
+		//{
+		//	cache.load((void*)((extraCount) * 64));
+		//}
+	}
+}
+
 int main()
 {
 	/*
@@ -41,12 +66,14 @@ int main()
 	return EXIT_SUCCESS;
 	*/
 
+	std::cout << "sizes of the nodes:." << std::endl;
+	std::cout << "Node " << 4 << ": " << sizeof(FastNode<4>) << std::endl;
+	std::cout << "Node " << 8 << ": " << sizeof(FastNode<8>) << std::endl;
+	std::cout << "Node " << 12 << ": " << sizeof(FastNode<12>) << std::endl;
+	std::cout << "Node " << 16 << ": " << sizeof(FastNode<16>) << std::endl;
+
+	std::cout << "Extra leaf data: LeafSize * 9 * 4 * padding " << std::endl;
 	/*
-	std::cout << "sizes of the nodes: FIX if its not 128 256 ..." << std::endl;
-	std::cout << sizeof(FastNode<4>) << std::endl;
-	std::cout << sizeof(FastNode<8>) << std::endl;
-	std::cout << sizeof(FastNode<12>) << std::endl;
-	std::cout << sizeof(FastNode<16>) << std::endl;
 	std::cout << sizeof(FastNode<24>) << std::endl;
 	std::cout << sizeof(FastNode<32>) << std::endl;
 	std::cout << sizeof(FastNode<40>) << std::endl;

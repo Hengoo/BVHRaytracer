@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <array>
 #include <numeric>
 #include <bitset>
 
