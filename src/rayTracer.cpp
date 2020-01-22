@@ -88,9 +88,9 @@ if constexpr (gangS == 4)												\
 
 #define startPerfRender5(gangS, branchMem, workGroupS) 	{												\
 	std::string problemPrefix = "_mb" + std::to_string(branchMem) + "_ml" + std::to_string(leafMemory);	\
-	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory);								\
+	FastNodeManager<gangS, branchMem, workGroupS> manager(bvh, leafMemory, cache);								\
 	CameraFast c(pathPerf, name, problem, problemPrefix, workGroupS, saveDistance, wideRender, cameraPositions, cameraTargets, xRes, yRes);			\
-	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute, wideAlternative, saveRayTimes);						\
+	c.renderImages(saveImage, manager, ambientSampleCount, ambientDistance, mute, wideAlternative, saveRayTimes, doCacheAnalysis);						\
 }
 
 
@@ -402,7 +402,7 @@ void RayTracer::run()
 								std::cerr << "failed to create performance workGroup scene directory" << std::endl;
 							}
 						}
-						
+
 
 					}
 					else
@@ -653,6 +653,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 		for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
 		{
+			CacheSimulator cache(256);
 			//macro that manages the calling of the right renderer (thx templates...)
 			if (!renderAllOptions)
 			{
@@ -808,6 +809,7 @@ void RayTracer::readConfig()
 				readBool(line, "wideRender", wideRender);
 				readBool(line, "wideAlternative", wideAlternative);
 				readBool(line, "renderAllOptions", renderAllOptions);
+				readBool(line, "doCacheAnalysis", doCacheAnalysis);
 			}
 		}
 	}

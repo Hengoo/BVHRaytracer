@@ -34,7 +34,7 @@ static void testIspc()
 
 }*/
 
-bool cacheTests()
+void cacheTests()
 {
 	CacheSimulator cache = CacheSimulator(256);
 
@@ -43,8 +43,8 @@ bool cacheTests()
 	{
 		if (i % 100 == 0)
 		{
-			std::cout << "step: " << i << ", hitRatio: " << (float)cache.cacheHits[0] / cache.loads[0] << std::endl;
-			cache.clearCounter();
+			std::cout << "step: " << i << ", hitRatio: " << (float)cache.cacheHits[0] / cache.cacheLoads[0] << std::endl;
+			cache.clearAllCounter();
 		}
 
 		extraCount++;
@@ -65,6 +65,8 @@ int main()
 	testIspc();
 	return EXIT_SUCCESS;
 	*/
+
+	//cacheTests();
 
 	std::cout << "sizes of the nodes:." << std::endl;
 	std::cout << "Node " << 4 << ": " << sizeof(FastNode<4>) << std::endl;

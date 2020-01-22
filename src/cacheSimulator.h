@@ -6,6 +6,7 @@
 #include <bitset>
 #include <array>
 #include <omp.h>
+#include <numeric>
 
 //This shouldnt change but not 100% sure
 #define pointerType uint32_t
@@ -47,15 +48,13 @@ class Plru
 
 	std::array<uint32_t, 8> cacheLines;
 
-
-
 	void updateTree(int cacheId)
 	{
 		level1 = !((cacheId & 4) >> 2);
 		level2[((cacheId & 4) >> 2)] = !((cacheId & 2) >> 1);
 		level3[((cacheId & 4) >> 1) | ((cacheId & 2) >> 1)] = !(cacheId & 1);
 	}
-	int getEvictId()
+	int getEvictionId()
 	{
 		int result = level1 << 2;
 		result |= level2[level1] << 1;
@@ -88,11 +87,7 @@ public:
 		else
 		{
 			//miss: update cacheline and bits
-			int evictId = getEvictId();
-			if (3452816845 != cacheLines[evictId])
-			{
-				int abc = 0;
-			}
+			int evictId = getEvictionId();
 			cacheLines[evictId] = address;
 			updateTree(evictId);
 			return false;
@@ -106,10 +101,12 @@ class Cache8WaySet
 
 	std::vector<Plru> storage;
 	int bitsForIndex;
+	int cacheSize;
 	pointerType mask;
 
 public:
 	Cache8WaySet(int cacheSize)
+		:cacheSize(cacheSize)
 	{
 		storage.resize(cacheSize / 8);
 		//From the log2(#Plru) bits put in correct Plru
@@ -119,7 +116,13 @@ public:
 
 	bool load(pointerType address)
 	{
-		return storage[address & mask].load(address);
+		return storage[address & mask].load(address >> bitsForIndex);
+	}
+
+	void reset()
+	{
+		storage.clear();
+		storage.resize(cacheSize / 8);
 	}
 };
 
@@ -135,33 +138,98 @@ class CacheSimulator
 	//std::vector<std::stack<pointerType>> cache;
 	//one thread per cache, but would be nice if it also supports two threads per cache
 public:
-	std::vector<uint64_t> loads;
+	std::vector<uint64_t> cacheLoads;
 	std::vector<uint64_t> cacheHits;
 
 	CacheSimulator(int cacheSize = 256)
-		:cache(Cache8WaySet(cacheSize)), threadCount()
+		:cache(Cache8WaySet(cacheSize))
 	{
-		int threadCount = omp_get_max_threads();
-		loads.resize(threadCount);
+		threadCount = omp_get_max_threads();
+		cacheLoads.resize(threadCount);
 		cacheHits.resize(threadCount);
+		std::cerr << threadCount << std::endl;
 	}
 
-	void load(void* pointer)
+	//simultes cache load.
+	inline void load(void* pointer)
 	{
+		//the method should be optimized away when doDacheSimulator is not defined.
 		//cast pointer into type we can do math with
 		pointerType p = (pointerType)pointer;
-		//divide by 64 (cacheLine size) to get the cacheLineId
-		pointerType cacheId = p / 64;
+		//ignore the first 6 bits to get cache line Id
+		pointerType cacheId = p >> 6;
 
 		int tId = omp_get_thread_num();
-		loads[tId]++;
+		cacheLoads[tId]++;
 		cacheHits[tId] += cache.load(cacheId);
 	}
 
-
-	void clearCounter()
+	//simultes cache load.
+	inline void load(pointerType pointer)
 	{
-		std::fill(loads.begin(), loads.end(), 0);
+		//the method should be optimized away when doDacheSimulator is not defined.
+		//ignore the first 6 bits to get cache line Id
+		pointerType cacheId = pointer >> 6;
+
+		int tId = omp_get_thread_num();
+		cacheLoads[tId]++;
+		cacheHits[tId] += cache.load(cacheId);
+	}
+
+	//writes cache results of THIS THREAD in a file
+	inline void writeThreadResult()
+	{
+		int tId = omp_get_thread_num();
+
+		std::cerr << "Thread: " << tId << ": Cache hitrate: " << cacheHits[tId] / (float)cacheLoads[tId] << std::endl;
+		cacheLoads[tId] = 0;
+		cacheHits[tId] = 0;
+
+		//write to what file?
+
+		//reset counters
+		cacheLoads[tId] = 0;
+		cacheHits[tId] = 0;
+	}
+
+	//writes all cache results
+	inline void writeAllResult()
+	{
+		std::cerr << threadCount << std::endl;
+		std::cerr << "total sum over all hits: " << std::accumulate(cacheLoads.begin(), cacheLoads.end(), 0ULL) << std::endl;
+		for (int tId = 0; tId < threadCount; tId++)
+		{
+			std::cerr << "Thread: " << tId << ": Cache hitrate: " << cacheHits[tId] / (float)cacheLoads[tId] << std::endl;
+			cacheLoads[tId] = 0;
+			cacheHits[tId] = 0;
+		}
+		
+
+		//write to what file?
+
+		//reset counters
+		resetEverything();
+	}
+
+	inline void resetCounter()
+	{
+		for (int i = 0; i < threadCount; i++)
+		{
+			cacheLoads[i] = 0;
+			cacheHits[i] = 0;
+		}
+	}
+
+	//resets counters and cache
+	inline void resetEverything()
+	{
+		cache.reset();
+		resetCounter();
+	}
+
+	void clearAllCounter()
+	{
+		std::fill(cacheLoads.begin(), cacheLoads.end(), 0);
 		std::fill(cacheHits.begin(), cacheHits.end(), 0);
 	}
 };

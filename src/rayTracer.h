@@ -36,6 +36,7 @@ class RayTracer
 	bool doNodeMemoryTest;
 	bool doLeafMemoryTest;
 	bool saveRayTimes;
+	bool doCacheAnalysis;
 
 	//true -> take new axis and sort for each split. False -> only do it once in the beginning
 	bool sortEachSplit;
