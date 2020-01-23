@@ -32,6 +32,9 @@ doNodeMemoryTests = false
 saveRayTimes = false
 doCacheAnalysis = true
 
+#Number of cachelines:
+cacheSize = 256
+
 #Number of samples for ambient occlusion
 ambientSampleCount = 1
 

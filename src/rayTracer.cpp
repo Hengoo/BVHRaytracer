@@ -165,6 +165,12 @@ void RayTracer::run()
 		std::cout << "do Workgroup Analysis" << std::endl;
 	}
 
+	if (cacheSize % 8 != 0)
+	{
+		std::cerr << "cacheSize has to be divideable by 8 due to the 8 way  set associative cache" << std::endl;
+		return;
+	}
+
 	if (doPerformanceTest)
 	{
 		std::cout << "press button to continue performance test (set high periority fist)" << std::endl;
@@ -653,7 +659,7 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 		for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
 		{
-			CacheSimulator cache(256);
+			CacheSimulator cache(cacheSize);
 			//macro that manages the calling of the right renderer (thx templates...)
 			if (!renderAllOptions)
 			{
@@ -772,6 +778,8 @@ void RayTracer::readConfig()
 
 				readInt(line, "xRes", xRes);
 				readInt(line, "yRes", yRes);
+
+				readInt(line, "cacheSize", cacheSize);
 
 				//scenario has an int for each scenario.
 				auto res = line.find("scenario", 0);

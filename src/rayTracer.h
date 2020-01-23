@@ -70,6 +70,8 @@ class RayTracer
 
 	int workGroupSize;
 
+	int cacheSize;
+
 public:
 	void run();
 

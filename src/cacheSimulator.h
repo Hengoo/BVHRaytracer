@@ -147,7 +147,6 @@ public:
 		threadCount = omp_get_max_threads();
 		cacheLoads.resize(threadCount);
 		cacheHits.resize(threadCount);
-		std::cerr << threadCount << std::endl;
 	}
 
 	//simultes cache load.
@@ -195,15 +194,19 @@ public:
 	//writes all cache results
 	inline void writeAllResult()
 	{
-		std::cerr << threadCount << std::endl;
-		std::cerr << "total sum over all hits: " << std::accumulate(cacheLoads.begin(), cacheLoads.end(), 0ULL) << std::endl;
+		uint64_t sumLoad = std::accumulate(cacheLoads.begin(), cacheLoads.end(), 0ULL);
+		uint64_t sumHit = std::accumulate(cacheHits.begin(), cacheHits.end(), 0ULL);
+
+		std::cerr << "total sum of all loads: " << sumLoad
+			<< ", Total Hits: " << sumHit
+			<< ", Total Cache miss: " << sumLoad - sumHit << std::endl;
 		for (int tId = 0; tId < threadCount; tId++)
 		{
 			std::cerr << "Thread: " << tId << ": Cache hitrate: " << cacheHits[tId] / (float)cacheLoads[tId] << std::endl;
 			cacheLoads[tId] = 0;
 			cacheHits[tId] = 0;
 		}
-		
+
 
 		//write to what file?
 

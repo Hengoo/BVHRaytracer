@@ -25,6 +25,8 @@ class FastRay;
 //padding. padding of 1 means no padding, 2 doubles everything, and so on
 #define nodeLeafPadding 1
 
+//#define onlyNodeLeafCache
+
 template  <unsigned nodeMemory>
 struct alignas(64) FastNode
 {
@@ -390,7 +392,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectRefillWideAl
 				int ispcResult;
 				int loopCount = getLeafLoopCount(node.primIdBegin);
 				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
-				if constexpr(doCache)
+				if constexpr (doCache)
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult != -1)
@@ -509,7 +511,16 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				int loopCount = getNodeLoopCount(node.bounds);
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&nodeWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif // onlyNodeLeafCache
+
 					nodeCacheLoad((void*)&node);
+				}
 				if (ispcResult)
 				{
 					if (rayMajorAxis[rayId] & 1)
@@ -594,8 +605,16 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				int ispcResult;
 				int loopCount = getLeafLoopCount(node.primIdBegin);
 				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
-				if constexpr(doCache)
+				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&leafWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
+				}
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult != -1)
 				{
@@ -689,7 +708,15 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				int loopCount = getNodeLoopCount(node.bounds);
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&leafWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif
 					nodeCacheLoad((void*)&node);
+				}
 				if (ispcResult)
 				{
 					//this loop is faster with constant (nodememory) than with branching factor for N4L4.
@@ -748,6 +775,16 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				bool ispcResult;
 				int loopCount = getLeafLoopCount(node.primIdBegin);
 				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
+				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&leafWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif
+					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
+				}
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult)
 				{
@@ -851,7 +888,15 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				int	loopCount = getNodeLoopCount(node.bounds);
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&leafWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif
 					nodeCacheLoad((void*)&node);
+				}
 				if (ispcResult)
 				{
 					if (rayMajorAxis[rayId] & 1)
@@ -936,8 +981,16 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				int ispcResult;
 				int loopCount = getLeafLoopCount(node.primIdBegin);
 				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
-				if constexpr(doCache)
+				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&leafWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
+				}
 				//it returns the hit id -> -1 = no hit
 				if (ispcResult != -1)
 				{
@@ -1042,7 +1095,15 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				int loopCount = getNodeLoopCount(node.bounds);
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&leafWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif
 					nodeCacheLoad((void*)&node);
+				}
 				if (ispcResult)
 				{
 					//this loop is faster with constant (nodememory) than with branching factor for N4L4.
@@ -1099,6 +1160,16 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				bool ispcResult;
 				int loopCount = getLeafLoopCount(node.primIdBegin);
 				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
+				if constexpr (doCache)
+				{
+#ifndef onlyNodeLeafCache
+					//cache.load((void*)&leafWork[i]);
+					cache.load((void*)&ray);
+					//cache.load((void*)&stackIndex[rayId]);
+					cache.load((void*)&stack[stackIndex[rayId]]);
+#endif
+					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
+				}
 				if (ispcResult)
 				{
 					result[rayId] ++;
@@ -1162,6 +1233,11 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 	{
 		//get current id (most recently added because we do depth first)
 		auto& tup = nodeStack[--stackIndex];
+
+#ifndef onlyNodeLeafCache
+		cache.load((void*) & tup);
+#endif
+
 		if (std::get<1>(tup) > ray.tMax)
 		{
 			continue;
@@ -1176,8 +1252,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 			int ispcResult;
 			int loopCount = getLeafLoopCount(node.primIdBegin);
 			callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
-			if constexpr(doCache)
-leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
+			if constexpr (doCache)
+				leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 			//it returns the hit id -> -1 = no hit
 			if (ispcResult != -1)
 			{
@@ -1255,6 +1331,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 		//get current id (most recently added because we do depth first)
 		const FastNode<nodeMemory>& node = compactNodes[nodeStack[--stackIndex]];
 
+#ifndef onlyNodeLeafCache
+		cache.load((void*)&node);
+#endif
 		if (isnan(node.bounds[0]))
 		{
 #if doTimer
@@ -1264,8 +1343,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 			int ispcResult;
 			int loopCount = getLeafLoopCount(node.primIdBegin);
 			callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
-			if constexpr(doCache)
-leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
+			if constexpr (doCache)
+				leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 			//it returns the hit id -> -1 = no hit
 			if (ispcResult != -1)
 			{
@@ -1341,7 +1420,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 	{
 		//get current id (most recently added because we do depth first)
 		const FastNode<nodeMemory>& node = compactNodes[nodeStack[--stackIndex]];
-
+#ifndef onlyNodeLeafCache
+		cache.load((void*)&node);
+#endif
 		if (isnan(node.bounds[0]))
 		{
 #if doTimer
@@ -1350,6 +1431,8 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 			bool ispcResult;
 			int loopCount = getLeafLoopCount(node.primIdBegin);
 			callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
+			if constexpr (doCache)
+				leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 			if (ispcResult)
 			{
 				//we dont care about exact result for shadowrays (could do other ispc intersection for it
