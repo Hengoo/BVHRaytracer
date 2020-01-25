@@ -25,7 +25,7 @@ class FastRay;
 //padding. padding of 1 means no padding, 2 doubles everything, and so on
 #define nodeLeafPadding 1
 
-#define onlyNodeLeafCache true
+#define onlyNodeLeafCache false
 
 template  <unsigned nodeMemory>
 struct alignas(64) FastNode

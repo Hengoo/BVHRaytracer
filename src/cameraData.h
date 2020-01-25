@@ -353,10 +353,12 @@ public:
 			{
 				for (int j = 0; j < workGroupSquare; j++)
 				{
+					int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
 					RenderInfo info(
-						((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
+						((i * workGroupSize) % width - width / 2.f) + tmpWidth,
 						-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
-						(i * workGroupSize) % width + (j % workGroupSize) + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width);
+						(i * workGroupSize) % width + tmpWidth + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width);
+
 					int realIndex = i * workGroupSquare + j;
 					glm::vec3 targetPos = getRayTargetPosition(info, cameraId);
 					auto ray = Ray(positions[cameraId], targetPos - positions[cameraId], bvh);
@@ -463,13 +465,15 @@ public:
 				//prepare rays for render chunk
 				std::vector<Ray> rays(workGroupSquare);
 
+
 				int tmp0 = ((i * workGroupSize) / width) * workGroupSize - height / 2;
 				int tmp1 = ((i * workGroupSize) % width - width / 2);
 				for (int j = 0; j < workGroupSquare; j++)
 				{
+					int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
 					glm::vec3 targetPos = getRayTargetPosition(
 						(-tmp0 - (j / workGroupSize)),
-						(tmp1 + (j % workGroupSize)), cameraId);
+						(tmp1 + tmpWidth), cameraId);
 					rays[j] = Ray(positions[cameraId], targetPos - positions[cameraId], bvh);
 				}
 
@@ -521,7 +525,8 @@ public:
 							ambientResult[j] ++;
 						}
 
-						int id = (i * workGroupSize) % width + (j % workGroupSize) + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width;
+						int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
+						int id = (i * workGroupSize) % width + tmpWidth + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width;
 						collectSecondaryRayData(secondaryRays[j], id);
 					}
 				}
@@ -529,7 +534,8 @@ public:
 				//write image
 				for (int j = 0; j < workGroupSquare; j++)
 				{
-					int id = (i * workGroupSize) % width + (j % workGroupSize) + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width;
+					int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
+					int id = (i * workGroupSize) % width + tmpWidth + (((i * workGroupSize) / width) * workGroupSize + (j / workGroupSize)) * width;
 
 					float factor = 1 - (ambientResult[j] / (float)ambientSampleCount);
 					//factor = rays[j].tMax / 100.0f;

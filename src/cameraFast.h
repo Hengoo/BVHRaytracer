@@ -166,15 +166,36 @@ public:
 		//This result is good because dynamic is the shedule that is most suited for for out problem since every ray can take differently long
 	//#pragma omp parallel for schedule(dynamic, 4)
 
+
+		std::vector<std::vector<float>>hitRate(8);
+		std::vector<std::vector<int>>count(8);
+		std::vector<std::vector<int>>miss(8);
+		if constexpr (doCache)
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				hitRate[i].resize(workGroupSquare, 0);
+				count[i].resize(workGroupSquare, 0);
+				miss[i].resize(workGroupSquare, 0);
+			}
+
+		}
 		if (!wideRender)
 		{
 #pragma omp parallel for schedule(dynamic, 4)
 			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 			{
+				if constexpr (doCache)
+				{
+					nodeManager.cache.resetThisThread();
+				}
+
 				for (int j = 0; j < workGroupSquare; j++)
 				{
+					//int tmpWidth = ((j / workGroupSize) % 2 == 0) ? j % workGroupSize : workGroupSize - j % workGroupSize - 1;
+					int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
 					RenderInfo info(
-						((i * workGroupSize) % width - width / 2.f) + (j % workGroupSize),
+						((i * workGroupSize) % width - width / 2.f) + tmpWidth,
 						-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
 						i * workGroupSquare + j);
 #if doTimer
@@ -248,6 +269,16 @@ public:
 					//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
 					//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
 					//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
+
+					if constexpr (doCache)
+					{
+						int tId = omp_get_thread_num();
+						hitRate[tId][j] += nodeManager.cache.getHitRate();
+						miss[tId][j] += nodeManager.cache.cacheLoads[tId] - nodeManager.cache.cacheHits[tId];
+						count[tId][j] ++;
+						nodeManager.cache.resetThisThread();
+					}
+
 				}
 				//if (omp_get_thread_num() == 0)
 				//{
@@ -278,9 +309,10 @@ public:
 				int tmp1 = ((i * workGroupSize) % width - width / 2);
 				for (int j = 0; j < workGroupSquare; j++)
 				{
+					int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
 					glm::vec3 targetPos = getRayTargetPosition(
 						(-tmp0 - (j / workGroupSize)),
-						(tmp1 + (j % workGroupSize)), cameraId);
+						tmp1 + tmpWidth, cameraId);
 					rays[j] = FastRay(positions[cameraId], targetPos);
 				}
 
@@ -505,6 +537,33 @@ public:
 		nanoSec timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), nanoSec(0));
 		nanoSec timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), nanoSec(0));
 
+
+		//tmp per ray missrate analysis:
+		if (!wideRender)
+		{
+			if constexpr (doCache)
+			{
+				std::string timingFileName = path + "/" + name + "PerRayCacheMiss" + "_c" + std::to_string(cameraId) + ".txt";
+				std::ofstream file(timingFileName);
+				if (file.is_open())
+				{
+					file << "rayId, averageCacheMiss" << std::endl;
+					float missSum = 0;
+					for (int j = 0; j < workGroupSquare; j++)
+					{
+						missSum = 0;
+						for (int i = 0; i < 8; i++)
+						{
+							int tId = omp_get_thread_num();
+							missSum += miss[tId][j] / (float)count[tId][j];
+						}
+						file << j << ", " << missSum / 8 << std::endl;
+					}
+
+				}
+			}
+		}
+
 		//for detailed timing analysis, save times of each ray.
 		if (saveRayTimes)
 		{
@@ -560,7 +619,9 @@ public:
 				for (int w = 0; w < width; w++)
 				{
 					//one line of smallsize
-					int id = (w / workGroupSize) * workGroupSquare + w % workGroupSize + (h % workGroupSize) * workGroupSize;
+					int id = (w / workGroupSize) * workGroupSquare;
+					id += h % 2 == 0 ? workGroupSize - w % workGroupSize - 1 : w % workGroupSize;
+					id += (h % workGroupSize) * workGroupSize;
 					id += (h / workGroupSize) * width * workGroupSize;
 					int idOrig = w + h * width;
 					imageCorrect[idOrig * 4 + 0] = image[id * 4 + 0];

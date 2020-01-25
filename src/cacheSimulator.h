@@ -116,6 +116,7 @@ public:
 
 	bool load(pointerType address)
 	{
+		///std::cerr << "load" << address;
 		return storage[address & mask].load(address >> bitsForIndex);
 	}
 
@@ -131,8 +132,9 @@ public:
 class CacheSimulator
 {
 	int threadCount;
+	int cacheSize;
 
-	Cache8WaySet cache;
+	std::vector<Cache8WaySet>cache;
 
 	//for each thread: storage for cacheSize many cachelines
 	//std::vector<std::stack<pointerType>> cache;
@@ -142,9 +144,12 @@ public:
 	std::vector<uint64_t> cacheHits;
 
 	CacheSimulator(int cacheSize = 256)
-		:cache(Cache8WaySet(cacheSize))
+		:cacheSize(cacheSize)
 	{
+
 		threadCount = omp_get_max_threads();
+		cache.reserve(threadCount);
+		cache.resize(threadCount, Cache8WaySet(cacheSize));
 		cacheLoads.resize(threadCount);
 		cacheHits.resize(threadCount);
 	}
@@ -160,7 +165,7 @@ public:
 
 		int tId = omp_get_thread_num();
 		cacheLoads[tId]++;
-		cacheHits[tId] += cache.load(cacheId);
+		cacheHits[tId] += cache[tId].load(cacheId);
 	}
 
 	//simultes cache load.
@@ -172,7 +177,7 @@ public:
 
 		int tId = omp_get_thread_num();
 		cacheLoads[tId]++;
-		cacheHits[tId] += cache.load(cacheId);
+		cacheHits[tId] += cache[tId].load(cacheId);
 	}
 
 	//writes cache results of THIS THREAD in a file
@@ -180,7 +185,10 @@ public:
 	{
 		int tId = omp_get_thread_num();
 
-		std::cerr << "Thread: " << tId << ": Cache hitrate: " << cacheHits[tId] / (float)cacheLoads[tId] << std::endl;
+		std::cerr << "Thread: " << tId << ": Cache hitrate: " << cacheHits[tId] / (float)cacheLoads[tId]
+			<< "total sum of all loads : " << cacheLoads[tId]
+			<< ", Total Hits: " << cacheHits[tId]
+			<< ", Total Cache miss: " << cacheLoads[tId] - cacheHits[tId] << std::endl;
 		cacheLoads[tId] = 0;
 		cacheHits[tId] = 0;
 
@@ -223,10 +231,25 @@ public:
 		}
 	}
 
+	inline void resetCounter(int tId)
+	{
+		cacheLoads[tId] = 0;
+		cacheHits[tId] = 0;
+	}
+
+	//resets counters and cache
+	inline void resetThisThread()
+	{
+		int tId = omp_get_thread_num();
+		cache[tId].reset();
+		resetCounter(tId);
+	}
+
 	//resets counters and cache
 	inline void resetEverything()
 	{
-		cache.reset();
+		cache.clear();
+		cache.resize(threadCount, Cache8WaySet(cacheSize));
 		resetCounter();
 	}
 
@@ -234,5 +257,11 @@ public:
 	{
 		std::fill(cacheLoads.begin(), cacheLoads.end(), 0);
 		std::fill(cacheHits.begin(), cacheHits.end(), 0);
+	}
+
+	float getHitRate()
+	{
+		int tId = omp_get_thread_num();
+		return cacheHits[tId] / (float)cacheLoads[tId];
 	}
 };
