@@ -122,8 +122,7 @@ public:
 
 	void reset()
 	{
-		storage.clear();
-		storage.resize(cacheSize / 8);
+		std::fill(storage.begin(), storage.end(), Plru());
 	}
 };
 
@@ -132,7 +131,6 @@ public:
 class CacheSimulator
 {
 	int threadCount;
-	int cacheSize;
 
 	std::vector<Cache8WaySet>cache;
 
@@ -140,6 +138,7 @@ class CacheSimulator
 	//std::vector<std::stack<pointerType>> cache;
 	//one thread per cache, but would be nice if it also supports two threads per cache
 public:
+	int cacheSize;
 	std::vector<uint64_t> cacheLoads;
 	std::vector<uint64_t> cacheHits;
 
@@ -237,6 +236,12 @@ public:
 		cacheHits[tId] = 0;
 	}
 
+	inline void resetThisThreadCounter()
+	{
+		int tId = omp_get_thread_num();
+		resetCounter(tId);
+	}
+
 	//resets counters and cache
 	inline void resetThisThread()
 	{
@@ -248,8 +253,7 @@ public:
 	//resets counters and cache
 	inline void resetEverything()
 	{
-		cache.clear();
-		cache.resize(threadCount, Cache8WaySet(cacheSize));
+		std::fill(cache.begin(), cache.end(), Cache8WaySet(cacheSize));
 		resetCounter();
 	}
 

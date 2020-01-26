@@ -22,6 +22,8 @@
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize >
 class FastNodeManager;
 
+#define perRayCacheAnalysis false
+
 //Fast version of camera that does no intersection counters but is only for performance analysis
 class CameraFast : public Camera
 {
@@ -60,12 +62,11 @@ public:
 		std::vector<std::tuple<float, float, float>> results;
 		results.reserve(sampleCount);
 
-		if (doCacheAnalysis == true)
+		if (doCacheAnalysis)
 		{
 			for (int cameraId = 0; cameraId < cameraCount; cameraId++)
 			{
 				renderImage<gangSize, nodeMemory, workGroupSize, true>(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative, false);
-				nodeManager.cache.writeAllResult();
 			}
 		}
 		//image render:
@@ -166,29 +167,46 @@ public:
 		//This result is good because dynamic is the shedule that is most suited for for out problem since every ray can take differently long
 	//#pragma omp parallel for schedule(dynamic, 4)
 
-
-		std::vector<std::vector<float>>hitRate(8);
-		std::vector<std::vector<int>>count(8);
-		std::vector<std::vector<int>>miss(8);
+#if perRayCacheAnalysis
+		std::vector<std::vector<float>>hitRate;
+		std::vector<std::vector<int>>count;
+		std::vector<std::vector<int>>miss;
 		if constexpr (doCache)
 		{
+			hitRate.resize(8);
+			count.resize(8);
+			miss.resize(8);
 			for (int i = 0; i < 8; i++)
 			{
 				hitRate[i].resize(workGroupSquare, 0);
 				count[i].resize(workGroupSquare, 0);
 				miss[i].resize(workGroupSquare, 0);
 			}
-
 		}
+#else
+		//create per workgroupo storage for hits, and loads
+		std::vector<uint64_t> cacheLoads;
+		std::vector<uint64_t> cacheHits;
+		if constexpr (doCache)
+		{
+			cacheLoads.resize((width / workGroupSize) * (height / workGroupSize), 0);
+			cacheHits.resize((width / workGroupSize) * (height / workGroupSize), 0);
+		}
+#endif
+
+
 		if (!wideRender)
 		{
 #pragma omp parallel for schedule(dynamic, 4)
 			for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
 			{
+#if perRayCacheAnalysis
 				if constexpr (doCache)
 				{
 					nodeManager.cache.resetThisThread();
+					nodeManager.cache.resetEverything();
 				}
+#endif
 
 				for (int j = 0; j < workGroupSquare; j++)
 				{
@@ -269,21 +287,26 @@ public:
 					//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
 					//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
 					//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
-
+#if perRayCacheAnalysis
 					if constexpr (doCache)
 					{
 						int tId = omp_get_thread_num();
 						hitRate[tId][j] += nodeManager.cache.getHitRate();
 						miss[tId][j] += nodeManager.cache.cacheLoads[tId] - nodeManager.cache.cacheHits[tId];
 						count[tId][j] ++;
-						nodeManager.cache.resetThisThread();
+						nodeManager.cache.resetThisThreadCounter();
 					}
-
+#endif
 				}
-				//if (omp_get_thread_num() == 0)
-				//{
-				//	nodeManager.cache.writeThreadResult();
-				//}
+#if !perRayCacheAnalysis
+				if constexpr (doCache)
+				{
+					int tId = omp_get_thread_num();
+					cacheLoads[i] = nodeManager.cache.cacheLoads[tId];
+					cacheHits[i] = nodeManager.cache.cacheHits[tId];
+					nodeManager.cache.resetThisThreadCounter();
+				}
+#endif
 			}
 		}
 		else if (!wideRefill)
@@ -392,10 +415,21 @@ public:
 				timesRay[i] = getTimeSpan(timeBeforeRay);
 #endif
 				timesTriangles[i] = timeTriangleTest;
+
+#if !perRayCacheAnalysis
+				if constexpr (doCache)
+				{
+					int tId = omp_get_thread_num();
+					cacheLoads[i] = nodeManager.cache.cacheLoads[tId];
+					cacheHits[i] = nodeManager.cache.cacheHits[tId];
+					nodeManager.cache.resetThisThreadCounter();
+				}
+#endif
+			}
 		}
-	}
 		else
 		{
+			//REFILL (WORK in progress)
 			//first "lazy" version, work for each thread is predetermined determined by threadId and max threadCount
 			int maxThreadCount = omp_get_max_threads();
 
@@ -538,10 +572,12 @@ public:
 		nanoSec timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), nanoSec(0));
 
 
-		//tmp per ray missrate analysis:
-		if (!wideRender)
+#if perRayCacheAnalysis
+		//per ray analysis:
+		if constexpr (doCache)
 		{
-			if constexpr (doCache)
+			std::cerr << "doing Per ray cache miss analysis" << std::endl;
+			if (!wideRender)
 			{
 				std::string timingFileName = path + "/" + name + "PerRayCacheMiss" + "_c" + std::to_string(cameraId) + ".txt";
 				std::ofstream file(timingFileName);
@@ -559,10 +595,35 @@ public:
 						}
 						file << j << ", " << missSum / 8 << std::endl;
 					}
-
 				}
 			}
 		}
+#else
+		//normal cache analysis. (per workgroup and or per image?)
+		if constexpr (doCache)
+		{
+			std::string workGroupName = "";
+			if (wideRender)
+			{
+				workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);;
+			}
+
+			std::string timingFileName = path + "/" + workGroupName + "/" + name + "PerWorkgroupCacheMiss_Cachesize" + std::to_string(nodeManager.cache.cacheSize) + "_c" + std::to_string(cameraId) + ".txt";
+
+
+			std::ofstream file(timingFileName);
+			if (file.is_open())
+			{
+				file << "workGroupId, cacheLoads, cacheHits" << std::endl;
+				//go trough all workgroups and write cache loads and hits
+				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+				{
+					file << i << ", " << cacheLoads[i] << ", " << cacheHits[i] << std::endl;
+				}
+				//nodeManager.cache.writeAllResult();
+			}
+		}
+#endif	
 
 		//for detailed timing analysis, save times of each ray.
 		if (saveRayTimes)
@@ -633,5 +694,5 @@ public:
 			encodeTwoSteps(path + "/" + name + "_c" + std::to_string(cameraId) + "_Perf.png", imageCorrect, width, height);
 		}
 		return std::make_tuple(getTimeFloat(totalTime), getTimeFloat(timeRaySum), getTimeFloat(timeTrianglesSum));
-}
+	}
 };
