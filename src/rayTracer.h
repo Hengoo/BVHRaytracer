@@ -52,6 +52,8 @@ class RayTracer
 	unsigned renderType;
 	std::vector<unsigned> scenarios;
 
+	std::vector<int> cacheSizes;
+
 	//0 = custom order, 1 = level, 2 = depth first,
 	unsigned compactNodeOrder;
 
@@ -69,8 +71,6 @@ class RayTracer
 	int subdivisionStep;
 
 	int workGroupSize;
-
-	int cacheSize;
 
 public:
 	void run();

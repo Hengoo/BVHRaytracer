@@ -66,8 +66,10 @@ public:
 		{
 			for (int cameraId = 0; cameraId < cameraCount; cameraId++)
 			{
+				nodeManager.cache.resetEverything();
 				renderImage<gangSize, nodeMemory, workGroupSize, true>(saveImage, nodeManager, ambientSampleCount, ambientDistance, cameraId, wideAlternative, false);
 			}
+			return;
 		}
 		//image render:
 		if (saveImage)
@@ -167,30 +169,138 @@ public:
 		//This result is good because dynamic is the shedule that is most suited for for out problem since every ray can take differently long
 	//#pragma omp parallel for schedule(dynamic, 4)
 
+		//helper struct for per ray cache analysis
+		struct CachePerRayResultStorage
+		{
+			std::vector<std::vector<int>>stackCacheLoads;
+			std::vector<std::vector<int>>stackCacheHits;
+			std::vector<std::vector<int>>heapCacheLoads;
+			std::vector<std::vector<int>>heapCacheHits;
+
+			void initialize()
+			{
+				int threadCount = omp_get_max_threads();
+				stackCacheLoads.resize(threadCount);
+				stackCacheHits.resize(threadCount);
+				heapCacheLoads.resize(threadCount);
+				heapCacheHits.resize(threadCount);
+
+				for (int i = 0; i < threadCount; i++)
+				{
+					stackCacheLoads[i].resize(workGroupSquare, 0);
+					stackCacheHits[i].resize(workGroupSquare, 0);
+					heapCacheLoads[i].resize(workGroupSquare, 0);
+					heapCacheHits[i].resize(workGroupSquare, 0);
+				}
+			}
+
+			//updates local counters and resets the counter of the cache. ONLY for current thread
+			void updateAndResetCounterThread(CacheSimulator& cache, int rayId)
+			{
+				//read the thread cache info after each ray
+				int tId = omp_get_thread_num();
+
+				stackCacheLoads[tId][rayId] += cache.stackCacheLoads[tId];
+				stackCacheHits[tId][rayId] += cache.stackCacheHits[tId];
+				heapCacheLoads[tId][rayId] += cache.heapCacheLoads[tId];
+				heapCacheHits[tId][rayId] += cache.heapCacheHits[tId];
+				//reset counter of this thread after each ray
+				cache.resetThisThreadCounter();
+			}
+
+			std::string outputLinePerRay(int rayId, int  threadCount, int workGroupCount)
+			{
+				std::string result;
+
+				float stackLoadSum = 0;
+				float stackMissSum = 0;
+				float heapLoadSum = 0;
+				float heapMissSum = 0;
+
+				for (int i = 0; i < threadCount; i++)
+				{
+					stackLoadSum += stackCacheLoads[i][rayId];
+					stackMissSum += stackCacheLoads[i][rayId] - stackCacheHits[i][rayId];
+					heapLoadSum += heapCacheLoads[i][rayId];
+					heapMissSum += heapCacheLoads[i][rayId] - heapCacheHits[i][rayId];
+				}
+				//divided by the number of workgroups (we have one 1.ray  per workgroup)
+				int divisor = workGroupCount;
+				stackLoadSum /= (float)divisor;
+				stackMissSum /= (float)divisor;
+				heapLoadSum /= (float)divisor;
+				heapMissSum /= (float)divisor;
+				result = std::to_string(stackLoadSum)
+					+ ", " + std::to_string(stackMissSum)
+					+ ", " + std::to_string(heapLoadSum)
+					+ ", " + std::to_string(heapMissSum);
+				return result;
+			}
+		};
+
+		struct CacheResultStorage
+		{
+			//create per workgroupo storage for hits, and loads
+			std::vector<uint64_t> stackCacheLoads;
+			std::vector<uint64_t> stackCacheHits;
+			std::vector<uint64_t> heapCacheLoads;
+			std::vector<uint64_t> heapCacheHits;
+
+			void initialize(int size)
+			{
+				stackCacheLoads.resize(size, 0);
+				stackCacheHits.resize(size, 0);
+				heapCacheLoads.resize(size, 0);
+				heapCacheHits.resize(size, 0);
+			}
+
+			void updateAndResetCounterThread(CacheSimulator& cache, int workGroupId)
+			{
+				//read the thread cache info after each ray
+				int tId = omp_get_thread_num();
+
+				stackCacheLoads[workGroupId] += cache.stackCacheLoads[tId];
+				stackCacheHits[workGroupId] += cache.stackCacheHits[tId];
+				heapCacheLoads[workGroupId] += cache.heapCacheLoads[tId];
+				heapCacheHits[workGroupId] += cache.heapCacheHits[tId];
+				//reset counter of this thread after each ray
+				cache.resetThisThreadCounter();
+			}
+
+			std::string outputLinePerWorkGroup(int workGroupId)
+			{
+				std::string result;
+				result = std::to_string(stackCacheLoads[workGroupId])
+					+ ", " + std::to_string(stackCacheLoads[workGroupId] - stackCacheHits[workGroupId])
+					+ ", " + std::to_string(heapCacheLoads[workGroupId])
+					+ ", " + std::to_string(heapCacheLoads[workGroupId] - heapCacheHits[workGroupId]);
+				return result;
+			}
+		};
+
 #if perRayCacheAnalysis
-		std::vector<std::vector<float>>hitRate;
-		std::vector<std::vector<int>>count;
-		std::vector<std::vector<int>>miss;
+		CachePerRayResultStorage cachePrimaryResult;
+		CachePerRayResultStorage cacheSecondaryResult;
+
 		if constexpr (doCache)
 		{
-			hitRate.resize(8);
-			count.resize(8);
-			miss.resize(8);
-			for (int i = 0; i < 8; i++)
-			{
-				hitRate[i].resize(workGroupSquare, 0);
-				count[i].resize(workGroupSquare, 0);
-				miss[i].resize(workGroupSquare, 0);
-			}
+			cachePrimaryResult.initialize();
+			cacheSecondaryResult.initialize();
+		}
+		if (wideRender)
+		{
+			std::cerr << "Stoped wide renderer for per ray cache analysis." << std::endl;
 		}
 #else
 		//create per workgroupo storage for hits, and loads
-		std::vector<uint64_t> cacheLoads;
-		std::vector<uint64_t> cacheHits;
+		CacheResultStorage cachePrimaryResult;
+		CacheResultStorage cacheSecondaryResult;
+
 		if constexpr (doCache)
 		{
-			cacheLoads.resize((width / workGroupSize) * (height / workGroupSize), 0);
-			cacheHits.resize((width / workGroupSize) * (height / workGroupSize), 0);
+			int workGroupCount = (width * height) / workGroupSquare;
+			cachePrimaryResult.initialize(workGroupCount);
+			cacheSecondaryResult.initialize(workGroupCount);
 		}
 #endif
 
@@ -203,8 +313,8 @@ public:
 #if perRayCacheAnalysis
 				if constexpr (doCache)
 				{
+					//Full reset of cache at beginning of workgroup (for per ray analysis)
 					nodeManager.cache.resetThisThread();
-					nodeManager.cache.resetEverything();
 				}
 #endif
 
@@ -233,6 +343,16 @@ public:
 					else
 					{
 						result = nodeManager.intersect<doCache>(ray, leafIndex, triIndex, timeTriangleTest);
+					}
+
+					if constexpr (doCache)
+					{
+#if perRayCacheAnalysis
+
+						cachePrimaryResult.updateAndResetCounterThread(nodeManager.cache, j);
+#else
+						cachePrimaryResult.updateAndResetCounterThread(nodeManager.cache, i);
+#endif
 					}
 					uint8_t imageResult = 0;
 					if (result)
@@ -287,26 +407,15 @@ public:
 					//image[info.index * 4 + 0] = (uint8_t)(ray.surfaceNormal.x * 127 + 127);
 					//image[info.index * 4 + 1] = (uint8_t)(ray.surfaceNormal.y * 127 + 127);
 					//image[info.index * 4 + 2] = (uint8_t)(ray.surfaceNormal.z * 127 + 127);
-#if perRayCacheAnalysis
 					if constexpr (doCache)
 					{
-						int tId = omp_get_thread_num();
-						hitRate[tId][j] += nodeManager.cache.getHitRate();
-						miss[tId][j] += nodeManager.cache.cacheLoads[tId] - nodeManager.cache.cacheHits[tId];
-						count[tId][j] ++;
-						nodeManager.cache.resetThisThreadCounter();
+#if perRayCacheAnalysis
+						cacheSecondaryResult.updateAndResetCounterThread(nodeManager.cache, j);
+#else
+						cacheSecondaryResult.updateAndResetCounterThread(nodeManager.cache, i);
+#endif
 					}
-#endif
 				}
-#if !perRayCacheAnalysis
-				if constexpr (doCache)
-				{
-					int tId = omp_get_thread_num();
-					cacheLoads[i] = nodeManager.cache.cacheLoads[tId];
-					cacheHits[i] = nodeManager.cache.cacheHits[tId];
-					nodeManager.cache.resetThisThreadCounter();
-				}
-#endif
 			}
 		}
 		else if (!wideRefill)
@@ -348,6 +457,12 @@ public:
 				{
 					nodeManager.intersectWide<doCache>(rays, leafIndex, triIndex, timeTriangleTest);
 				}
+#if !perRayCacheAnalysis
+				if constexpr (doCache)
+				{
+					cachePrimaryResult.updateAndResetCounterThread(nodeManager.cache, i);
+				}
+#endif
 
 				//prepare secondary rays:
 				std::array<uint8_t, workGroupSquare> ambientResult;
@@ -410,6 +525,7 @@ public:
 					image[index * 4 + 3] = 255;
 				}
 
+
 				//time for rays:
 #if doTimer
 				timesRay[i] = getTimeSpan(timeBeforeRay);
@@ -419,10 +535,7 @@ public:
 #if !perRayCacheAnalysis
 				if constexpr (doCache)
 				{
-					int tId = omp_get_thread_num();
-					cacheLoads[i] = nodeManager.cache.cacheLoads[tId];
-					cacheHits[i] = nodeManager.cache.cacheHits[tId];
-					nodeManager.cache.resetThisThreadCounter();
+					cacheSecondaryResult.updateAndResetCounterThread(nodeManager.cache, i);
 				}
 #endif
 			}
@@ -579,48 +692,43 @@ public:
 			std::cerr << "doing Per ray cache miss analysis" << std::endl;
 			if (!wideRender)
 			{
-				std::string timingFileName = path + "/" + name + "PerRayCacheMiss" + "_c" + std::to_string(cameraId) + ".txt";
-				std::ofstream file(timingFileName);
+				std::string filenameCachePrimary = path + "/" + name + "PerRayCache_Cachesize" + std::to_string(nodeManager.cache.cacheSize) + problem + problemPrefix + ".txt";
+				std::ofstream file(filenameCachePrimary);
 				if (file.is_open())
 				{
-					file << "rayId, averageCacheMiss" << std::endl;
-					float missSum = 0;
+					file << "rayId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss, "
+						<< "secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads, secondaryHeapCacheMiss" << std::endl;
+					int threadCount = omp_get_max_threads();
+					int workGroupCount = (width * height) / workGroupSquare;
 					for (int j = 0; j < workGroupSquare; j++)
 					{
-						missSum = 0;
-						for (int i = 0; i < 8; i++)
-						{
-							int tId = omp_get_thread_num();
-							missSum += miss[tId][j] / (float)count[tId][j];
-						}
-						file << j << ", " << missSum / 8 << std::endl;
+						file << j << ", " << cachePrimaryResult.outputLinePerRay(j, threadCount, workGroupCount) << ", " << cacheSecondaryResult.outputLinePerRay(j, threadCount, workGroupCount) << std::endl;
+
 					}
 				}
 			}
 		}
 #else
-		//normal cache analysis. (per workgroup and or per image?)
+		//normal cache analysis. (per workgroup)
 		if constexpr (doCache)
 		{
 			std::string workGroupName = "";
 			if (wideRender)
 			{
-				workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);;
+				workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);
 			}
+			std::string filenamePrimary = path + "/" + workGroupName + "/" + name + "PerWorkgroupCache_Cachesize" + std::to_string(nodeManager.cache.cacheSize) + problem + problemPrefix + ".txt";
 
-			std::string timingFileName = path + "/" + workGroupName + "/" + name + "PerWorkgroupCacheMiss_Cachesize" + std::to_string(nodeManager.cache.cacheSize) + "_c" + std::to_string(cameraId) + ".txt";
-
-
-			std::ofstream file(timingFileName);
+			std::ofstream file(filenamePrimary);
 			if (file.is_open())
 			{
-				file << "workGroupId, cacheLoads, cacheHits" << std::endl;
+				file << "workGroupId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss, "
+					<< "secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads, secondaryHeapCacheMiss" << std::endl;
 				//go trough all workgroups and write cache loads and hits
-				for (int i = 0; i < (width / workGroupSize) * (height / workGroupSize); i++)
+				for (int i = 0; i < (width * height) / workGroupSquare; i++)
 				{
-					file << i << ", " << cacheLoads[i] << ", " << cacheHits[i] << std::endl;
+					file << i << ", " << cachePrimaryResult.outputLinePerWorkGroup(i) << ", " << cacheSecondaryResult.outputLinePerWorkGroup(i) << std::endl;
 				}
-				//nodeManager.cache.writeAllResult();
 			}
 		}
 #endif	

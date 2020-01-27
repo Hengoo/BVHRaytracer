@@ -25,8 +25,6 @@ class FastRay;
 //padding. padding of 1 means no padding, 2 doubles everything, and so on
 #define nodeLeafPadding 1
 
-#define onlyNodeLeafCache false
-
 template  <unsigned nodeMemory>
 struct alignas(64) FastNode
 {
@@ -159,7 +157,7 @@ struct RefillStructure
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize >
 class FastNodeManager
 {
-	std::vector<FastNode<nodeMemory>>compactNodes;
+	alignas(64) std::vector<FastNode<nodeMemory>>compactNodes;
 
 	//(SoA order) -> first p0.x p0.y p0.z -> p1.x ....   (this for each triangle so its lieafsize * p0.x)
 	std::vector<float> trianglePoints;
@@ -221,7 +219,7 @@ public:
 		int cacheLineCount = sizeof(FastNode<nodeMemory>) / 64;
 		for (int i = 0; i < cacheLineCount; i++)
 		{
-			cache.load((pointerType)pointer + i * 64);
+			cache.loadHeap((pointerType)pointer + i * 64);
 		}
 	}
 	inline void leafCacheLoad(void* leafPointer, void* trianglePointer)
@@ -230,12 +228,12 @@ public:
 		int cacheLineCount = sizeof(FastNode<nodeMemory>) / 64;
 		for (int i = 0; i < cacheLineCount; i++)
 		{
-			cache.load((pointerType)leafPointer + i * 64);
+			cache.loadHeap((pointerType)leafPointer + i * 64);
 		}
 		cacheLineCount = (9 * 4 * leafMemory) / 64;
 		for (int i = 0; i < cacheLineCount; i++)
 		{
-			cache.load((pointerType)trianglePointer + i * 64);
+			cache.loadHeap((pointerType)trianglePointer + i * 64);
 		}
 	}
 };
@@ -512,12 +510,9 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&nodeWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif // onlyNodeLeafCache
+					//cache.loadStack((void*)&nodeWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -607,12 +602,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&leafWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif
+					//cache.loadStack((void*)&leafWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
+					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
 				//it returns the hit id -> -1 = no hit
@@ -646,7 +640,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-		}
+			}
 	}
 }
 
@@ -709,12 +703,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&leafWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif
+					//cache.loadStack((void*)&leafWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
+					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+
 					nodeCacheLoad((void*)&node);
 				}
 				if (ispcResult)
@@ -777,12 +770,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&leafWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif
+					//cache.loadStack((void*)&leafWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
+					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
 				//it returns the hit id -> -1 = no hit
@@ -817,7 +809,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-		}
+			}
 	}
 }
 
@@ -889,12 +881,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&leafWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif
+					//cache.loadStack((void*)&leafWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
+					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+
 					nodeCacheLoad((void*)&node);
 				}
 				if (ispcResult)
@@ -983,12 +974,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 				callIspcTemplateNotConst(triIntersect, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&leafWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif
+					//cache.loadStack((void*)&leafWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
+					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
 				//it returns the hit id -> -1 = no hit
@@ -1020,7 +1010,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -1096,12 +1086,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				callIspcTemplateNotConst(aabbIntersect, loopCount, node.bounds.data(), aabbDistances.data(), reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&leafWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif
+					//cache.loadStack((void*)&leafWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
+					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+
 					nodeCacheLoad((void*)&node);
 				}
 				if (ispcResult)
@@ -1162,12 +1151,11 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 				callIspcTemplateNotConst(triAnyHit, loopCount, trianglePoints.data(), node.primIdBegin, reinterpret_cast<float*>(&ray));
 				if constexpr (doCache)
 				{
-#if !onlyNodeLeafCache
-					//cache.load((void*)&leafWork[i]);
-					cache.load((void*)&ray);
-					//cache.load((void*)&stackIndex[rayId]);
-					cache.load((void*)&stack[stackIndex[rayId]]);
-#endif
+					//cache.loadStack((void*)&leafWork[i]);
+					cache.loadStack((void*)&ray);
+					//cache.loadStack((void*)&stackIndex[rayId]);
+					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
 				if (ispcResult)
@@ -1199,7 +1187,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -1235,9 +1223,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 		auto& tup = nodeStack[--stackIndex];
 		if constexpr (doCache)
 		{
-#if !onlyNodeLeafCache
-			cache.load((void*)&tup);
-#endif
+			cache.loadStack((void*)&tup);
 		}
 		if (std::get<1>(tup) > ray.tMax)
 		{
@@ -1265,7 +1251,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		else
 		{
 			//child tests: 
@@ -1333,9 +1319,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 		const FastNode<nodeMemory>& node = compactNodes[nodeStack[--stackIndex]];
 		if constexpr (doCache)
 		{
-#if !onlyNodeLeafCache
-			cache.load((void*)&node);
-#endif
+			cache.loadStack((void*)&nodeStack[stackIndex + 1]);
 		}
 		if (isnan(node.bounds[0]))
 		{
@@ -1358,7 +1342,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-		}
+			}
 		else
 		{
 			//child tests: 
@@ -1425,9 +1409,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 		const FastNode<nodeMemory>& node = compactNodes[nodeStack[--stackIndex]];
 		if constexpr (doCache)
 		{
-#if !onlyNodeLeafCache
-			cache.load((void*)&node);
-#endif
+			cache.loadStack((void*)&nodeStack[stackIndex + 1]);
 		}
 		if (isnan(node.bounds[0]))
 		{
@@ -1494,7 +1476,6 @@ FastNodeManager<gangSize, nodeMemory, workGroupSize>::FastNodeManager(Bvh& bvh, 
 	std::vector<NodeAnalysis*> nodeVector;
 	nodeVector.push_back(bvh.getAnalysisRoot());
 	customTreeOrder(bvh.getAnalysisRoot(), nodeVector);
-
 
 	leafSize = bvh.leafSize;
 	branchingFactor = bvh.branchingFactor;

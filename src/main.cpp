@@ -41,9 +41,9 @@ static void testCacheSequence()
 	CacheSimulator cache = CacheSimulator(8);
 	for (int i = 0; i < seq.size(); i++)
 	{
-		cache.load(seq[i] * 64);
+		cache.loadStack(seq[i] * 64);
 	}
-	cache.writeAllResult();
+	//cache.writeAllResult();
 }
 
 void cacheTests()
@@ -55,15 +55,15 @@ void cacheTests()
 	{
 		if (i % 100 == 0)
 		{
-			std::cout << "step: " << i << ", hitRatio: " << (float)cache.cacheHits[0] / cache.cacheLoads[0] << std::endl;
-			cache.clearAllCounter();
+			std::cout << "step: " << i << ", hitRatio: " << (float)cache.stackCacheHits[0] / cache.stackCacheLoads[0] << std::endl;
+			cache.resetAllCounter();
 		}
 
 		extraCount++;
 		int loadId = i % 100;
-		cache.load((void*)(64 * loadId));
+		cache.loadStack((void*)(64 * loadId));
 		int randId = rand() % 512;
-		cache.load((void*)(64 * randId));
+		cache.loadStack((void*)(64 * randId));
 		//if (i % 2 == 0)
 		//{
 		//	cache.load((void*)((extraCount) * 64));

@@ -12,29 +12,53 @@ def endPlot():
 	else:
 		plt.cla()
 
-def perRayCacheMiss(cacheSize):
-	filePath = inputFolder + "amazonLumberyardInteriorPerRayCacheMiss_c0_" + str(cacheSize) + ".txt"
-	(rayId, missC0) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
-	filePath = inputFolder + "amazonLumberyardInteriorPerRayCacheMiss_c1_" + str(cacheSize) + ".txt"
-	(rayId, missC1) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+def perRayCacheMiss(cacheSize, bvhConfig):
 
+	doHeap = False
+	filePath = inputFolder + "PerRayCache/"+ "amazonLumberyardInteriorPerRayCache_Cachesize" + str(cacheSize) + bvhConfig + ".txt"
 
-	plt.plot(rayId, missC0, label="camera0")
-	plt.plot(rayId , missC1, label = "camera1")
-	plt.xticks(np.arange(0, cacheSize + 16, step=16))
-	plt.ylabel("cache Misses")
+	(rayId, stackCacheLoads, stackCacheMiss, heapCacheLoads,
+		heapCacheMiss, secondaryStackCacheLoads, secondaryStackCacheMiss,
+		secondaryHeapCacheLoads, secondaryHeapCacheMiss) =  np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+
+	plt.suptitle("Cache behavior per ray, Cachesize " + str(cacheSize))
+	plt.subplot(2,1,1)
+	
+	plt.plot(rayId, stackCacheMiss, label="stack Miss")
+	plt.plot(rayId, stackCacheLoads, label="stack loads")
+
+	if doHeap:
+		plt.plot(rayId, heapCacheMiss, label="heap Miss")
+		plt.plot(rayId, heapCacheLoads, label="heap loads")
+
+	plt.xticks(np.arange(0, 256 + 16, step=16))
+	plt.ylabel("Cache Misses")
 	plt.xlabel("Ray Id")
 	plt.legend()
 
-	print(np.sum(missC0))
-	print(np.sum(missC1))
 
-	plt.savefig(outputFolder + "PerRayCacheMiss.pgf")
-	plt.savefig(outputFolder + "PerRayCacheMiss.pdf")
+	plt.subplot(2,1,2)
+	plt.plot(rayId, secondaryStackCacheMiss, label="stack Miss")
+	plt.plot(rayId, secondaryStackCacheLoads, label="stack loads")
+
+	if doHeap:
+		plt.plot(rayId, secondaryHeapCacheMiss, label="heap Miss")
+		plt.plot(rayId, secondaryHeapCacheLoads, label="heap loads")
+
+	plt.xticks(np.arange(0, 256 + 16, step=16))
+	plt.ylabel("Cache Misses")
+	plt.xlabel("Ray Id")
+	plt.legend()
+
+	plt.savefig(outputFolder + "PerRayCache" + str(cacheSize) + bvhConfig + ".pgf")
+	plt.savefig(outputFolder + "PerRayCache" + str(cacheSize) + bvhConfig + ".pdf")
 	endPlot()
 
+	# do hitrate?
+
 def differentCachesizeAnalysis():
-	cacheSizes = [8, 16, 32, 64, 128, 256, 512]
+	#cacheSizes = [8, 16, 32, 64, 128, 256, 512]
+	cacheSizes = [128, 256]
 	cacheSizes = np.array(cacheSizes)
 
 	misses0 = []
@@ -67,18 +91,8 @@ def differentCachesizeAnalysis():
 	
 	plt.xticks(xAxis, (8,16,32,64,128,256,512))
 	width = 0.4
-	plt.bar(xAxis - width, misses0, width=width, label="Single ray Traversal")
-	plt.bar(xAxis, misses1, width=width, label="Wide V0")
-	plt.bar(xAxis + width, misses2, width=width, label="Wide V1")
 
-	plt.ylabel("Cache Misses")
-	plt.xlabel("Cache Size per Thread [cache lines]")
-	plt.legend()
-
-	plt.savefig(outputFolder + "CacheMisses.pdf")
-	plt.savefig(outputFolder + "CacheMisses.pgf")
-	endPlot()
-
+	#Cache Hitrate
 	plt.title("Cache hit rate with different Cache sizes.")
 	plt.xticks(xAxis, (8,16,32,64,128,256,512))
 	plt.bar(xAxis - width, hitRate0, width=width, label="Single ray Traversal")
@@ -93,5 +107,23 @@ def differentCachesizeAnalysis():
 	plt.savefig(outputFolder + "CacheHitrate.pgf")
 	endPlot()
 
-#perRayCacheMiss(256)
-differentCachesizeAnalysis()
+	#Cache Misses
+	plt.bar(xAxis - width, misses0, width=width, label="Single ray Traversal")
+	plt.bar(xAxis, misses1, width=width, label="Wide V0")
+	plt.bar(xAxis + width, misses2, width=width, label="Wide V1")
+
+	plt.ylabel("Cache Misses")
+	plt.xlabel("Cache Size per Thread [cache lines]")
+	plt.legend()
+
+	plt.savefig(outputFolder + "CacheMisses.pdf")
+	plt.savefig(outputFolder + "CacheMisses.pgf")
+	endPlot()
+
+
+
+perRayCacheMiss(512, "_b4_l4_mb4_ml4")
+perRayCacheMiss(256, "_b4_l4_mb4_ml4")
+perRayCacheMiss(128, "_b4_l4_mb4_ml4")
+perRayCacheMiss(64, "_b4_l4_mb4_ml4")
+#differentCachesizeAnalysis()

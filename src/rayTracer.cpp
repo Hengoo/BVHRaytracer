@@ -165,13 +165,17 @@ void RayTracer::run()
 		std::cout << "do Workgroup Analysis" << std::endl;
 	}
 
-	if (cacheSize % 8 != 0)
+	if (doCacheAnalysis)
 	{
-		std::cerr << "cacheSize has to be divideable by 8 due to the 8 way  set associative cache" << std::endl;
-		return;
+		std::cout << "Doing cache analysis with the follwoing cachesizes:" << std::endl;
+		for (auto& c : cacheSizes)
+		{
+			std::cout << c << ", ";
+		}
+		std::cout << std::endl;
 	}
 
-	if (doPerformanceTest)
+	if (doPerformanceTest && !doCacheAnalysis)
 	{
 		std::cout << "press button to continue performance test (set high periority fist)" << std::endl;
 		system("pause");
@@ -306,8 +310,16 @@ void RayTracer::run()
 				//amazon lumberyard inside scene converted to glb with this tool https://blackthread.io/gltf-converter/
 				name = "amazonLumberyardInterior";
 				loadGltfModel("models/AmazonLumberyard/interior.glb", gameObjects, meshBins);
-				cameraPositions.push_back(glm::vec3(-109, 284, -147));
-				cameraTargets.push_back(glm::vec3(20, 257, -151));
+
+				if (!doCacheAnalysis)
+				{
+					cameraPositions.push_back(glm::vec3(-109, 284, -147));
+					cameraTargets.push_back(glm::vec3(20, 257, -151));
+				}
+				else
+				{
+					std::cout << "disabled camera 0 of amazon lumberyard since we do cache analysis" << std::endl;
+				}
 
 				cameraPositions.push_back(glm::vec3(765, 207, 550));
 				cameraTargets.push_back(glm::vec3(786, 174, 123));
@@ -659,27 +671,58 @@ void RayTracer::renderImage(unsigned branchingFactor, unsigned leafSize, unsigne
 
 		for (int leafMemory = minLeafMemory; leafMemory <= maxLeafMemory; leafMemory += gangSize)
 		{
-			CacheSimulator cache(cacheSize);
-			//macro that manages the calling of the right renderer (thx templates...)
-			if (!renderAllOptions)
+			if (doCacheAnalysis)
 			{
-				startPerfRender(gangSize, minBranchMemory, workGroupSize);
+				//write how large the nodes, ez are?				
+
+				for (auto& cacheSize : cacheSizes)
+				{
+					std::cerr << "Testing cacheSize " << cacheSize << std::endl;
+					CacheSimulator cache(cacheSize);
+					//macro that manages the calling of the right renderer (thx templates...)
+					if (!renderAllOptions)
+					{
+						startPerfRender(gangSize, minBranchMemory, workGroupSize);
+					}
+					else
+					{
+						//renders all versions -> can resue bvh (~3.5 seconds for lumberyard)
+						wideRender = true;
+						wideAlternative = true;
+						std::cout << std::endl << "Rendering Wide V1" << std::endl;
+						startPerfRender(gangSize, minBranchMemory, workGroupSize);
+						//wideAlternative = false;
+						//std::cout << std::endl << "Rendering Wide V0" << std::endl;
+						//startPerfRender(gangSize, minBranchMemory, workGroupSize);
+						wideRender = false;
+						std::cout << std::endl << "Rendering normal" << std::endl;
+						startPerfRender(gangSize, minBranchMemory, workGroupSize);
+					}
+				}
 			}
 			else
 			{
-				//renders all versions -> can resue bvh (~3.5 seconds for lumberyard)
-				wideRender = true;
-				wideAlternative = true;
-				std::cout << std::endl << "Rendering Wide V1" << std::endl;
-				startPerfRender(gangSize, minBranchMemory, workGroupSize);
-				wideAlternative = false;
-				std::cout << std::endl << "Rendering Wide V0" << std::endl;
-				startPerfRender(gangSize, minBranchMemory, workGroupSize);
-				wideRender = false;
-				std::cout << std::endl << "Rendering normal" << std::endl;
-				startPerfRender(gangSize, minBranchMemory, workGroupSize);
+				CacheSimulator cache(0);
+				//macro that manages the calling of the right renderer (thx templates...)
+				if (!renderAllOptions)
+				{
+					startPerfRender(gangSize, minBranchMemory, workGroupSize);
+				}
+				else
+				{
+					//renders all versions -> can resue bvh (~3.5 seconds for lumberyard)
+					wideRender = true;
+					wideAlternative = true;
+					std::cout << std::endl << "Rendering Wide V1" << std::endl;
+					startPerfRender(gangSize, minBranchMemory, workGroupSize);
+					//wideAlternative = false;
+					//std::cout << std::endl << "Rendering Wide V0" << std::endl;
+					//startPerfRender(gangSize, minBranchMemory, workGroupSize);
+					wideRender = false;
+					std::cout << std::endl << "Rendering normal" << std::endl;
+					startPerfRender(gangSize, minBranchMemory, workGroupSize);
+				}
 			}
-
 		}
 	}
 
@@ -779,27 +822,6 @@ void RayTracer::readConfig()
 				readInt(line, "xRes", xRes);
 				readInt(line, "yRes", yRes);
 
-				readInt(line, "cacheSize", cacheSize);
-
-				//scenario has an int for each scenario.
-				auto res = line.find("scenario", 0);
-				if (res != std::string::npos)
-				{
-					std::string s = line.substr(line.find("=") + 1);
-					std::string delimiter = ",";
-					size_t pos = 0;
-					std::string token;
-					while ((pos = s.find(delimiter)) != std::string::npos) {
-						token = s.substr(0, pos);
-						scenarios.push_back(std::stoi(token));
-						s.erase(0, pos + delimiter.length());
-					}
-					scenarios.push_back(std::stoi(s));
-				}
-
-				//floats:
-				//currently nothing method is readFloat
-
 				//booleans:
 				readBool(line, "saveImage", saveImage);
 				readBool(line, "saveDepthDetailedImage", saveDepthDetailedImage);
@@ -818,6 +840,70 @@ void RayTracer::readConfig()
 				readBool(line, "wideAlternative", wideAlternative);
 				readBool(line, "renderAllOptions", renderAllOptions);
 				readBool(line, "doCacheAnalysis", doCacheAnalysis);
+
+				//scenario has an int for each scenario.
+				auto res = line.find("scenario", 0);
+				if (res != std::string::npos)
+				{
+					std::string s = line.substr(line.find("=") + 1);
+					std::string delimiter = ",";
+					size_t pos = 0;
+					std::string token;
+					while ((pos = s.find(delimiter)) != std::string::npos) {
+						token = s.substr(0, pos);
+						scenarios.push_back(std::stoi(token));
+						s.erase(0, pos + delimiter.length());
+					}
+					scenarios.push_back(std::stoi(s));
+
+					if (scenarios.empty())
+					{
+						std::cerr << "no Scenario found. Using default scenario of 9" << std::endl;
+						scenarios.push_back(9);
+					}
+				}
+
+
+				//read in cacheline sizes to test:
+				if (doCacheAnalysis)
+				{
+					res = line.find("cacheSize", 0);
+					if (res != std::string::npos)
+					{
+						std::string s = line.substr(line.find("=") + 1);
+						std::string delimiter = ",";
+						size_t pos = 0;
+						std::string token;
+						while ((pos = s.find(delimiter)) != std::string::npos) {
+							token = s.substr(0, pos);
+							int size = std::stoi(token);
+							if (size % 8 != 0)
+							{
+								std::cerr << "cachesize must be divideable by 8 to fit in 8 way set. The cachesize" << size << "is ignored." << std::endl;
+								continue;
+							}
+							cacheSizes.push_back(size);
+							s.erase(0, pos + delimiter.length());
+						}
+						int size = std::stoi(s);
+						if (size % 8 != 0)
+						{
+							std::cerr << "cachesize must be divideable by 8 to fit in 8 way set. The cachesize" << size << "is ignored." << std::endl;
+							continue;
+						}
+						cacheSizes.push_back(size);
+						if (cacheSizes.empty())
+						{
+							std::cerr << "no cachesize found. Using default cachesize of 256" << std::endl;
+							cacheSizes.push_back(256);
+						}
+					}
+				}
+
+				//floats:
+				//currently nothing method is readFloat
+
+
 			}
 		}
 	}

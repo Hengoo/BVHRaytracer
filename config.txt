@@ -12,7 +12,7 @@ maxLeafSize = 4
 leafStep = 4
 
 minBranch = 4
-maxBranch = 4
+maxBranch = 16
 branchStep = 4
 
 workGroupSize = 16
@@ -32,8 +32,9 @@ doNodeMemoryTests = false
 saveRayTimes = false
 doCacheAnalysis = true
 
-#Number of cachelines:
-cacheSize = 256
+#Cacheline analysis disables other time analysis
+#Number of cachelines: (multiple numbers possible like "= 8, 16, 32")
+cacheSize = 512, 256, 128, 64, 32, 16, 8
 
 #Number of samples for ambient occlusion
 ambientSampleCount = 1
@@ -63,7 +64,7 @@ renderType = 2
 saveDistance = false
 
 #Use wide renderer / alternative wide renderer or not:
-wideRender = true
+wideRender = false
 wideAlternative = true
 renderAllOptions = true
 
