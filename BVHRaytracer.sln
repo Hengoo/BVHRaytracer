@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.29025.244
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BVHRaytracer", "BVHRaytracer.vcxproj", "{5148BFFB-9F22-40F7-BCAF-5067168223B8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Catch2Testing", "src\Catch2Testing\Catch2Testing.vcxproj", "{3930EDE3-292C-4D18-BCF4-952E627ACCBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{5148BFFB-9F22-40F7-BCAF-5067168223B8}.Release|x64.Build.0 = Release|x64
 		{5148BFFB-9F22-40F7-BCAF-5067168223B8}.Release|x86.ActiveCfg = Release|Win32
 		{5148BFFB-9F22-40F7-BCAF-5067168223B8}.Release|x86.Build.0 = Release|Win32
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Debug|x64.ActiveCfg = Debug|x64
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Debug|x64.Build.0 = Debug|x64
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Debug|x86.ActiveCfg = Debug|Win32
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Debug|x86.Build.0 = Debug|Win32
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Release|x64.ActiveCfg = Release|x64
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Release|x64.Build.0 = Release|x64
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Release|x86.ActiveCfg = Release|Win32
+		{3930EDE3-292C-4D18-BCF4-952E627ACCBC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

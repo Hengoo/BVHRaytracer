@@ -46,8 +46,6 @@ class Plru
 	std::array<bool, 2> level2;
 	std::array<bool, 4> level3;
 
-	std::array<uint32_t, 8> cacheLines;
-
 	void updateTree(int cacheId)
 	{
 		level1 = !((cacheId & 4) >> 2);
@@ -63,6 +61,7 @@ class Plru
 	}
 
 public:
+	std::array<uint32_t, 8> cacheLines;
 	Plru()
 	{
 		//initialize the tree with false
@@ -70,6 +69,7 @@ public:
 		level2[0] = false;
 		level2[1] = false;
 		std::fill(level3.begin(), level3.end(), false);
+		cacheLines.fill(0);
 	}
 
 	//Updates cache and returns true if hit
@@ -98,13 +98,12 @@ public:
 class Cache8WaySet
 {
 	//contains #cacheline / 8 PLRU s
-
-	std::vector<Plru> storage;
 	int bitsForIndex;
 	int cacheSize;
 	pointerType mask;
 
 public:
+	std::vector<Plru> storage;
 	Cache8WaySet(int cacheSize)
 		:cacheSize(cacheSize)
 	{
@@ -132,13 +131,13 @@ class CacheSimulator
 {
 	int threadCount;
 
-	std::vector<Cache8WaySet>cache;
 
 	//for each thread: storage for cacheSize many cachelines
 	//std::vector<std::stack<pointerType>> cache;
 	//one thread per cache, but would be nice if it also supports two threads per cache
 public:
 	int cacheSize;
+	std::vector<Cache8WaySet>cache;
 	std::vector<uint64_t> stackCacheLoads;
 	std::vector<uint64_t> stackCacheHits;
 	std::vector<uint64_t> heapCacheLoads;
@@ -157,6 +156,38 @@ public:
 			heapCacheLoads.resize(threadCount);
 			heapCacheHits.resize(threadCount);
 		}
+	}
+
+	inline uint64_t getAllStackHits()
+	{
+		return std::accumulate(stackCacheHits.begin(), stackCacheHits.end(), 0ULL);
+	}
+
+	inline uint64_t getAllHeapHits()
+	{
+		return std::accumulate(heapCacheHits.begin(), heapCacheHits.end(), 0ULL);
+	}
+
+	inline uint64_t getAllStackLoads()
+	{
+		return std::accumulate(stackCacheLoads.begin(), stackCacheLoads.end(), 0ULL);
+	}
+
+	inline uint64_t getAllHeapLoads()
+	{
+		return std::accumulate(heapCacheLoads.begin(), heapCacheLoads.end(), 0ULL);
+	}
+
+	inline uint64_t getThisThreadHits()
+	{
+		int tId = omp_get_thread_num();
+		return stackCacheHits[tId] + heapCacheHits[tId];
+	}
+
+	inline uint64_t getThisThreadStackLoads()
+	{
+		int tId = omp_get_thread_num();
+		return stackCacheLoads[tId] + heapCacheLoads[tId];
 	}
 
 	//simultes cache load.
