@@ -12,7 +12,7 @@ def endPlot():
 	if showImage:
 		plt.show()
 	else:
-		plt.cla()
+		plt.close()
 
 def makePerfAnalysis(filePath, title, outputName):
 

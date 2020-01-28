@@ -514,6 +514,8 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
 
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+
 					nodeCacheLoad((void*)&node);
 				}
 				if (ispcResult)
@@ -605,7 +607,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
@@ -706,7 +708,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -773,7 +775,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
@@ -884,7 +886,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -977,7 +979,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
@@ -1089,7 +1091,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -1154,7 +1156,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId]]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
