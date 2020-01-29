@@ -515,7 +515,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
 
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -538,6 +538,10 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 										//next is leaf
 										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 									}
+									if constexpr (doCache)
+									{
+										cache.loadStack((void*)&stack[stackIndex[rayId] - 1][rayId]);
+									}
 									aabbDistances[cId] = NAN;
 								}
 							});
@@ -559,6 +563,10 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 									{
 										//next is leaf
 										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
+									}
+									if constexpr (doCache)
+									{
+										cache.loadStack((void*)&stack[stackIndex[rayId] - 1][rayId]);
 									}
 									aabbDistances[cId] = NAN;
 								}
@@ -608,7 +616,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
@@ -643,7 +651,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-			}
+		}
 	}
 }
 
@@ -709,7 +717,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -729,6 +737,10 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 							{
 								//next is leaf
 								stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
+							}
+							if constexpr (doCache)
+							{
+								cache.loadStack((void*)&stack[stackIndex[rayId] - 1][rayId]);
 							}
 							aabbDistances[cId] = NAN;
 						}
@@ -776,7 +788,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
@@ -812,7 +824,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 #endif
 			leafRays = leafRaysNext;
 			leafRaysNext = 0;
-			}
+		}
 	}
 }
 
@@ -887,7 +899,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -910,6 +922,10 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 										//next is leaf
 										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
 									}
+									if constexpr (doCache)
+									{
+										cache.loadStack((void*)&stack[stackIndex[rayId] - 1][rayId]);
+									}
 									aabbDistances[cId] = NAN;
 								}
 							});
@@ -931,6 +947,10 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 									{
 										//next is leaf
 										stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
+									}
+									if constexpr (doCache)
+									{
+										cache.loadStack((void*)&stack[stackIndex[rayId] - 1][rayId]);
 									}
 									aabbDistances[cId] = NAN;
 								}
@@ -980,7 +1000,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
@@ -1008,12 +1028,12 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
 #endif
 					}
-				}
-			}
+					}
+					}
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+				}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -1022,8 +1042,8 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 		nodeRaysNext = 0;
 
 		std::swap(currentWork, nextWork);
-	}
-}
+			}
+		}
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 template <bool doCache>
@@ -1092,7 +1112,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					nodeCacheLoad((void*)&node);
 				}
@@ -1112,6 +1132,10 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 							{
 								//next is leaf
 								stack[stackIndex[rayId]++][rayId] = -(int32_t)(node.childIdBegin + cId);
+							}
+							if constexpr (doCache)
+							{
+								cache.loadStack((void*)&stack[stackIndex[rayId] - 1][rayId]);
 							}
 							aabbDistances[cId] = NAN;
 						}
@@ -1157,7 +1181,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 					//cache.loadStack((void*)&leafWork[i]);
 					cache.loadStack((void*)&ray);
 					//cache.loadStack((void*)&stackIndex[rayId]);
-					cache.loadStack((void*)&stack[stackIndex[rayId] + 1]);
+					cache.loadStack((void*)&stack[stackIndex[rayId] + 1][rayId]);
 
 					leafCacheLoad((void*)&node, (void*)&trianglePoints[node.primIdBegin]);
 				}
@@ -1185,12 +1209,12 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 						(*nextWork)[workGroupSquare - 1 - (leafRaysNext++)] = rayId;
 #endif
 					}
-				}
-			}
+					}
+					}
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+				}
 		//prepare next loop:
 		leafRays = leafRaysNext;
 		leafRaysNext = 0;
@@ -1199,8 +1223,8 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWid
 		nodeRaysNext = 0;
 
 		std::swap(currentWork, nextWork);
-	}
-}
+			}
+		}
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 template <bool doCache>
@@ -1254,7 +1278,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+		}
 		else
 		{
 			//child tests: 
@@ -1345,7 +1369,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 #if doTimer
 			timeTriangleTest += getTimeSpan(timeBeforeTriangleTest);
 #endif
-			}
+		}
 		else
 		{
 			//child tests: 
@@ -1386,9 +1410,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ra
 				}
 			}
 		}
-	}
+		}
 	return result;
-}
+	}
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 template <bool doCache>
@@ -1461,9 +1485,9 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 				}
 			}
 		}
-	}
+		}
 	return result;
-}
+	}
 
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>
 FastNodeManager<gangSize, nodeMemory, workGroupSize>::FastNodeManager(Bvh& bvh, int leafMemory, CacheSimulator cache)
@@ -1643,7 +1667,7 @@ FastNodeManager<gangSize, nodeMemory, workGroupSize>::FastNodeManager(Bvh& bvh, 
 #endif // padding
 
 
-}
+	}
 
 //first add all children of node, then recusion for each child
 template <unsigned gangSize, unsigned nodeMemory, unsigned  workGroupSize>

@@ -88,6 +88,8 @@ int main()
 	std::cout << "Node " << 16 << ": " << sizeof(FastNode<16>) << std::endl;
 
 	std::cout << "Extra leaf data: LeafSize * 9 * 4 * padding " << std::endl;
+
+	std::cout << "Size of Fastray: " << sizeof(FastRay) << std::endl;
 	/*
 	std::cout << sizeof(FastNode<24>) << std::endl;
 	std::cout << sizeof(FastNode<32>) << std::endl;

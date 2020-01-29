@@ -8,7 +8,8 @@
 //#include "util.h"
 //#include "global.h"
 
-class FastRay
+
+class alignas(64) FastRay
 {
 public:
 

@@ -1,6 +1,5 @@
 #include "fastRay.h"
 
-
 FastRay::FastRay(const glm::vec3& pos, const glm::vec3& targetPosition, float maxDistance)
 	: pos(pos), direction(targetPosition - pos), tMax(maxDistance)
 {
