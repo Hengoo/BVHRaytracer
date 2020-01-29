@@ -179,13 +179,13 @@ public:
 	void intersectWide(std::array<FastRay, workGroupSquare>& rays, std::array<uint32_t, workGroupSquare>& leafIndex,
 		std::array<int8_t, workGroupSquare>& triIndex, nanoSec& timeTriangleTest);
 	template<bool doCache>
-	void  intersectSecondaryWide(std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t,
+	void  intersectSecondaryWide(std::array<FastRay, workGroupSquare>& rays, std::array<uint16_t,
 		workGroupSquare>& result, nanoSec& timeTriangleTest);
 	template<bool doCache>
 	void intersectWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint32_t, workGroupSquare>& leafIndex,
 		std::array<int8_t, workGroupSquare>& triIndex, nanoSec& timeTriangleTest);
 	template<bool doCache>
-	void intersectSecondaryWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t,
+	void intersectSecondaryWideAlternative(std::array<FastRay, workGroupSquare>& rays, std::array<uint16_t,
 		workGroupSquare>& result, nanoSec& timeTriangleTest);
 
 	template<bool doCache>
@@ -650,7 +650,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 template <bool doCache>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWide(
-	std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest)
+	std::array<FastRay, workGroupSquare>& rays, std::array<uint16_t, workGroupSquare>& result, nanoSec& timeTriangleTest)
 {
 	//next nodeId for each ray. 40 is current max stack size. Negative id means leaf
 	//id 0 is root node
@@ -1028,7 +1028,7 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize>
 template <bool doCache>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWideAlternative(
-	std::array<FastRay, workGroupSquare>& rays, std::array<uint8_t, workGroupSquare>& result, nanoSec& timeTriangleTest)
+	std::array<FastRay, workGroupSquare>& rays, std::array<uint16_t, workGroupSquare>& result, nanoSec& timeTriangleTest)
 {
 	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
 	//id 0 is root node

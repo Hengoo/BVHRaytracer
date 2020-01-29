@@ -22,7 +22,7 @@
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize >
 class FastNodeManager;
 
-#define perRayCacheAnalysis true
+#define perRayCacheAnalysis false
 
 //Fast version of camera that does no intersection counters but is only for performance analysis
 class CameraFast : public Camera
@@ -64,6 +64,13 @@ public:
 
 		if (doCacheAnalysis)
 		{
+#if perRayCacheAnalysis
+			if (wideRender)
+			{
+				std::cerr << "Stopped wide renderer for per ray cache analysis." << std::endl;
+				return;
+			}
+#endif
 			for (int cameraId = 0; cameraId < cameraCount; cameraId++)
 			{
 				nodeManager.cache.resetEverything();
@@ -287,10 +294,6 @@ public:
 			cachePrimaryResult.initialize();
 			cacheSecondaryResult.initialize();
 		}
-		if (wideRender)
-		{
-			std::cerr << "Stoped wide renderer for per ray cache analysis." << std::endl;
-		}
 #else
 		//create per workgroupo storage for hits, and loads
 		CacheResultStorage cachePrimaryResult;
@@ -317,7 +320,8 @@ public:
 					nodeManager.cache.resetThisThread();
 				}
 #endif
-
+				//data to do secondary rays: (frist ray, second is surface normal (NAN if no hit))
+				std::array<std::pair<FastRay, glm::vec3>, workGroupSquare> secondaryRayData;
 				for (int j = 0; j < workGroupSquare; j++)
 				{
 					RenderInfo info(
@@ -352,12 +356,9 @@ public:
 						cachePrimaryResult.updateAndResetCounterThread(nodeManager.cache, i);
 #endif
 					}
-					uint8_t imageResult = 0;
 					if (result)
 					{
-						//shoot secondary ray:
-						unsigned ambientResult = 0;
-
+						//prepare secondary rays (traversal is done after the primary rays)
 						//get surface normal and position from triangle index info.
 						glm::vec3 surfaceNormal(0);
 						glm::vec3 surfacePosition(0);
@@ -365,10 +366,42 @@ public:
 						ray.pos = surfacePosition + surfaceNormal * 0.001f;
 						//nodeManager.getSurfaceNormalTri(ray, surfaceNormal);
 
+						secondaryRayData[j] = std::make_pair(ray, surfaceNormal);
+					}
+					else
+					{
+						secondaryRayData[j] = std::make_pair(ray, glm::vec3(NAN));
+					}
+
+
+
+					//important to override previous data since we do more than one run.
+					timesTriangles[info.index] = timeTriangleTest;
+#if doTimer
+					timesRay[info.index] = getTimeSpan(timeBeforeRay);
+#endif
+
+				}
+
+				//now secondary ray:
+				for (int j = 0; j < workGroupSquare; j++)
+				{
+					FastRay ray = secondaryRayData[j].first;
+					glm::vec3 surfaceNormal = secondaryRayData[j].second;
+
+					nanoSec timeTriangleTest(0);
+#if doTimer
+					auto timeBeforeRay = getTime();
+#endif
+					int index = i * workGroupSquare + j;
+					uint8_t imageResult = 0;
+					uint16_t ambientResult = 0;
+					if (!isnan(surfaceNormal.x))
+					{
 						for (size_t i = 0; i < ambientSampleCount; i++)
 						{
 							//deterministic random direction
-							auto direction = getAmbientDirection(info.index, surfaceNormal, i);
+							auto direction = getAmbientDirection(index, surfaceNormal, i);
 							ray.updateDirection(direction);
 							ray.tMax = ambientDistance;
 							//shoot secondary ray
@@ -381,19 +414,22 @@ public:
 						float factor = 1 - (ambientResult / (float)ambientSampleCount);
 						imageResult = (uint8_t)(factor * 255);
 					}
-					//important to override previous data since we do more than one run.
-					timesTriangles[info.index] = timeTriangleTest;
+
+
+					//add time results to primary ray times:
+					timesTriangles[index] += timeTriangleTest;
 #if doTimer
-					timesRay[info.index] = getTimeSpan(timeBeforeRay);
+					timesRay[index] += getTimeSpan(timeBeforeRay);
 #endif
+
 					//distance render version (for large scenes)
 					//float distanceToCamera =  glm::distance(ray.surfacePosition, ray.pos);
 					//imageResult = (uint8_t)(distanceToCamera / 50.f);
 
-					image[info.index * 4 + 0] = imageResult;
-					image[info.index * 4 + 1] = imageResult;
-					image[info.index * 4 + 2] = imageResult;
-					image[info.index * 4 + 3] = 255;
+					image[index * 4 + 0] = imageResult;
+					image[index * 4 + 1] = imageResult;
+					image[index * 4 + 2] = imageResult;
+					image[index * 4 + 3] = 255;
 
 					//render ambient sum average:
 					//ambientSum = glm::normalize(ambientSum);
@@ -462,7 +498,7 @@ public:
 #endif
 
 				//prepare secondary rays:
-				std::array<uint8_t, workGroupSquare> ambientResult;
+				std::array<uint16_t, workGroupSquare> ambientResult;
 				ambientResult.fill(0);
 				std::array<glm::vec3, workGroupSquare> surfaceNormal;
 				//surfaceNormal.fill(glm::vec3(0));
