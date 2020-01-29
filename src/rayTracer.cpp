@@ -158,7 +158,7 @@ void RayTracer::run()
 	}
 	else
 	{
-		std::cout << "Doing normal (NOT wide) renderer" << std::endl;
+		std::cout << "Doing single ray traversal" << std::endl;
 	}
 	if (doWorkGroupAnalysis)
 	{

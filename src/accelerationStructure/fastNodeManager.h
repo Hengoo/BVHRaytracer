@@ -23,6 +23,7 @@ class FastRay;
 #define workGroupSquare (workGroupSize * workGroupSize)
 
 //padding. padding of 1 means no padding, 2 doubles everything, and so on
+//In order for it to work the padding also has to be the same in the jinja script
 #define nodeLeafPadding 1
 
 template  <unsigned nodeMemory>

@@ -22,7 +22,7 @@
 template <unsigned gangSize, unsigned nodeMemory, unsigned workGroupSize >
 class FastNodeManager;
 
-#define perRayCacheAnalysis false
+#define perRayCacheAnalysis true
 
 //Fast version of camera that does no intersection counters but is only for performance analysis
 class CameraFast : public Camera
@@ -320,10 +320,8 @@ public:
 
 				for (int j = 0; j < workGroupSquare; j++)
 				{
-					//int tmpWidth = ((j / workGroupSize) % 2 == 0) ? j % workGroupSize : workGroupSize - j % workGroupSize - 1;
-					int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
 					RenderInfo info(
-						((i * workGroupSize) % width - width / 2.f) + tmpWidth,
+						((i * workGroupSize) % width - width / 2.f) + j % workGroupSize,
 						-(((i * workGroupSize) / width) * workGroupSize - height / 2.f) - (j / workGroupSize),
 						i * workGroupSquare + j);
 #if doTimer
@@ -441,10 +439,9 @@ public:
 				int tmp1 = ((i * workGroupSize) % width - width / 2);
 				for (int j = 0; j < workGroupSquare; j++)
 				{
-					int tmpWidth = ((j / workGroupSize) % 2 == 0) ? workGroupSize - j % workGroupSize - 1 : j % workGroupSize;
 					glm::vec3 targetPos = getRayTargetPosition(
 						(-tmp0 - (j / workGroupSize)),
-						tmp1 + tmpWidth, cameraId);
+						tmp1 + j % workGroupSize, cameraId);
 					rays[j] = FastRay(positions[cameraId], targetPos);
 				}
 
@@ -789,7 +786,7 @@ public:
 				{
 					//one line of smallsize
 					int id = (w / workGroupSize) * workGroupSquare;
-					id += h % 2 == 0 ? workGroupSize - w % workGroupSize - 1 : w % workGroupSize;
+					id += w % workGroupSize;
 					id += (h % workGroupSize) * workGroupSize;
 					id += (h / workGroupSize) * width * workGroupSize;
 					int idOrig = w + h * width;
