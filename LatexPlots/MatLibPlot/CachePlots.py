@@ -12,7 +12,7 @@ def endPlot():
 	else:
 		plt.close()
 
-def perRayCacheMiss(bvhConfig):
+def perRayCacheMiss(bvhConfig, workSize):
 
 	cacheSizes = [512, 256, 128, 64, 32]
 	cacheSizes = np.array(cacheSizes)
@@ -21,14 +21,14 @@ def perRayCacheMiss(bvhConfig):
 
 	fig = plt.figure(figsize=(13,11))
 	plt.subplots_adjust(hspace = 0.4)
-	plt.suptitle("Cache behavior per ray")
+	plt.suptitle("Cache behavior per ray (" + str(workSize) + " * " + str(workSize) + " Work groups)")
 	
 	for iteration, cacheSize in enumerate(cacheSizes):
-		filePath = inputFolder + "PerRayCache/"+ "amazonLumberyardInteriorPerRayCache_Cachesize" + str(cacheSize) + bvhConfig + ".txt"
+		filePath = inputFolder + "PerRayCache_s" + str(workSize) + "/"+ "amazonLumberyardInteriorPerRayCache_Cachesize" + str(cacheSize) + bvhConfig + ".txt"
 
 		(rayId, stackCacheLoads, stackCacheMiss, heapCacheLoads,
 			heapCacheMiss, secondaryStackCacheLoads, secondaryStackCacheMiss,
-			secondaryHeapCacheLoads, secondaryHeapCacheMiss) =  np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+			secondaryHeapCacheLoads, secondaryHeapCacheMiss) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 
 		
 		ax = plt.subplot(5, 2, 1 + iteration * 2)
@@ -73,14 +73,14 @@ def perRayCacheMiss(bvhConfig):
 	handles, labels = ax.get_legend_handles_labels()
 	fig.legend(handles, labels, ncol=4, loc='upper center', bbox_to_anchor=(0.5, 0.95))	
 
-	plt.savefig(outputFolder + "PerRayCache" + bvhConfig + ".pgf")
-	plt.savefig(outputFolder + "PerRayCache" + bvhConfig + ".pdf")
+	plt.savefig(outputFolder + "PerRayCache_s" + str(workSize) + bvhConfig + ".pgf")
+	plt.savefig(outputFolder + "PerRayCache_s" + str(workSize) + bvhConfig + ".pdf")
 
 	endPlot()
 
 	# do hitrate?
 
-def differentCachesizeAnalysis():
+def differentCachesizeAnalysis(workSize):
 
 
 	cacheSizes = [8, 16, 32, 64, 128, 256, 512]
@@ -91,7 +91,7 @@ def differentCachesizeAnalysis():
 
 	fig = plt.figure(figsize=(13,11))
 	#figure.tight_layout(False)
-	plt.suptitle("Cache hit rate with different Cache sizes and Node sizes.")
+	plt.suptitle("Cache hit rate with different Cache sizes and Node sizes. (" + str(workSize) + " * " + str(workSize) + " Work groups)")
 	plt.subplots_adjust(hspace = 0.4)
 
 	for iteration, n in enumerate(nodeSizes):
@@ -104,37 +104,38 @@ def differentCachesizeAnalysis():
 
 		for i in range(len(cacheSizes)):
 			cacheSize = cacheSizes[i]
-			filePath0 = inputFolder + "WorkGroupNormal/amazonLumberyardInteriorPerWorkgroupCache_Cachesize" + str(cacheSize) + configString + ".txt"
-			filePath1 = inputFolder + "WorkGroupWide1/amazonLumberyardInteriorPerWorkgroupCache_Cachesize" + str(cacheSize) + configString + ".txt"
+			filePath0 = inputFolder + "WorkGroupNormal_s" + str(workSize) + "/amazonLumberyardInteriorPerWorkgroupCache_Cachesize" + str(cacheSize) + configString + ".txt"
+			filePath1 = inputFolder + "WorkGroupWide1_s" + str(workSize) + "/amazonLumberyardInteriorPerWorkgroupCache_Cachesize" + str(cacheSize) + configString + ".txt"
 
 			(workGroupId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss,
 				secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads,
 				secondaryHeapCacheMiss) = np.loadtxt(filePath0, delimiter=',', unpack=True, skiprows=1)
 
+			stackLoads0 = np.append(stackLoads0, np.average(stackCacheLoads))
+			stackMisses0 = np.append(stackMisses0, np.average(stackCacheMiss))
+			heapLoads0 = np.append(heapLoads0, np.average(heapCacheLoads))
+			heapMisses0 = np.append(heapMisses0, np.average(heapCacheMiss))
 
-			stackLoads0 = np.append(stackLoads0, np.sum(stackCacheLoads) / len(workGroupId))
-			stackMisses0 = np.append(stackMisses0, np.sum(stackCacheMiss) / len(workGroupId))
-			heapLoads0 = np.append(heapLoads0, np.sum(heapCacheLoads) / len(workGroupId))
-			heapMisses0 = np.append(heapMisses0, np.sum(heapCacheMiss) / len(workGroupId))
-
-			stackSecondaryLoads0 = np.append(stackSecondaryLoads0, np.sum(secondaryStackCacheLoads) / len(workGroupId))
-			stackSecondaryMisses0 = np.append(stackSecondaryMisses0, np.sum(secondaryStackCacheMiss) / len(workGroupId))
-			heapSecondaryLoads0 = np.append(heapSecondaryLoads0, np.sum(secondaryHeapCacheLoads) / len(workGroupId))
-			heapSecondaryMisses0 = np.append(heapSecondaryMisses0, np.sum(secondaryHeapCacheMiss) / len(workGroupId))
+			stackSecondaryLoads0 = np.append(stackSecondaryLoads0, np.average(secondaryStackCacheLoads))
+			stackSecondaryMisses0 = np.append(stackSecondaryMisses0, np.average(secondaryStackCacheMiss))
+			heapSecondaryLoads0 = np.append(heapSecondaryLoads0, np.average(secondaryHeapCacheLoads))
+			heapSecondaryMisses0 = np.append(heapSecondaryMisses0, np.average(secondaryHeapCacheMiss))
 
 			(workGroupId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss,
 				secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads,
 				secondaryHeapCacheMiss) = np.loadtxt(filePath1, delimiter=',', unpack=True, skiprows=1)
 
-			stackLoads1 = np.append(stackLoads1, np.sum(stackCacheLoads) / len(workGroupId))
-			stackMisses1 = np.append(stackMisses1, np.sum(stackCacheMiss) / len(workGroupId))
-			heapLoads1 = np.append(heapLoads1, np.sum(heapCacheLoads) / len(workGroupId))
-			heapMisses1 = np.append(heapMisses1, np.sum(heapCacheMiss) / len(workGroupId))
+			print("cache size " + str(cacheSizes[i]) + " nodeSize" + str(n) + " misses: "+ str(np.average(stackCacheMiss)))
 
-			stackSecondaryLoads1 = np.append(stackSecondaryLoads1, np.sum(secondaryStackCacheLoads) / len(workGroupId))
-			stackSecondaryMisses1 = np.append(stackSecondaryMisses1, np.sum(secondaryStackCacheMiss) / len(workGroupId))
-			heapSecondaryLoads1 = np.append(heapSecondaryLoads1, np.sum(secondaryHeapCacheLoads) / len(workGroupId))
-			heapSecondaryMisses1 = np.append(heapSecondaryMisses1, np.sum(secondaryHeapCacheMiss) / len(workGroupId))
+			stackLoads1 = np.append(stackLoads1, np.average(stackCacheLoads))
+			stackMisses1 = np.append(stackMisses1, np.average(stackCacheMiss))
+			heapLoads1 = np.append(heapLoads1, np.average(heapCacheLoads))
+			heapMisses1 = np.append(heapMisses1, np.average(heapCacheMiss))
+
+			stackSecondaryLoads1 = np.append(stackSecondaryLoads1, np.average(secondaryStackCacheLoads))
+			stackSecondaryMisses1 = np.append(stackSecondaryMisses1, np.average(secondaryStackCacheMiss))
+			heapSecondaryLoads1 = np.append(heapSecondaryLoads1, np.average(secondaryHeapCacheLoads))
+			heapSecondaryMisses1 = np.append(heapSecondaryMisses1, np.average(secondaryHeapCacheMiss))
 
 		stackHitRate0 = 1 - stackMisses0 / stackLoads0
 		heapHitRate0 = 1 - heapMisses0 / heapLoads0
@@ -186,8 +187,8 @@ def differentCachesizeAnalysis():
 	handles, labels = ax.get_legend_handles_labels()
 	fig.legend(handles, labels, ncol=4, loc='lower center', bbox_to_anchor=(0.5, 0.91))	
 
-	plt.savefig(outputFolder + "CacheHitrate.pdf")
-	plt.savefig(outputFolder + "CacheHitrate.pgf")
+	plt.savefig(outputFolder + "CacheHitrate_s" + str(workSize) + ".pdf")
+	plt.savefig(outputFolder + "CacheHitrate_s" + str(workSize) + ".pgf")
 	endPlot()
 
 	#Cache Misses
@@ -206,6 +207,6 @@ def differentCachesizeAnalysis():
 
 
 
-#perRayCacheMiss("_b4_l4_mb4_ml4")
+#perRayCacheMiss("_b4_l4_mb4_ml4", 16)
 
-differentCachesizeAnalysis()
+differentCachesizeAnalysis(16)
