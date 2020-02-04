@@ -24,7 +24,7 @@ def perRayCacheMiss(bvhConfig, workSize):
 	plt.suptitle("Cache behavior per ray (" + str(workSize) + " * " + str(workSize) + " Work groups)")
 	
 	for iteration, cacheSize in enumerate(cacheSizes):
-		filePath = inputFolder + "PerRayCache_s" + str(workSize) + "/"+ "amazonLumberyardInteriorPerRayCache_Cachesize" + str(cacheSize) + bvhConfig + ".txt"
+		filePath = inputFolder + "WorkGroupSize_" + str(workSize) + "_Normal/"+ "amazonLumberyardInterior_PerRayCache_Cache" + str(cacheSize) + bvhConfig + ".txt"
 
 		(rayId, stackCacheLoads, stackCacheMiss, heapCacheLoads,
 			heapCacheMiss, secondaryStackCacheLoads, secondaryStackCacheMiss,
@@ -104,8 +104,11 @@ def differentCachesizeAnalysis(workSize):
 
 		for i in range(len(cacheSizes)):
 			cacheSize = cacheSizes[i]
-			filePath0 = inputFolder + "WorkGroupNormal_s" + str(workSize) + "/amazonLumberyardInteriorPerWorkgroupCache_Cachesize" + str(cacheSize) + configString + ".txt"
-			filePath1 = inputFolder + "WorkGroupWide1_s" + str(workSize) + "/amazonLumberyardInteriorPerWorkgroupCache_Cachesize" + str(cacheSize) + configString + ".txt"
+			filePath0 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Normal/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
+			filePath1 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Wide/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
+
+			filePath0 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Normal_NoRayPad/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
+			filePath1 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Wide_NoRayPad/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
 
 			(workGroupId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss,
 				secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads,

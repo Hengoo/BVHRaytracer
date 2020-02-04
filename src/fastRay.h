@@ -10,6 +10,7 @@
 
 
 class alignas(64) FastRay
+//class FastRay
 {
 public:
 

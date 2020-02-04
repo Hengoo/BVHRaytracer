@@ -131,13 +131,20 @@ public:
 			std::cout << "all rays minus triangle took " << timeSumEachRay - timeSumTriangle << " seconds." << std::endl;
 		}
 
-		std::string workGroupName = "";
+		std::string workGroupName = "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Normal";
 		if (wideRender)
 		{
-			workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);;
+			if (wideAlternative == 0)
+			{
+				workGroupName = "/WorkGroupSize_" + std::to_string(workGroupSize) + "_WideOld";
+			}
+			else
+			{
+				workGroupName = "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Wide";
+			}
 		}
 
-		std::ofstream myfile(path + "/" + workGroupName + "/" + name + problem + problemPrefix + "_Perf.txt");
+		std::ofstream myfile(path + workGroupName + "/" + name + problem + problemPrefix + "_Perf.txt");
 		if (myfile.is_open())
 		{
 			myfile << "scenario " << name << " with branching factor of " << nodeManager.branchingFactor << " and leafsize of " << nodeManager.leafSize << std::endl;
@@ -717,6 +724,18 @@ public:
 		nanoSec timeRaySum = std::accumulate(timesRay.begin(), timesRay.end(), nanoSec(0));
 		nanoSec timeTrianglesSum = std::accumulate(timesTriangles.begin(), timesTriangles.end(), nanoSec(0));
 
+		std::string workGroupName = "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Normal";
+		if (wideRender)
+		{
+			if (wideAlternative == 0)
+			{
+				workGroupName = "/WorkGroupSize_" + std::to_string(workGroupSize) + "_WideOld";
+			}
+			else
+			{
+				workGroupName = "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Wide";
+			}
+		}
 
 #if perRayCacheAnalysis
 		//per ray analysis:
@@ -725,7 +744,7 @@ public:
 			std::cerr << "doing Per ray cache miss analysis" << std::endl;
 			if (!wideRender)
 			{
-				std::string filenameCachePrimary = path + "/" + name + "PerRayCache_Cachesize" + std::to_string(nodeManager.cache.cacheSize) + problem + problemPrefix + ".txt";
+				std::string filenameCachePrimary = path + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Normal/" + name + "_PerRayCache_Cache" + std::to_string(nodeManager.cache.cacheSize) + problem + problemPrefix + ".txt";
 				std::ofstream file(filenameCachePrimary);
 				if (file.is_open())
 				{
@@ -742,15 +761,11 @@ public:
 			}
 		}
 #else
+
 		//normal cache analysis. (per workgroup)
 		if constexpr (doCache)
 		{
-			std::string workGroupName = "";
-			if (wideRender)
-			{
-				workGroupName = "WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);
-			}
-			std::string filenamePrimary = path + "/" + workGroupName + "/" + name + "PerWorkgroupCache_Cachesize" + std::to_string(nodeManager.cache.cacheSize) + problem + problemPrefix + ".txt";
+			std::string filenamePrimary = path + workGroupName + "/" + name + "_PerWorkgroupCache_Cache" + std::to_string(nodeManager.cache.cacheSize) + problem + problemPrefix + ".txt";
 
 			std::ofstream file(filenamePrimary);
 			if (file.is_open())
@@ -769,9 +784,10 @@ public:
 		//for detailed timing analysis, save times of each ray.
 		if (saveRayTimes)
 		{
+
 			if (wideRender)
 			{
-				std::string timingFileName = path + "/" + name + "RayPerformanceWideV" + std::to_string(wideAlternative) + "_c" + std::to_string(cameraId) + ".txt";
+				std::string timingFileName = path + workGroupName + "/" + name + "_RayPerformanceWideV" + std::to_string(wideAlternative) + "_c" + std::to_string(cameraId) + ".txt";
 				std::ofstream file(timingFileName);
 				if (file.is_open())
 				{
@@ -790,7 +806,7 @@ public:
 			}
 			else
 			{
-				std::string timingFileName = path + "/" + name + "RayPerformance_c" + std::to_string(cameraId) + ".txt";
+				std::string timingFileName = path + workGroupName + "/" + name + "_RayPerformance_c" + std::to_string(cameraId) + ".txt";
 				std::ofstream file(timingFileName);
 				if (file.is_open())
 				{

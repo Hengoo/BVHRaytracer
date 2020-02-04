@@ -397,24 +397,46 @@ void RayTracer::run()
 						//create folders for the workGroup sizes we use:
 						if (!renderAllOptions)
 						{
-							std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_" + std::to_string(wideAlternative);
-							if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
-								ERROR_ALREADY_EXISTS == GetLastError()))
+							if (!wideRender)
 							{
-								std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+								std::string pathPerfWorkGroup0 = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Normal";
+								if (!(CreateDirectory(pathPerfWorkGroup0.data(), NULL) ||
+									ERROR_ALREADY_EXISTS == GetLastError()))
+								{
+									std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+								}
 							}
+							else if (wideAlternative == 0)
+							{
+								std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_WideOld";
+								if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+									ERROR_ALREADY_EXISTS == GetLastError()))
+								{
+									std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+								}
+							}
+							else
+							{
+								std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Wide";
+								if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+									ERROR_ALREADY_EXISTS == GetLastError()))
+								{
+									std::cerr << "failed to create performance workGroup scene directory" << std::endl;
+								}
+							}
+
 						}
 						else
 						{
-							std::string pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_0";
-							if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+							std::string pathPerfWorkGroup0 = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Normal";
+							if (!(CreateDirectory(pathPerfWorkGroup0.data(), NULL) ||
 								ERROR_ALREADY_EXISTS == GetLastError()))
 							{
 								std::cerr << "failed to create performance workGroup scene directory" << std::endl;
 							}
 
-							pathPerfWorkGroup = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Version_1";
-							if (!(CreateDirectory(pathPerfWorkGroup.data(), NULL) ||
+							std::string pathPerfWorkGroup1 = pathPerf + "/WorkGroupSize_" + std::to_string(workGroupSize) + "_Wide";
+							if (!(CreateDirectory(pathPerfWorkGroup1.data(), NULL) ||
 								ERROR_ALREADY_EXISTS == GetLastError()))
 							{
 								std::cerr << "failed to create performance workGroup scene directory" << std::endl;

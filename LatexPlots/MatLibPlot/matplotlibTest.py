@@ -664,44 +664,37 @@ def npArrayAnalysis(a, title):
 	print(title + text)
 
 def rayTotalAnalysis():
-	def rayTotalAnalysisHelperComparison(ax, totalTimeV0, totalTimeV1, leaf, branch, leafSize, width):
-		maskV0 = np.ma.masked_where(leaf != leafSize, totalTimeV0)
+	def rayTotalAnalysisHelperComparison(ax, totalTimeV1, leaf, branch, leafSize, width):
 		maskV1 = np.ma.masked_where(leaf != leafSize, totalTimeV1)
 		maskBranch = np.ma.masked_where(leaf != leafSize, branch)
-		maskV0 = maskV0.compressed()
 		maskV1 = maskV1.compressed()
 		maskBranch = maskBranch.compressed()
 
 		plt.xticks(np.arange(4, 20, step=4))
 		plt.title("Leafsize " + str(leafSize))
-		ax.bar(maskBranch - width / 2, maskV0, width=width, bottom=1, label="V0")
-		ax.bar(maskBranch + width / 2, maskV1, width=width, bottom=1, label="V1")
+		ax.bar(maskBranch, maskV1, width=width, bottom=1, label="Wide renderer")
 		ax.axhline(linewidth=1, y = 1, color='0.5')
 		plt.legend()
 
-	def rayTotalAnalysisHelperOverview(ax, totalTime, totalTimeV0, totalTimeV1, leaf, branch, leafSize, width):
+	def rayTotalAnalysisHelperOverview(ax, totalTime, totalTimeV1, leaf, branch, leafSize, width):
 		mask = np.ma.masked_where(leaf != leafSize, totalTime)
-		maskV0 = np.ma.masked_where(leaf != leafSize, totalTimeV0)
 		maskV1 = np.ma.masked_where(leaf != leafSize, totalTimeV1)
 		maskBranch = np.ma.masked_where(leaf != leafSize, branch)
 		mask = mask.compressed()
-		maskV0 = maskV0.compressed()
 		maskV1 = maskV1.compressed()
 		maskBranch = maskBranch.compressed()
 
 		plt.xticks(np.arange(4, 20, step=4))
 		plt.title("Leafsize " + str(leafSize))
 
-		ax.bar(maskBranch - width, maskV0, width=width, label="Wide ray V0")
-		ax.bar(maskBranch, maskV1, width=width, label="Wide ray V1")
-		ax.bar(maskBranch + width, mask, width=width, label="Single ray Traversal")
+		ax.bar(maskBranch - width / 2, maskV1, width=width, label="Wide ray")
+		ax.bar(maskBranch + width / 2, mask, width=width, label="Single ray Traversal")
 		
 		#ax.axhline(linewidth=1, y = 0, color='0.5')
 		plt.legend(loc = 'lower left')
 	
 	#overview of the 3 raytracer version, normal , wideV0 and wideV1 for N,L 4 to 16
 	(branch, leaf, totalTime) = np.loadtxt(inputFolder + "rayTotalTime.txt" , delimiter=',', unpack=True, skiprows = 1)
-	(branch, leaf, totalTimeV0) = np.loadtxt(inputFolder + "rayTotalTimeV0.txt" , delimiter=',', unpack=True, skiprows = 1)
 	(branch, leaf, totalTimeV1) = np.loadtxt(inputFolder + "rayTotalTimeV1.txt" , delimiter=',', unpack=True, skiprows = 1)
 
 	width = 1
@@ -711,19 +704,19 @@ def rayTotalAnalysis():
 	fig.suptitle("General performance overview")
 
 	ax0 = plt.subplot(2,2,1)
-	rayTotalAnalysisHelperOverview(ax0, totalTime, totalTimeV0, totalTimeV1, leaf, branch, 4, width)
+	rayTotalAnalysisHelperOverview(ax0, totalTime, totalTimeV1, leaf, branch, 4, width)
 	plt.ylabel("Render time in seconds")
 
 	ax1 = plt.subplot(2,2,2, sharex = ax0, sharey = ax0)
-	rayTotalAnalysisHelperOverview(ax1, totalTime, totalTimeV0, totalTimeV1, leaf, branch, 8, width)
+	rayTotalAnalysisHelperOverview(ax1, totalTime, totalTimeV1, leaf, branch, 8, width)
 
 	ax2 = plt.subplot(2,2,3, sharex = ax0, sharey = ax0)
-	rayTotalAnalysisHelperOverview(ax2, totalTime, totalTimeV0, totalTimeV1, leaf, branch, 12, width)
+	rayTotalAnalysisHelperOverview(ax2, totalTime, totalTimeV1, leaf, branch, 12, width)
 	plt.ylabel("Render time in seconds")
 	plt.xlabel("Nodesize")
 
 	ax3 = plt.subplot(2,2,4, sharex = ax0, sharey = ax0)
-	rayTotalAnalysisHelperOverview(ax3, totalTime, totalTimeV0, totalTimeV1, leaf, branch, 16, width)
+	rayTotalAnalysisHelperOverview(ax3, totalTime, totalTimeV1, leaf, branch, 16, width)
 	plt.xlabel("Nodesize")
 
 
@@ -733,24 +726,23 @@ def rayTotalAnalysis():
 	#Now plot that is normalized by "smallest" (single ray traversal)
 	fig = plt.figure(figsize=(12, 8))
 	fig.suptitle("Performance comparison of single ray traversal to wide traversal")
-	totalTimeV0 = (totalTimeV0 / totalTime) - 1
 	totalTimeV1 = (totalTimeV1 / totalTime) - 1
 
 	ax0 = plt.subplot(2,2,1)
 	plt.ylabel("time relative to single ray traversal")
-	rayTotalAnalysisHelperComparison(ax0, totalTimeV0, totalTimeV1, leaf, branch, 4, width)
+	rayTotalAnalysisHelperComparison(ax0, totalTimeV1, leaf, branch, 4, width)
 
 	ax1 = plt.subplot(2,2,2, sharex = ax0, sharey = ax0)
-	rayTotalAnalysisHelperComparison(ax1, totalTimeV0, totalTimeV1, leaf, branch, 8, width)
+	rayTotalAnalysisHelperComparison(ax1, totalTimeV1, leaf, branch, 8, width)
 
 	ax2 = plt.subplot(2,2,3, sharex = ax0, sharey = ax0)
 	plt.xlabel("Nodesize")
 	plt.ylabel("time relative to single ray traversal")
-	rayTotalAnalysisHelperComparison(ax2, totalTimeV0, totalTimeV1, leaf, branch, 12, width)
+	rayTotalAnalysisHelperComparison(ax2, totalTimeV1, leaf, branch, 12, width)
 
 	ax3 = plt.subplot(2,2,4, sharex = ax0, sharey = ax0)
 	plt.xlabel("Nodesize")
-	rayTotalAnalysisHelperComparison(ax3, totalTimeV0, totalTimeV1, leaf, branch, 16, width)
+	rayTotalAnalysisHelperComparison(ax3, totalTimeV1, leaf, branch, 16, width)
 
 	plt.savefig(outputFolder + "PerformanceComparison.pdf")
 	plt.savefig(outputFolder + "PerformanceComparison.pgf")
@@ -868,9 +860,9 @@ def rayTotalAnalysisPadding():
 #makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c0_WorkGroupUniqueWork.txt", "c0", 16)
 #makeWorkGroupUniqueAnalysis(inputFolder + "WorkGroups/WorkGroupSize_16_Version_0/amazonLumberyardInterior_b4_l4_c1_WorkGroupUniqueWork.txt", "c1", 16)
 
-workGroupUniqueLoadedCachelines()
+#workGroupUniqueLoadedCachelines()
 
 #perRayPlot(inputFolder + "amazonLumberyardInteriorRayPerformance")
 
-#rayTotalAnalysis()
+rayTotalAnalysis()
 #rayTotalAnalysisPadding()

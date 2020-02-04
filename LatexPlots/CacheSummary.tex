@@ -1,0 +1,37 @@
+\section{Cache Summary}
+
+Performance overview of single ray traversal vs wide renderer
+\begin{figure}[!htb]
+	\scalebox{0.45}{\input{Plots/PerformanceComparison.pgf}}
+\end{figure}
+
+\begin{figure}[!htb]
+	\scalebox{0.45}{\input{Plots/PerformanceOverview.pgf}}
+\end{figure}
+
+
+\newpage
+
+Cache results:
+
+Short explanation:
+\begin{itemize}
+	\item Heap: Everything that is loaded from the BVH. This is the node data and the triangles.
+	\item Stack: All the extra data the algorithm needs to store. (Mostly important for wide renderer)
+	
+\end{itemize}
+
+\begin{figure}[!htb]
+	\scalebox{0.45}{\input{Plots/CacheHitrate_s8.pgf}}
+	\caption{8x8 Work Group}
+\end{figure}
+
+\begin{figure}[!htb]
+	\scalebox{0.45}{\input{Plots/CacheHitrate_s16.pgf}}
+	\caption{16x16 Work Group}
+\end{figure}
+
+\begin{figure}[!htb]
+	\scalebox{0.45}{\input{Plots/CacheHitrate_s32.pgf}}
+	\caption{32x32 Work Group}
+\end{figure}

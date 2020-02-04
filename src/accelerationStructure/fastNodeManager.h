@@ -161,7 +161,7 @@ class FastNodeManager
 	alignas(64) std::vector<FastNode<nodeMemory>>compactNodes;
 
 	//(SoA order) -> first p0.x p0.y p0.z -> p1.x ....   (this for each triangle so its lieafsize * p0.x)
-	std::vector<float> trianglePoints;
+	alignas(64) std::vector<float> trianglePoints;
 
 public:
 	CacheSimulator cache;
@@ -1598,8 +1598,8 @@ FastNodeManager<gangSize, nodeMemory, workGroupSize>::FastNodeManager(Bvh& bvh, 
 			pBegin = trianglePoints.size();
 			leafRealSize = ((pCount - 1) / gangSize + 1) * gangSize;
 			uint32_t pTmp = pBegin + leafRealSize;
-			//idea is to restucture the floats inside the primitives
-			//i want to have all x of p0, then all y of p0, then all z of p0 -> all x of p1 ...
+			//restucture the floats of the triangle to soa order
+			// -> its x0, x1, x2, x3, y0, y1 ,.. for L4
 			for (int i = 0; i < 3; i++)
 			{
 				std::for_each(std::execution::seq, n->node->primitiveBegin, n->node->primitiveEnd,
