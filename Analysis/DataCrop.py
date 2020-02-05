@@ -3,21 +3,7 @@ import math
 from os import path
 #short python script to crop a table to the intresting collums
 
-def work(tableInput, tableOutput):
-	folder = ""
-	#tableInput = "amazonLumberyardExteriorTableSorted.txt"
-	#tableOutput = "amazonLumberyardExteriorTable.txt"
-	collumsToKeep = ["branchFactor", "leafSize", "primaryNodeIntersections", "primaryAabb", "primaryLeafIntersections", "primaryPrimitive", "primaryAabbSuccessRatio", "primaryTriangleSuccessRatio","secondaryNodeIntersections", "secondaryAabb", "secondaryLeafIntersections", "secondaryPrimitive", "secondaryAabbSuccessRatio", "secondaryTriangleSuccessRatio"]
-
-	#config for the
-	if False:
-		folder = "Summary/"
-		collumsToKeep = ["branchFactor", "leafSize", "sahNodeFactor"]
-
-	if True:
-		folder = "Summary/"
-		collumsToKeep = ["branchFactor", "leafSize","totalTime"]
-
+def work(folder, tableInput, tableOutput, collumsToKeep):
 	#open table
 	if (path.exists(folder + tableInput)):
 		f = open(folder + tableInput, "r")
@@ -56,6 +42,5 @@ def work(tableInput, tableOutput):
 		print("problem finding file")
 
 
-work("amazonLumberyardInteriorTable.txt",   "rayTotalTime.txt")
-work("amazonLumberyardInteriorTableV1.txt", "rayTotalTimeV1.txt")
-work("amazonLumberyardInteriorTableV0.txt", "rayTotalTimeV0.txt")
+work("Summary/", "amazonLumberyardInteriorTable_Normal.txt",   "rayTotalTime_Normal.txt", ["branchFactor", "leafSize","totalTime"])
+work("Summary/", "amazonLumberyardInteriorTable_Wide.txt", "rayTotalTime_Wide.txt", ["branchFactor", "leafSize","totalTime"])

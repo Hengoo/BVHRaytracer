@@ -558,77 +558,17 @@ void RayTracer::run()
 					}
 				}
 
-				//two versions:
-				//non parallel when we already have multiple scenes
-
-				if (maxBranch == minBranch && maxLeafSize == minLeafSize || doPerformanceTest)
+				//go trough all configurations
+				for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
 				{
-					//non parallel version:
-					for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
+					for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
 					{
-						for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
-						{
-							float sahFactor = loadSahFactor(l, b, gangSize);
-							renderImage(b, l, gangSize, primitives, cameraPositions, cameraTargets,
-								lights, name, path, pathPerf, sahFactor);
-						}
+						float sahFactor = loadSahFactor(l, b, gangSize);
+						renderImage(b, l, gangSize, primitives, cameraPositions, cameraTargets,
+							lights, name, path, pathPerf, sahFactor);
 					}
 				}
-				else
-				{
-					//parallel version
 
-					//number of renders that should run in parallel:
-					unsigned parallelCount = 4;
-
-					if ((maxLeafSize - minLeafSize) > (maxBranch - minBranch))
-					{
-						//in case leafsize is larger than branching factor:
-						for (size_t i = minLeafSize; i <= maxLeafSize; i = i + parallelCount)
-						{
-
-							std::vector<unsigned> leafWork(parallelCount);
-							std::iota(std::begin(leafWork), std::end(leafWork), i);
-
-							std::for_each(std::execution::par_unseq, leafWork.begin(), leafWork.end(),
-								[&](auto& l)
-								{
-									if ((l - minLeafSize) * leafStep + minLeafSize <= maxLeafSize)
-									{
-										for (size_t b = minBranch; b < maxBranch + 1; b += branchStep)
-										{
-											float sahFactor = loadSahFactor(l, b, gangSize);
-											renderImage(b, (l - minLeafSize) * leafStep + minLeafSize, gangSize, primitives,
-												cameraPositions, cameraTargets, lights, name, path, pathPerf, sahFactor);
-										}
-									}
-								});
-						}
-					}
-					else
-					{
-						//in case branching factor is larger than leafsize:
-						for (size_t i = minBranch; i <= maxBranch; i = i + parallelCount)
-						{
-							std::vector<unsigned> branchWork(parallelCount);
-							std::iota(std::begin(branchWork), std::end(branchWork), i);
-
-							std::for_each(std::execution::par_unseq, branchWork.begin(), branchWork.end(),
-								[&](auto& b)
-								{
-									if ((b - minBranch) * branchStep + minBranch <= maxBranch)
-									{
-										for (size_t l = minLeafSize; l < maxLeafSize + 1; l += leafStep)
-										{
-											float sahFactor = loadSahFactor(l, b, gangSize);
-											renderImage((b - minBranch) * branchStep + minBranch, l, gangSize, primitives,
-												cameraPositions, cameraTargets, lights, name, path, pathPerf, sahFactor);
-										}
-									}
-								});
-						}
-					}
-				}
 			}
 		});
 
@@ -946,12 +886,7 @@ float RayTracer::loadSahFactor(int leafSize, int nodeSize, int gangSize)
 		std::cerr << "Avx sah factor config not set up / tested." << std::endl;
 		return 1;
 	}
-	std::string versionName = "";
-	if (wideRender)
-	{
-		versionName = "V" + std::to_string(wideAlternative);
-	}
-	std::ifstream myfile("sahFactorConfig" + gangSizeName + versionName + ".txt");
+	std::ifstream myfile("sahFactorConfig" + gangSizeName + ".txt");
 
 	std::vector<float> lineContent;
 	if (myfile.is_open())

@@ -9,8 +9,8 @@
 //#include "global.h"
 
 
-class alignas(64) FastRay
-//class FastRay
+//class alignas(64) FastRay
+class FastRay
 {
 public:
 

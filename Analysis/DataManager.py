@@ -51,10 +51,10 @@ class storageType:
 
 class everything:
 
-	def __init__(self, wideVersion):
+	def __init__(self, wide):
 		#the folder all the scene folders are in: (leave empty if no folder)
 		#self.folder = "SavesSortedEarlyStop/"
-		self.folder = "ResultsStorage/Office_15_1/"
+		self.folder = "ResultsStorage/"
 		self.outputFolder = "Summary/"
 
 		#names of the sceneFolders
@@ -70,11 +70,11 @@ class everything:
 
 		self.workGroupSize = 16
 		#Version -1 = not wide, 0 = old version, 1 = new version
-		self.wideVersion = wideVersion
-		if self.wideVersion == -1:
-			self.intermediateFolderName = ""
+		self.wide = wide
+		if self.wide:
+			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Wide/"
 		else:
-			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Version_" + str(self.wideVersion) + "/"
+			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Normal/"
 		
 
 
@@ -178,10 +178,7 @@ class everything:
 		self.storage = [None for _ in range(len(self.names))]
 
 		#folder to the performance files. For now its the laptop per files
-		if(self.subdivisionRange[1] == 0):
-			self.perfFolder = "ResultsStorage/Office_15_1/"
-		else:
-			self.perfFolder = "ResultsStorage/"
+		self.perfFolder = "ResultsStorage/"
 
 		self.listVariableCount = [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)]
 
@@ -266,14 +263,15 @@ class everything:
 			#create file if i want one file for all subs
 			name = scenes.sceneName
 
-			wideString = "V" + str(self.wideVersion)
-			if self.wideVersion == -1:
-				wideString = ""
+			if self.wide:
+				wideString = "_Wide"
+			else:
+				wideString = "_Normal"
 			#output file:
 			if(self.subdivisionRange[1] == 0):
 				fResult = open(self.outputFolder + name + self.prefix + "Table" + self.outputPrefix + wideString +".txt", "w+")
 			else:
-				fResult = open(self.outputFolder + name + "Sub" + self.prefix + "Table" + self.outputPrefix + str(self.wideVersion)+ ".txt", "w+")
+				fResult = open(self.outputFolder + name + "Sub" + self.prefix + "Table" + self.outputPrefix + wideString + ".txt", "w+")
 			fResult.write(firstLine + "\n")
 			for subId, sub in enumerate(scenes.subdivisions):
 				for configStorage in sub:
@@ -404,9 +402,7 @@ class everything:
 					pass
 		return False, 0
 
-e = everything(wideVersion = -1)
+e = everything(wide = True)
 e.run()
-e = everything(wideVersion = 0)
-e.run()
-e = everything(wideVersion = 1)
+e = everything(wide = False)
 e.run()

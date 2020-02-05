@@ -1,14 +1,16 @@
 #Config file for raytracer.
 
 #Resolution
-xRes = 1920
-yRes = 1088
-#xRes = 3840
-#yRes = 2176
+#xRes = 1920
+#yRes = 1088
+xRes = 3840
+yRes = 2176
+#xRes = 960
+#yRes = 544
 
 #Leafsize and Branching Factor to test:
 minLeafSize = 4
-maxLeafSize = 4
+maxLeafSize = 16
 leafStep = 4
 
 minBranch = 4
@@ -22,7 +24,7 @@ renderAnalysisImage = false
 saveDepthDetailedImage = false
 bvhAnalysis = false
 saveBvhImage = false
-saveImage = true
+saveImage = false
 doWorkGroupAnalysis = false
 
 #Do performance Analysis: (this disables parallel execution)
@@ -30,7 +32,7 @@ doPerformanceTest = true
 doLeafMemoryTests = false
 doNodeMemoryTests = false
 saveRayTimes = false
-doCacheAnalysis = true
+doCacheAnalysis = false
 
 #Cacheline analysis disables other time analysis
 #Number of cachelines: (multiple numbers possible like "= 8, 16, 32")
@@ -64,7 +66,7 @@ renderType = 2
 saveDistance = false
 
 #Use wide renderer / alternative wide renderer or not:
-wideRender = false
+wideRender = true
 wideAlternative = true
 renderAllOptions = true
 

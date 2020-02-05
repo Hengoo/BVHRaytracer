@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-inputFolder = "../Data/CachePlot/"
-outputFolder = "../Plots/"
+inputFolder = "../Data/CacheData/"
+outputFolder = "../Plots/CachePlots/"
 
 showImage = True
 
@@ -30,8 +30,12 @@ def perRayCacheMiss(bvhConfig, workSize):
 			heapCacheMiss, secondaryStackCacheLoads, secondaryStackCacheMiss,
 			secondaryHeapCacheLoads, secondaryHeapCacheMiss) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 
+		if iteration == 0:
+			ax = plt.subplot(5, 2, 1 + iteration * 2)
+			primaryRef = ax
+		else:
+			ax = plt.subplot(5, 2, 1 + iteration * 2, sharex = primaryRef, sharey = primaryRef)
 		
-		ax = plt.subplot(5, 2, 1 + iteration * 2)
 		plt.title("Primary Ray, Cache size " + str(cacheSize))
 		if doStack:	
 			plt.plot(rayId, stackCacheMiss, label="stack Miss")
@@ -47,8 +51,13 @@ def perRayCacheMiss(bvhConfig, workSize):
 		if (iteration == len(cacheSizes) -1):
 			plt.xlabel("Ray Id")
 		#plt.legend()
-		ax.set_ylim(ymin=0, ymax = 160)
+		ax.set_ylim(ymin=0)
 
+		if iteration == 0:
+			ax = plt.subplot(5, 2, 2 + iteration * 2)
+			secondaryRef = ax
+		else:
+			ax = plt.subplot(5, 2, 2 + iteration * 2, sharex = secondaryRef, sharey = secondaryRef)
 
 		ax = plt.subplot(5, 2, 2 + iteration * 2)
 		plt.title("Secondary Ray, Cache size " + str(cacheSize))
@@ -67,7 +76,7 @@ def perRayCacheMiss(bvhConfig, workSize):
 		if (iteration == len(cacheSizes) -1):
 			plt.xlabel("Ray Id")
 		#plt.legend()
-		ax.set_ylim(ymin=0, ymax = 90)
+		ax.set_ylim(ymin=0)
 		
 	
 	handles, labels = ax.get_legend_handles_labels()
@@ -95,8 +104,10 @@ def differentCachesizeAnalysis(workSize):
 	plt.subplots_adjust(hspace = 0.4)
 
 	for iteration, n in enumerate(nodeSizes):
+		l = n
+		n = 4
 		configString = "_b" + str(n) + "_l" + str(l) + "_mb" + str(n) + "_ml" + str(l)
-		titleConfigString = "N" + str(n) + "L " + str(l)
+		titleConfigString = "N" + str(n) + "L" + str(l)
 		stackMisses0, stackMisses1, stackLoads0, stackLoads1, stackHitRate0, stackHitRate1 = (np.zeros(0) for i in range(6))
 		heapMisses0, heapMisses1, heapLoads0, heapLoads1, heapHitRate0, heapHitRate1 = (np.zeros(0) for i in range(6))
 		stackSecondaryMisses0, stackSecondaryMisses1, stackSecondaryLoads0, stackSecondaryLoads1, stackSecondaryHitRate0, stackSecondaryHitRate1 = (np.zeros(0) for i in range(6))
@@ -107,8 +118,8 @@ def differentCachesizeAnalysis(workSize):
 			filePath0 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Normal/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
 			filePath1 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Wide/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
 
-			filePath0 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Normal_NoRayPad/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
-			filePath1 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Wide_NoRayPad/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
+			#filePath0 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Normal_NoRayPad/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
+			#filePath1 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Wide_NoRayPad/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
 
 			(workGroupId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss,
 				secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads,
@@ -154,7 +165,7 @@ def differentCachesizeAnalysis(workSize):
 		#Cache Hitrate
 
 		ax = plt.subplot(4,2,1 + iteration * 2)
-		plt.title("Primary rays" + titleConfigString)
+		plt.title("Primary rays " + titleConfigString)
 		
 		#horizontal line at 0 and 1
 		plt.axhline(y = 1, linewidth=0.5, color='0.6')
@@ -171,7 +182,7 @@ def differentCachesizeAnalysis(workSize):
 		#plt.legend()
 
 		ax = plt.subplot(4,2,2 + iteration * 2)
-		plt.title("Secondary rays" + titleConfigString)
+		plt.title("Secondary rays " + titleConfigString)
 		#horizontal line at 0 and 1
 		plt.axhline(y = 1, linewidth=0.5, color='0.6')
 		plt.axhline(y = 0, linewidth=0.5, color='0.6')
@@ -210,6 +221,7 @@ def differentCachesizeAnalysis(workSize):
 
 
 
-#perRayCacheMiss("_b4_l4_mb4_ml4", 16)
+perRayCacheMiss("_b4_l4_mb4_ml4", 16)
+perRayCacheMiss("_b16_l16_mb16_ml16", 16)
 
-differentCachesizeAnalysis(16)
+#differentCachesizeAnalysis(16)
