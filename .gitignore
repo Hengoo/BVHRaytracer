@@ -99,3 +99,6 @@ Analysis/*
 src/ISPC/ISPCBuild
 src/ISPC/rayTracer.ispc
 src/ISPC/IspcTests/ISPCBuild
+
+#ignore the mather thesis part (separate repository)
+MasterThesis
