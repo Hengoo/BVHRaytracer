@@ -72,14 +72,8 @@ public:
 		*the x is related to primitive count
 		*c produces most compact tree.
 		*intersection counts seem to depend on the scene and branching factor.
-		*for sponza:	branch 4 is overall better with c
-		*				branch 2 normal rays are better with a and shadowray heavily prefer c
-		*					(but the counts only change for leafnodes not for overall node itnersections for b=2)
-		*for shift happens:
-		*				a is best for leaf intersections (and therefor even more for aabb intersections)
+		* c produces significantly smaller bvh than a. (better filled nodes and leafs) and has similar or better performance
 		*/
-
-		//TODO: test different scenes
 
 		unsigned primCount = getPrimCount();
 		if (primCount != 0)

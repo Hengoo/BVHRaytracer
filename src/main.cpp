@@ -34,52 +34,12 @@ static void testIspc()
 
 }*/
 
-static void testCacheSequence()
-{
-	//std::vector<int> seq = { 0, 1, 2, 3, 4, 2, 5, 6, 7, 6, 8, 9, 6, 2, 0, 6, 10, 2, 11, 12, 1, 13, 6, 12, 9, 14, 15, 13, 13, 16, 17, 0, 12, 18, 3, 19, 20, 4, 21, 13, 9, 22, 23, 24, 25, 26, 27, 2, 13, 20, 28 };
-	std::vector<int> seq = { 0, 1, 1, 1, 2, 3, 3, 4, 5, 5, 1, 6, 3, 6, 0, 1, 7, 1, 1, 0, 8, 4, 2, 1, 9, 10, 1, 11, 12, 13, 1, 14, 15, 16, 17, 18, 19, 3, 20, 21, 3, 1, 1, 22, 23, 24, 8, 13, 1, 1, 9 };
-	CacheSimulator cache = CacheSimulator(8);
-	for (int i = 0; i < seq.size(); i++)
-	{
-		cache.loadStack(seq[i] * 64);
-	}
-	//cache.writeAllResult();
-}
-
-void cacheTests()
-{
-	CacheSimulator cache = CacheSimulator(256);
-
-	int extraCount = 500000;
-	for (int i = 0; i < 256 * 100; i++)
-	{
-		if (i % 100 == 0)
-		{
-			std::cout << "step: " << i << ", hitRatio: " << (float)cache.stackCacheHits[0] / cache.stackCacheLoads[0] << std::endl;
-			cache.resetAllCounter();
-		}
-
-		extraCount++;
-		int loadId = i % 100;
-		cache.loadStack((void*)(64 * loadId));
-		int randId = rand() % 512;
-		cache.loadStack((void*)(64 * randId));
-		//if (i % 2 == 0)
-		//{
-		//	cache.load((void*)((extraCount) * 64));
-		//}
-	}
-}
-
 int main()
 {
 	/*
 	testIspc();
 	return EXIT_SUCCESS;
 	*/
-
-	//cacheTests();
-	//testCacheSequence();
 
 	std::cout << "sizes of the nodes:." << std::endl;
 	std::cout << "Node " << 4 << ": " << sizeof(FastNode<4>) << std::endl;

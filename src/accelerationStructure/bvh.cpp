@@ -397,8 +397,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 		uint32_t vertexCount = 0;
 		uint32_t uniqueVertexCount = 0;
 		//analyse vertexcount vs unique vertex count -> triangleFan ec?
-
-		std::set<uint32_t> trianglePrimitiveIds;
+		std::vector<glm::vec3> triangleVertex;
 		//different metrics analysis:
 		float leafSah = 0, leafVolume = 0, leafSurfaceArea = 0;
 		averageBvhDepth = 0;
@@ -419,25 +418,48 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 				[&](auto& prim)
 				{
 					Triangle* tri = static_cast<Triangle*>(prim.get());
-					uint32_t vertex0, vertex1, vertex2;
-					tri->getVertexIds(vertex0, vertex1, vertex2);
-					auto result = trianglePrimitiveIds.insert(vertex0);
-					if (result.second)
+					
+					//Check how many vertices are the same:
+
+					//holy shit why is std::set that annoying to work with that i cannot easily use it for glm::vec3
+					//and i dont want 100 errors due to template stuff
+					glm::vec3 v0, v1, v2;
+					tri->getVertexPositions(v0, v1, v2);
+					int v0Count = 0, v1Count = 0, v2Count = 0;
+					for (int i = 0; i < triangleVertex.size(); i++)
 					{
-						uniqueVertexCount += 1;
+						auto& v = triangleVertex[i];
+						if (v == v0)
+						{
+							v0Count++;
+						}
+						if (v == v1)
+						{
+							v1Count++;
+						}
+						if (v == v2)
+						{
+							v2Count++;
+						}
 					}
-					result = trianglePrimitiveIds.insert(vertex1);
-					if (result.second)
+					if (v0Count == 0)
 					{
-						uniqueVertexCount += 1;
+						triangleVertex.push_back(v0);
+						uniqueVertexCount++;
 					}
-					result = trianglePrimitiveIds.insert(vertex2);
-					if (result.second)
+					if (v1Count == 0)
 					{
-						uniqueVertexCount += 1;
+						triangleVertex.push_back(v1);
+						uniqueVertexCount++;
+					}
+					if (v1Count == 0)
+					{
+						triangleVertex.push_back(v1);
+						uniqueVertexCount++;
 					}
 				});
 			trianglePrimitiveIds.clear();
+			triangleVertex.clear();
 		}
 		//could "normalize" those by the root node
 		//leafVolume = leafVolume / analysisRoot->volume;
@@ -487,7 +509,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 			std::cout << std::endl;
 			std::cout << "number of leafnodes: " << leafs << std::endl;
 			std::cout << "leafnode checksum: " << seed << std::endl;
-			std::cout << "vertexc ount : " << vertexCount << std::endl;
+			std::cout << "vertex count : " << vertexCount << std::endl;
 			std::cout << "unique vertex count : " << uniqueVertexCount << std::endl;
 			std::cout << "factor : " << uniqueVertexCount / (float)vertexCount << std::endl;
 			std::cout << "leafnodes with x primitives:" << std::endl;
