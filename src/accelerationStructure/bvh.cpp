@@ -96,6 +96,7 @@ bool Bvh::intersect(Ray& ray)
 	return false;
 }
 
+//analysis bvh traversal to calcualte epo
 void Bvh::traverseAnalysisBvh(float& epoNode, float& epoLeaf, Triangle* tri, const float& triSurfaceArea, const uint32_t primId,
 	const glm::vec3& triMin, const glm::vec3& triMax, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
 {
@@ -458,7 +459,6 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 						uniqueVertexCount++;
 					}
 				});
-			trianglePrimitiveIds.clear();
 			triangleVertex.clear();
 		}
 		//could "normalize" those by the root node

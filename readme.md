@@ -9,12 +9,10 @@ Needed libary:
 	
 	-ISPC compiler needs to be installed (exe has to be in path)
 
-Needed models:
+Needed models: (currently not up to date)
 
 	-For now downloadable here: https://www.dropbox.com/s/ri3azxcga87dt5q/RaytracerModels.zip?dl=0
 	-unzip them to /models
-
-Its planned to have some sort of modelConfig file to add new models without changing the source code.
 
 ### Settings:
 

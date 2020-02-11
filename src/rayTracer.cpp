@@ -115,6 +115,11 @@ void RayTracer::run()
 		std::cerr << "unknown compactNodeOrder" << std::endl;
 		return;
 	}
+	if (minBranch < 2)
+	{
+		std::cerr << "branching factor below 2. Set to minimum possible value of 2" << std::endl;
+		maxBranch = std::max(maxBranch, minBranch);
+	}
 
 	std::cout << "Settings: " << std::endl;
 	std::cout << "LeafSize from " << minLeafSize << " to " << maxLeafSize << " with a step size of " << leafStep << std::endl;
