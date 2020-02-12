@@ -318,8 +318,8 @@ void RayTracer::run()
 
 				if (!doCacheAnalysis)
 				{
-					cameraPositions.push_back(glm::vec3(-109, 284, -147));
-					cameraTargets.push_back(glm::vec3(20, 257, -151));
+					//cameraPositions.push_back(glm::vec3(-109, 284, -147));
+					//cameraTargets.push_back(glm::vec3(20, 257, -151));
 				}
 				else
 				{

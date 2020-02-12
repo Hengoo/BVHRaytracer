@@ -104,9 +104,9 @@ struct RefillStructure
 
 	nanoSec timeTriangleTest;
 
-	//next nodeId for each ray. 40 is current max stack size. Negative id means leaf
+	//next nodeId for each ray. 48 is current max stack size. Negative id means leaf
 	//id 0 is root node
-	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+	std::array< std::array<int32_t, workGroupSquare>, 48> stack;
 	//id of the current element in the stack we have to work on. 0 means we are finished
 	std::array< uint8_t, workGroupSquare>stackIndex;
 
@@ -452,8 +452,8 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWide(std::ar
 	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<int8_t, workGroupSquare>& triIndex,
 	nanoSec& timeTriangleTest)
 {
-	//stack for each ray. 40 is current max stack size
-	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+	//stack for each ray. 48 is current max stack size
+	std::array< std::array<int32_t, workGroupSquare>, 48> stack;
 	std::array< uint8_t, workGroupSquare>stackIndex;
 
 	stack[0].fill(0);
@@ -660,9 +660,9 @@ template <bool doCache>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWide(
 	std::array<FastRay, workGroupSquare>& rays, std::array<uint16_t, workGroupSquare>& result, nanoSec& timeTriangleTest)
 {
-	//next nodeId for each ray. 40 is current max stack size. Negative id means leaf
+	//next nodeId for each ray. 48 is current max stack size. Negative id means leaf
 	//id 0 is root node
-	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+	std::array< std::array<int32_t, workGroupSquare>, 48> stack;
 	//id of the current element in the stack we have to work on. 0 means we are finished
 	std::array< uint8_t, workGroupSquare>stackIndex;
 
@@ -835,8 +835,8 @@ void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectWideAlternat
 	std::array<uint32_t, workGroupSquare>& leafIndex, std::array<int8_t, workGroupSquare>& triIndex,
 	nanoSec& timeTriangleTest)
 {
-	//stack for each ray. 40 is current max stack size
-	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+	//stack for each ray. 48 is current max stack size
+	std::array< std::array<int32_t, workGroupSquare>, 48> stack;
 	std::array< uint8_t, workGroupSquare>stackIndex;
 	stack[0].fill(0);
 	stackIndex.fill(1);
@@ -1050,9 +1050,9 @@ template <bool doCache>
 void FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondaryWideAlternative(
 	std::array<FastRay, workGroupSquare>& rays, std::array<uint16_t, workGroupSquare>& result, nanoSec& timeTriangleTest)
 {
-	//next nodeId for each ray. 32 is current max stack size. Negative id means leaf
+	//next nodeId for each ray. 48 is current max stack size. Negative id means leaf
 	//id 0 is root node
-	std::array< std::array<int32_t, workGroupSquare>, 40> stack;
+	std::array< std::array<int32_t, workGroupSquare>, 48> stack;
 
 	//id of the current element in the stack we have to work on. 0 means we are finished
 	std::array< uint8_t, workGroupSquare>stackIndex;
@@ -1231,7 +1231,7 @@ template <bool doCache>
 bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSaveDistance(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest)
 {
 	//ids of ndodes that we still need to test:
-	std::array<std::tuple<uint32_t, float>, 40> nodeStack;
+	std::array<std::tuple<uint32_t, float>, 48> nodeStack;
 	nodeStack[0] = std::make_tuple<uint32_t, float>(0, 0);
 	uint8_t stackIndex = 1;
 
@@ -1327,7 +1327,7 @@ template <bool doCache>
 bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersect(FastRay& ray, uint32_t& leafIndex, uint8_t& triIndex, nanoSec& timeTriangleTest)
 {
 	//ids of ndodes that we still need to test:
-	std::array<uint32_t, 40> nodeStack;
+	std::array<uint32_t, 48> nodeStack;
 	nodeStack[0] = 0;
 	uint8_t stackIndex = 1;
 
@@ -1422,7 +1422,7 @@ bool FastNodeManager<gangSize, nodeMemory, workGroupSize>::intersectSecondary(Fa
 	//differences: no return for triangles. No aabb distance stop (no saving of distance of aabb intersections since we stop after first hit)
 
 	//ids of ndodes that we still need to test:
-	std::array<uint32_t, 40> nodeStack;
+	std::array<uint32_t, 48> nodeStack;
 	nodeStack[0] = 0;
 	uint8_t stackIndex = 1;
 	bool result = false;
