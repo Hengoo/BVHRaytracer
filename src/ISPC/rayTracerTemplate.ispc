@@ -1,81 +1,23 @@
-//strongly inspired / taken from ISPC raytracer example https://github.com/ispc/ispc/blob/master/examples/rt/rt.ispc
+//strongly inspired by ISPC raytracer example https://github.com/ispc/ispc/blob/master/examples/rt/rt.ispc
 
 export uniform int getGangSize()
 {
 	return programCount;
 }
 
-//my glm::vec3 are just 3 floats after each other so this fits:
+//ISPC Equivalent to glm::vec3 :
 typedef float<3> float3;
-
-struct Triangle
-{
-	float p[3][4];
-	//float3 p0;
-	//float3 p1;
-	//float3 p2;
-	int pad[4];
-};
-
-struct Ray
-{
-	float origin[3];
-	float direction[3];
-	float invDirection[3];
-	float surfaceNormal[3];
-	float surfacePosition[3];
-	float tMax;
-	bool shadowRay;
-};
 
 static inline float dot(const float3 a, const float3 b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-/*
-static inline float3 cross(const float3 v1, const float3 v2) {
-	float v1x = v1.x, v1y = v1.y, v1z = v1.z;
-	float v2x = v2.x, v2y = v2.y, v2z = v2.z;
-	float3 ret;
-	ret.x = (v1y * v2z) - (v1z * v2y);
-	ret.y = (v1z * v2x) - (v1x * v2z);
-	ret.z = (v1x * v2y) - (v1y * v2x);
-	return ret;
-}*/
-
-//both seem the be the same speed
 static inline float3 cross(float3 v0, float3 v1) {
 	float3 ret;
 	ret.x = v0.y * v1.z - v0.z * v1.y;
 	ret.y = v0.z * v1.x - v0.x * v1.z;
 	ret.z = v0.x * v1.y - v0.y * v1.x;
 	return ret;
-}
-
-static inline void normalize(float3 &v) {
-	float len2 = dot(v, v);
-	float invlen = rsqrt(len2);
-	v *= invlen;
-}
-
-static inline uniform float3 uniformCross(const uniform float3 v1, const uniform float3 v2) {
-	uniform float v1x = v1.x, v1y = v1.y, v1z = v1.z;
-	uniform float v2x = v2.x, v2y = v2.y, v2z = v2.z;
-	uniform float3 ret;
-	ret.x = (v1y * v2z) - (v1z * v2y);
-	ret.y = (v1z * v2x) - (v1x * v2z);
-	ret.z = (v1x * v2y) - (v1y * v2x);
-	return ret;
-}
-
-static inline uniform float3 computeNormal2(const uniform float3& p0, const uniform float3& p1,const uniform float3& p2)
-{
-	return uniformCross(p1 - p0, p2 - p0);
-}
-
-static inline float3 computeNormal(const float3& p0,const float3& p1,const float3& p2)
-{
-	return cross(p1 - p0, p2 - p0);
 }
 
 //input: triangle array (uniform pointer, and since its a pointer also uniform data). Uniform ray. (all access the same ray, but dont write on it). tMax -> is our output
