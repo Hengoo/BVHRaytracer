@@ -573,7 +573,6 @@ void RayTracer::run()
 							lights, name, path, pathPerf, sahFactor);
 					}
 				}
-
 			}
 		});
 
