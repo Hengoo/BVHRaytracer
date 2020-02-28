@@ -170,7 +170,7 @@ void RayTracer::run()
 		std::cout << "do Workgroup Analysis" << std::endl;
 	}
 
-	if (doCacheAnalysis)
+	if (doCacheAnalysis && doPerformanceTest)
 	{
 		std::cout << "Doing cache analysis with the follwoing cachesizes:" << std::endl;
 		for (auto& c : cacheSizes)

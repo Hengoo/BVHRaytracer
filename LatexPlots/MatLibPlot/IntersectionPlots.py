@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 inputFolder = "../Data/"
-outputFolder = "../Plots/IntersectionPlots"
+outputFolder = "../Plots/IntersectionPlots/"
 
 showImage = True
 
@@ -90,4 +90,4 @@ def makeIntersectionAnalysis(filePath, title, outputName):
 	plt.savefig(outputFolder + outputName + "PrimaryTriIntersection.pgf")
 	endPlot()
 
-makeIntersectionAnalysis(inputFolder + "amazonLumberyardInterior_1To16Table.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
+makeIntersectionAnalysis(inputFolder + "amazonLumberyardInteriorTable_AllIntersections.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")

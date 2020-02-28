@@ -501,7 +501,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 			}
 			//sum /= std::accumulate(childCount.begin(), childCount.end(), 0);
 			sum /= sum2;
-			std::cout << "average: " << std::to_string(sum) << std::endl;
+			std::cout << "average bvh node fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 2; i < childCount.size(); i++)
 			{
 				std::cout << i << " : " << childCount[i] << std::endl;
@@ -522,7 +522,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 			}
 			//sum /= std::accumulate(primCount.begin(), primCount.end(), 0);
 			sum /= sum2;
-			std::cout << "average: : " << std::to_string(sum) << std::endl;
+			std::cout << "average bvh leaf fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 1; i < primCount.size(); i++)
 			{
 				std::cout << i << " : " << primCount[i] << std::endl;
@@ -562,7 +562,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 			}
 			//sum /= std::accumulate(childCount.begin(), childCount.end(), 0);
 			sum /= sum2;
-			myfile << "average: " << std::to_string(sum) << std::endl;
+			myfile << "average bvh node fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 2; i < childCount.size(); i++)
 			{
 				myfile << i << " : " << childCount[i] << std::endl;
@@ -584,7 +584,7 @@ void Bvh::bvhAnalysis(std::string path, bool saveAndPrintResult, bool performanc
 			}
 			//sum /= std::accumulate(primCount.begin(), primCount.end(), 0);
 			sum /= sum2;
-			myfile << "average: : " << std::to_string(sum) << std::endl;
+			myfile << "average bvh leaf fullness: " << std::to_string(sum) << std::endl;
 			for (size_t i = 1; i < primCount.size(); i++)
 			{
 				myfile << i << " : " << primCount[i] << std::endl;

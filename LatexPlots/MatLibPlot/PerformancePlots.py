@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-inputFolder = "../Data/PerformanceData/"
+inputFolder = "../Data/"
 outputFolder = "../Plots/PerformancePlots/"
 
 showImage = True

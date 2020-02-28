@@ -53,14 +53,13 @@ class everything:
 
 	def __init__(self, wide):
 		#the folder all the scene folders are in: (leave empty if no folder)
-		#self.folder = "SavesSortedEarlyStop/"
-		self.folder = "ResultsStorage/"
+		self.folder = "ResultsStorage/Data/IntersectionResults/"
+		#self.folder = "ResultsStorage/Data/AllIntersections/"
 		self.outputFolder = "Summary/"
 
 		#names of the sceneFolders
-		#self.names = ["shiftHappens", "erato", "sponza", "rungholt"]
-		#self.names = [7, 8, 9, 10, 11, 12]
-		self.names = [9]
+		self.names = [4,8,9,10,12]
+		#self.names = [9]
 		
 		#prefixTo the folderNames like this "_4To16"
 		#self.prefix = "_4To16"
@@ -120,6 +119,9 @@ class everything:
 			"volume of leafs:",
 			"surface area of leafs:",
 			"average child fullness:",
+			"average leaf fullness:",
+			"average bvh node fullness:",
+			"average bvh leaf fullness:",			
 			"primary aabb success ration:",
 			"primary primitive success ratio:",
 			"secondary aabb success ration:",
@@ -142,6 +144,9 @@ class everything:
 			"leafVolume",
 			"leafSurfaceArea",
 			"nodeFullness",
+			"leafFullness",
+			"realNodeFullness",
+			"realLeafFullness",
 			"primaryAabbSuccessRatio",
 			"primaryTriangleSuccessRatio",
 			"secondaryAabbSuccessRatio",
@@ -178,7 +183,7 @@ class everything:
 		self.storage = [None for _ in range(len(self.names))]
 
 		#folder to the performance files. For now its the laptop per files
-		self.perfFolder = "ResultsStorage/"
+		self.perfFolder = "ResultsStorage/Data/PerfResult/"
 
 		self.listVariableCount = [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)]
 

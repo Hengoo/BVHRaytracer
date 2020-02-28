@@ -42,5 +42,5 @@ def work(folder, tableInput, tableOutput, collumsToKeep):
 		print("problem finding file")
 
 
-work("Summary/", "amazonLumberyardInteriorTable_Normal.txt",   "rayTotalTime_Normal.txt", ["branchFactor", "leafSize","totalTime"])
-work("Summary/", "amazonLumberyardInteriorTable_Wide.txt", "rayTotalTime_Wide.txt", ["branchFactor", "leafSize","totalTime"])
+work("Summary/", "averageTable_Normal.txt", "rayTotalTime_Normal.txt", ["branchFactor", "leafSize","totalTime"])
+work("Summary/", "averageTable_Wide.txt", "rayTotalTime_Wide.txt", ["branchFactor", "leafSize","totalTime"])
