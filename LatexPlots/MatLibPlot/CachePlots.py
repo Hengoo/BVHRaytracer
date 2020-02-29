@@ -221,7 +221,7 @@ def differentCachesizeAnalysis(workSize):
 
 
 
-perRayCacheMiss("_b4_l4_mb4_ml4", 16)
-perRayCacheMiss("_b16_l16_mb16_ml16", 16)
+#perRayCacheMiss("_b4_l4_mb4_ml4", 16)
+#perRayCacheMiss("_b16_l16_mb16_ml16", 16)
 
-#differentCachesizeAnalysis(16)
+differentCachesizeAnalysis(16)
