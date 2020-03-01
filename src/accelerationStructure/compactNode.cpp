@@ -137,8 +137,8 @@ void CompactNodeManager<T>::intersectWide(std::vector<Ray>& rays, std::vector<ui
 		std::vector<uint16_t> nodeWork(wideSize);
 		std::vector<uint16_t> leafWork(wideSize);
 
-		//stack for each ray. 36 is current max stack size
-		std::vector<std::array<int32_t, 36>>stack(wideSize);
+		//stack for each ray. 48 is current max stack size
+		std::vector<std::array<int32_t, 48>>stack(wideSize);
 		std::vector< uint8_t>stackIndex(wideSize);
 
 		for (int i = 0; i < wideSize; i++)
@@ -379,8 +379,8 @@ void CompactNodeManager<T>::intersectWideAlternative(std::vector<Ray>& rays, std
 		std::vector<uint16_t>* currentWork = &work1;
 		std::vector<uint16_t>* nextWork = &work2;
 
-		//stack for each ray. 36 is current max stack size
-		std::vector<std::array<int32_t, 36>>stack(wideSize);
+		//stack for each ray. 48 is current max stack size
+		std::vector<std::array<int32_t, 48>>stack(wideSize);
 		std::vector< uint8_t>stackIndex(wideSize);
 
 		for (int i = 0; i < wideSize; i++)

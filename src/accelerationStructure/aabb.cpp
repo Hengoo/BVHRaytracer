@@ -195,7 +195,7 @@ void Aabb::recursiveBvh(const unsigned branchingFactor, const unsigned leafTarge
 	}
 
 	//just a debug output to get warned abount eventual loop
-	if (depth >= 40)
+	if (depth >= 45)
 	{
 		std::cerr << "bvh is suspiciously deep: " << depth << std::endl;
 	}
