@@ -896,6 +896,8 @@ float RayTracer::loadSahFactor(int leafSize, int nodeSize, int gangSize)
 	if (myfile.is_open())
 	{
 		std::getline(myfile, line);
+		int targetLeafConfig = ceil(leafSize / (float)gangSize) * gangSize;
+		int targetNodeConfig = ceil(nodeSize / (float)gangSize) * gangSize;
 		while (std::getline(myfile, line))
 		{
 			if (!line.empty())
@@ -903,20 +905,20 @@ float RayTracer::loadSahFactor(int leafSize, int nodeSize, int gangSize)
 				int configNodeSize = 0;
 				int configLeafSize = 0;
 				lineContent = readConfigLine(line, configNodeSize, configLeafSize);
-				if ((configNodeSize <= nodeSize && configNodeSize > nodeSize - gangSize)
-					&& (configLeafSize <= leafSize && configLeafSize > leafSize - leafSize))
+
+				if (targetLeafConfig == configLeafSize && targetNodeConfig == configNodeSize)
 				{
 					sahFactor = lineContent[0];
+					break;
 				}
 			}
 		}
 	}
-	else
-		if (isnan(sahFactor))
-		{
-			std::cerr << "not able to find fitting sahFactor in config, instead took 1" << std::endl;
-			sahFactor = 1;
-		}
+	if (isnan(sahFactor))
+	{
+		std::cerr << "not able to find fitting sahFactor in config, instead took 1" << std::endl;
+		sahFactor = 1;
+	}
 	std::cout << "using sah factor of " << sahFactor << std::endl;
 	return sahFactor;
 }

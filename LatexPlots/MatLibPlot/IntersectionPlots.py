@@ -92,4 +92,4 @@ def makeIntersectionAnalysis(filePath, title, outputName):
 	plt.savefig(outputFolder + outputName + "PrimaryTriIntersection.pgf")
 	endPlot()
 
-makeIntersectionAnalysis(inputFolder + "amazonLumberyardInteriorTable_AllIntersections.txt" , "Amazon Lumberyard Interior", "AmazonLumberyardInterior_1To16")
+makeIntersectionAnalysis(inputFolder + "averageTable_AllInter.txt" , "todoTitle", "todoOutName")
