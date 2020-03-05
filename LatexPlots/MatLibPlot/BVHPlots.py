@@ -15,11 +15,9 @@ def endPlot():
 def nodeLeafCount(splitting):
 	if splitting:
 		filePath = inputFolder + "averageTable_AllInter.txt"
-		title = "BVH node and leaf count"
 		outputName = "average"
 	else:
 		filePath = inputFolder + "averageTable_AllInterNoSplit.txt"
-		title = "BVH without splitting node and leaf count"
 		outputName = "averageNoSlit"
 
 	#load:
@@ -31,14 +29,13 @@ def nodeLeafCount(splitting):
 		averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
-	fig = plt.figure(figsize=(12,7))
+	fig = plt.figure(figsize=(12,12))
 	plt.subplots_adjust(hspace = 0.35, wspace = 0.15)
-	plt.suptitle(title)
 
 	#Bvh node counts:
-	ax = plt.subplot(2, 2, 1)
+	ax = plt.subplot(3, 2, 1)
 	
-	plt.title("Node count depending on node size")
+	#plt.title("Node count depending on node size")
 	leafSizes = [1,2,3,4,8,12,16]
 	for i in leafSizes:
 		filter2 = nodeCount[leafSize == i] #* branchFactor[leafSize == i]
@@ -47,14 +44,14 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Node size')
-	plt.ylabel('Number of nodes')
+	plt.ylabel("\#Nodes")
 	plt.legend()
 
 	
 	#aabb intersections by leaf size.
-	ax = plt.subplot(2, 2, 2)
+	ax = plt.subplot(3, 2, 2)
 	nodeSizes = [2,3,4,8,12,16]
-	plt.title("Node count depending on leaf size")
+	#plt.title("Node count depending on leaf size")
 	plt.plot([2],[1]) # <- in order to scip first color ;/
 	for i in nodeSizes:
 		filter2 = nodeCount[branchFactor == i] #* i
@@ -63,13 +60,13 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Number of nodes')
+	plt.ylabel('Relative \#Nodes')
 	plt.legend()
 
 	# leaf counts:
-	ax = plt.subplot(2, 2, 3)
+	ax = plt.subplot(3, 2, 3)
 	
-	plt.title("Leaf count depending on node size")
+	#plt.title("Leaf count depending on node size")
 	leafSizes = [1,2,3,4,8,12,16]
 	for i in leafSizes:
 		filter2 = leafCount[leafSize == i] #* branchFactor[leafSize == i]
@@ -78,13 +75,13 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Node size')
-	plt.ylabel('Number of leafs')
+	plt.ylabel('Relative \#Leafs')
 	plt.legend(ncol=3)
 
 	
-	ax = plt.subplot(2, 2, 4)
+	ax = plt.subplot(3, 2, 4)
 	nodeSizes = [2,3,4,8,12,16]
-	plt.title("Leaf count depending on leaf size")
+	#plt.title("Leaf count depending on leaf size")
 	if splitting:
 		plt.plot([2],[1]) # <- in order to scip first color ;/
 		for i in nodeSizes:
@@ -98,13 +95,43 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Number of leafs')
+	plt.ylabel('Relative \#Leafs')
 	plt.legend()
 
+	#node fullness
+	ax = plt.subplot(3, 2, 5)
+	#plt.title("Node Fullness")
+	leafSizes = [1,2,3,4,8,12,16]
+	for i in leafSizes:
+		filter2 = BVHNodeFullness[leafSize == i] * 100
+		filter1 = branchFactor[leafSize == i]
+		filter2 /= filter1
+		plt.plot(filter1, filter2, label='L' + str(i))
+	plt.xticks(np.arange(2, 18, step=2))
+	ax.set_ylim(ymin= -5, ymax = 105)
+	plt.xlabel('Node size')
+	plt.ylabel('Node Fullness [%]')
+	plt.legend(ncol=3)
+	
+	#leaf fullness
+	ax = plt.subplot(3, 2, 6)
+	plt.plot([2],[1]) # <- in order to scip first color ;/
+	nodeSizes = [2,3,4,8,12,16]
+	#plt.title("Leaf Fullness")
+	for i in nodeSizes:
+		filter2 = BVHLeafFullness[branchFactor == i] * 100
+		filter1 = leafSize[branchFactor == i]
+		filter2 /= filter1
+		plt.plot(filter1, filter2, label='N' + str(i))
+	plt.xticks(np.arange(2, 18, step=2))
+	ax.set_ylim(ymin= -5, ymax = 105)
+	plt.xlabel('Leaf size')
+	plt.ylabel('Leaf Fullness [%]')
+	plt.legend(ncol=3)
 
 	#save to file
-	plt.savefig(outputFolder + outputName + "BVHCountOverview.pdf")
-	plt.savefig(outputFolder + outputName + "BVHCountOverview.pgf")
+	plt.savefig(outputFolder + outputName + "BVHCountOverview.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + outputName + "BVHCountOverview.pgf", bbox_inches='tight')
 	endPlot()
 
 def bvhVolume():
@@ -112,8 +139,7 @@ def bvhVolume():
 	filePath = inputFolder + "averageTable_AllInter.txt"
 	#filePath = inputFolder + "averageTable_AllInterNoSplit.txt"
 	#filePath = inputFolder + "amazonLumberyardExteriorTable_AllInter.txt"
-	
-	title = "Surface area, volume and EPO of BVH"
+
 	outputName = "average"
 
 	#load:
@@ -127,10 +153,9 @@ def bvhVolume():
 		
 	fig = plt.figure(figsize=(12,7))
 	plt.subplots_adjust(hspace = 0.35, wspace = 0.15)
-	plt.suptitle(title)
 
 	ax = plt.subplot(2, 2, 1)
-	plt.title("Leaf surface area")
+	#plt.title("Leaf surface area")
 	nodeSizes = [4,8,12,16]
 	for i in nodeSizes:
 		filter2 = leafSurfaceArea[branchFactor == i]
@@ -139,12 +164,12 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf surface area')
+	plt.ylabel('Relative Leaf surface area')
 	plt.legend()
 
 	ax = plt.subplot(2, 2, 2)
 	nodeSizes = [4,8,12,16]
-	plt.title("Leaf volume")
+	#plt.title("Leaf volume")
 	for i in nodeSizes:
 		filter2 = leafVolume[branchFactor == i]
 		filter1 = leafSize[branchFactor == i]
@@ -152,13 +177,13 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf Volume')
+	plt.ylabel('Relative Leaf Volume')
 	plt.legend()
 
 	#leaf epo
 	ax = plt.subplot(2, 2, 3)
 	nodeSizes = [4,8,12,16]
-	plt.title("Leaf EPO")
+	#plt.title("Leaf EPO")
 	for i in nodeSizes:
 		filter2 = leafEpo[branchFactor == i]
 		filter1 = leafSize[branchFactor == i]
@@ -166,12 +191,12 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf EPO')
+	plt.ylabel('Relative Leaf EPO')
 	plt.legend()
 
 	#node epo
 	ax = plt.subplot(2, 2, 4)
-	plt.title("Node EPO")
+	#plt.title("Node EPO")
 	leafSizes = [4,8,12,16]
 	for i in leafSizes:
 		filter2 = nodeEpo[leafSize == i]
@@ -180,12 +205,12 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Node size')
-	plt.ylabel('Node EPO')
+	plt.ylabel('Relative Node EPO')
 	plt.legend()
 
 	#save to file
-	plt.savefig(outputFolder + outputName + "BVHVolume.pdf")
-	plt.savefig(outputFolder + outputName + "BVHVolume.pgf")
+	plt.savefig(outputFolder + outputName + "BVHVolume.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + outputName + "BVHVolume.pgf", bbox_inches='tight')
 	endPlot()
 
 def epoComparison():
@@ -193,8 +218,6 @@ def epoComparison():
 
 	filePath1 = inputFolder + "sponzaTable_AllInter.txt"
 	filePath2 = inputFolder + "galleryTable_AllInter.txt"
-	
-	outputName = "epoComparison"
 
 	#load:
 	(branchFactor, leafSize, subdivision, primaryNodeIntersections, primaryLeafIntersections, primaryAabb,
@@ -234,6 +257,7 @@ def epoComparison():
 
 	#leaf epo gallery
 	ax = plt.subplot(1, 2, 2)
+	leafSizes = [4,8,12,16]
 	plt.title("Leaf EPO Gallery")
 	for i in nodeSizes:
 		filter2 = leafEpo[branchFactor == i]
@@ -246,9 +270,62 @@ def epoComparison():
 	plt.legend()
 
 	#save to file
-	plt.savefig(outputFolder + "epoComparison.pdf")
-	plt.savefig(outputFolder + "epoComparison.pgf")
+	plt.savefig(outputFolder + "epoComparison.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "epoComparison.pgf", bbox_inches='tight')
 	endPlot()
+
+def treeDepth():
+	#comparing sponza and gallery epos
+
+	filePath = inputFolder + "averageTable_AllInter.txt"
+	#filePath = inputFolder + "galleryTable_AllInter.txt"
+
+
+	#load:
+	(branchFactor, leafSize, subdivision, primaryNodeIntersections, primaryLeafIntersections, primaryAabb,
+		primaryAabbSuccessRatio, primaryPrimitive, primaryPrimitiveSuccessRatio, secondaryNodeIntersections,
+		secondaryLeafIntersections, secondaryAabb, secondaryAabbSuccessRatio, secondaryPrimitive,
+		secondaryPrimitiveSuccessRatio, nodeSah, leafSah, nodeEpo, leafEpo, leafVolume, leafSurfaceArea,
+		traversalNodeFullness, traversalLeafFullness, BVHNodeFullness, BVHLeafFullness, nodeCount, leafCount,
+		averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
+		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+		
+	fig = plt.figure(figsize=(12,3.8))
+	plt.subplots_adjust(hspace = 0.4, wspace = 0.15)
+
+
+	#average leaf depth
+	ax = plt.subplot(1, 2, 1)
+	nodeSizes = [2,3,4,8,12,16]
+	for i in nodeSizes:
+		filter2 = averageLeafDepth[branchFactor == i]
+		filter1 = leafSize[branchFactor == i]
+		plt.plot(filter1, filter2, label='N' + str(i))
+	plt.xticks(np.arange(2, 18, step=2))
+	ax.set_ylim(ymin= -1)
+	plt.xlabel('Leaf Size')
+	plt.ylabel('Average tree depth')
+	plt.legend()
+
+	#average leaf depth
+	ax = plt.subplot(1, 2, 2)
+	leafSizes = [1,2,3,4,8,12,16]
+	for i in leafSizes:
+		filter2 = averageLeafDepth[leafSize == i]
+		filter1 = branchFactor[leafSize == i]
+		plt.plot(filter1, filter2, label='N' + str(i))
+	plt.xticks(np.arange(2, 18, step=2))
+	ax.set_ylim(ymin= -1)
+	plt.xlabel('Node Size')
+	plt.ylabel('Average tree depth')
+	plt.legend()
+
+	#save to file
+
+	plt.savefig(outputFolder + "treeDepth.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "treeDepth.pgf", bbox_inches='tight')
+	endPlot()
+
 
 def fullnessGraph():
 	filePath = inputFolder + "averageTable_AllInter.txt"
@@ -266,38 +343,37 @@ def fullnessGraph():
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
 	fig = plt.figure(figsize=(12,7))
-	plt.suptitle("Node and leaf fullness for BVH with and without leaf splitting")
 	plt.subplots_adjust(hspace = 0.35, wspace = 0.15)
-	#Bvh node counts:
-	ax = plt.subplot(2, 2, 1)
 	
+	#node fullness
+	ax = plt.subplot(2, 2, 1)
 	plt.title("Leaf splitting enabled")
 	leafSizes = [1,2,3,4,8,12,16]
 	for i in leafSizes:
-		filter2 = BVHNodeFullness[leafSize == i]
+		filter2 = BVHNodeFullness[leafSize == i] * 100
 		filter1 = branchFactor[leafSize == i]
 		filter2 /= filter1
 		plt.plot(filter1, filter2, label='L' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
-	ax.set_ylim(ymin= -0.1, ymax = 1.1)
+	ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Node size')
-	plt.ylabel('Node Fullness')
+	plt.ylabel('Node Fullness [%]')
 	plt.legend(ncol=3)
 	
-	#aabb intersections by leaf size.
+	#leaf fullness
 	ax = plt.subplot(2, 2, 3)
 	plt.plot([2],[1]) # <- in order to scip first color ;/
 	nodeSizes = [2,3,4,8,12,16]
 	plt.title("Leaf splitting enabled")
 	for i in nodeSizes:
-		filter2 = BVHLeafFullness[branchFactor == i]
+		filter2 = BVHLeafFullness[branchFactor == i] * 100
 		filter1 = leafSize[branchFactor == i]
 		filter2 /= filter1
 		plt.plot(filter1, filter2, label='N' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
-	ax.set_ylim(ymin= -0.1, ymax = 1.1)
+	ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf Fullness')
+	plt.ylabel('Leaf Fullness [%]')
 	plt.legend(ncol=3)
 
 	#load:
@@ -309,35 +385,44 @@ def fullnessGraph():
 		averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath2, delimiter=',', unpack=True, skiprows=1)
 
-	#Bvh node counts:
+	#node fullness
 	ax = plt.subplot(2, 2, 2)
 	
 	plt.title("Leaf splitting disabled")
 	leafSizes = [1,2,3,4,8,12,16]
 	for i in leafSizes:
-		filter2 = BVHNodeFullness[leafSize == i]
+		filter2 = BVHNodeFullness[leafSize == i] * 100
 		filter1 = branchFactor[leafSize == i]
 		filter2 /= filter1
 		plt.plot(filter1, filter2, label='L' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
-	ax.set_ylim(ymin= -0.1, ymax = 1.1)
+	ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Node size')
-	plt.ylabel('Node Fullness')
+	plt.ylabel('Node Fullness [%]')
 	plt.legend(ncol=3)
 	
-	#aabb intersections by leaf size.
+	#just average computation
+	fullnessAverage = 0
+	for i in range(2, 17):
+		filter2 = BVHLeafFullness[branchFactor == i] * 100
+		filter1 = leafSize[branchFactor == i]
+		filter2 /= filter1
+		fullnessAverage += np.average(filter2)
+	fullnessAverage /= 15
+
+	#leaf fullness
 	ax = plt.subplot(2, 2, 4)
 	plt.title("Leaf splitting disabled")
 
-	filter2 = BVHLeafFullness[branchFactor == 2]
+	filter2 = BVHLeafFullness[branchFactor == 2] * 100
 	filter1 = leafSize[branchFactor == 2]
 	filter2 /= filter1
 	plt.plot(filter1, filter2, label= "All node sizes")
 
 	plt.xticks(np.arange(2, 18, step=2))
-	ax.set_ylim(ymin= -0.1, ymax = 1.1)
+	ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf Fullness')
+	plt.ylabel('Leaf Fullness [%]')
 	plt.legend(ncol=3)
 
 	#save to file
@@ -422,9 +507,11 @@ def bvhOverview():
 #nodeLeafCount(True)
 #nodeLeafCount(False)
 
+treeDepth()
+
 #fullnessGraph()
 
 #bvhOverview()
 
-bvhVolume()
-epoComparison()
+#bvhVolume()
+#epoComparison()

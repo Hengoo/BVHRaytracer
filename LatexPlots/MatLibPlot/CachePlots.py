@@ -151,15 +151,15 @@ def differentCachesizeAnalysis(workSize):
 			heapSecondaryLoads1 = np.append(heapSecondaryLoads1, np.average(secondaryHeapCacheLoads))
 			heapSecondaryMisses1 = np.append(heapSecondaryMisses1, np.average(secondaryHeapCacheMiss))
 
-		stackHitRate0 = 1 - stackMisses0 / stackLoads0
-		heapHitRate0 = 1 - heapMisses0 / heapLoads0
-		stackHitRate1 = 1 - stackMisses1 / stackLoads1
-		heapHitRate1 = 1 - heapMisses1 / heapLoads1
-
-		stackSecondaryHitRate0 = 1 - stackSecondaryMisses0 / stackSecondaryLoads0
-		heapSecondaryHitRate0 = 1 - heapSecondaryMisses0 / heapSecondaryLoads0
-		stackSecondaryHitRate1 = 1 - stackSecondaryMisses1 / stackSecondaryLoads1
-		heapSecondaryHitRate1 = 1 - heapSecondaryMisses1 / heapSecondaryLoads1
+		stackHitRate0 = (1 - stackMisses0 / stackLoads0) * 100
+		heapHitRate0 = (1 - heapMisses0 / heapLoads0) * 100
+		stackHitRate1 = (1 - stackMisses1 / stackLoads1) * 100
+		heapHitRate1 = (1 - heapMisses1 / heapLoads1) * 100
+ 
+		stackSecondaryHitRate0 = (1 - stackSecondaryMisses0 / stackSecondaryLoads0) * 100
+		heapSecondaryHitRate0 = (1 - heapSecondaryMisses0 / heapSecondaryLoads0) * 100
+		stackSecondaryHitRate1 = (1 - stackSecondaryMisses1 / stackSecondaryLoads1) * 100
+		heapSecondaryHitRate1 = (1 - heapSecondaryMisses1 / heapSecondaryLoads1) * 100
 
 		xAxis = np.arange(len(cacheSizes)) * 5
 		#Cache Hitrate
@@ -168,15 +168,15 @@ def differentCachesizeAnalysis(workSize):
 		plt.title("Primary rays " + titleConfigString)
 		
 		#horizontal line at 0 and 1
-		plt.axhline(y = 1, linewidth=0.5, color='0.6')
+		plt.axhline(y = 100, linewidth=0.5, color='0.6')
 		plt.axhline(y = 0, linewidth=0.5, color='0.6')
 		plt.plot(xAxis, heapHitRate1, label="Wide V1 heap")
 		plt.plot(xAxis, stackHitRate1, label="Wide V1 stack")
 		plt.plot(xAxis, heapHitRate0, label="Single ray Traversal Heap")
-		plt.plot(xAxis, stackHitRate0, label="Single ray Traversal Stack")	
+		#plt.plot(xAxis, stackHitRate0, label="Single ray Traversal Stack")
 
 		plt.xticks(xAxis, (8, 16, 32, 64, 128, 256, 512))
-		plt.ylabel("Cache line hit rate")
+		plt.ylabel("Cache line hit rate[%]")
 		if (iteration == len(nodeSizes) -1):
 			plt.xlabel("Cache Size per Thread [cache lines]")
 		#plt.legend()
@@ -184,12 +184,12 @@ def differentCachesizeAnalysis(workSize):
 		ax = plt.subplot(4,2,2 + iteration * 2)
 		plt.title("Secondary rays " + titleConfigString)
 		#horizontal line at 0 and 1
-		plt.axhline(y = 1, linewidth=0.5, color='0.6')
+		plt.axhline(y = 100, linewidth=0.5, color='0.6')
 		plt.axhline(y = 0, linewidth=0.5, color='0.6')
-		plt.plot(xAxis, heapSecondaryHitRate1, label="Wide V1 heap")
-		plt.plot(xAxis, stackSecondaryHitRate1, label="Wide V1 stack")
-		plt.plot(xAxis, heapSecondaryHitRate0, label="Single ray Traversal Heap")
-		plt.plot(xAxis, stackSecondaryHitRate0, label="Single ray Traversal Stack")	
+		plt.plot(xAxis, heapSecondaryHitRate1, label="Wide traversal BVH cache loads")
+		plt.plot(xAxis, stackSecondaryHitRate1, label="Wide traversal overhead cache loads")
+		plt.plot(xAxis, heapSecondaryHitRate0, label="Single ray Traversal BVH cache loads")
+		#plt.plot(xAxis, stackSecondaryHitRate0, label="Single ray Traversal Stack")
 
 		plt.xticks(xAxis, (8, 16, 32, 64, 128, 256, 512))
 		#plt.ylabel("cache hit rate")
@@ -201,8 +201,8 @@ def differentCachesizeAnalysis(workSize):
 	handles, labels = ax.get_legend_handles_labels()
 	fig.legend(handles, labels, ncol=4, loc='lower center', bbox_to_anchor=(0.5, 0.91))	
 
-	plt.savefig(outputFolder + "CacheHitrate_s" + str(workSize) + ".pdf")
-	plt.savefig(outputFolder + "CacheHitrate_s" + str(workSize) + ".pgf")
+	plt.savefig(outputFolder + "CacheHitrate_s" + str(workSize) + ".pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "CacheHitrate_s" + str(workSize) + ".pgf", bbox_inches='tight')
 	endPlot()
 
 	#Cache Misses
@@ -224,4 +224,4 @@ def differentCachesizeAnalysis(workSize):
 #perRayCacheMiss("_b4_l4_mb4_ml4", 16)
 #perRayCacheMiss("_b16_l16_mb16_ml16", 16)
 
-differentCachesizeAnalysis(16)
+#differentCachesizeAnalysis(16)
