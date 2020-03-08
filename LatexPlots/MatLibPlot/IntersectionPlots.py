@@ -29,6 +29,8 @@ def primaryAnalysis():
 	leafSizes = [1,2, 4, 8, 12, 16]
 	nodeSizes = [2, 4, 8, 12, 16]
 
+	printImprovement = True
+
 	fig = plt.figure(figsize=(12, 7))
 	plt.subplots_adjust(hspace = 0.25, wspace = 0.2)
 	
@@ -39,6 +41,16 @@ def primaryAnalysis():
 		filter1 = branchFactor[leafSize == i]
 		plt.plot(filter1, filter2, label='L' + str(i))
 
+		if printImprovement and i == 4:
+			print("-------- node intersection improvement")
+			lastValue = filter2[0]
+			for n in range(0, 15):
+				currentValue = filter2[n]
+				tmp1 = "%.2f" % ((currentValue / lastValue - 1) * 100)
+				tmp2 = "%.2f" % currentValue
+				print(" & N" + str(n + 2) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
+				lastValue = currentValue
+
 	ax.set_ylim(ymin= -1)
 	plt.xlabel('Node size')
 	plt.ylabel('\# Primary Node intersections')
@@ -46,12 +58,22 @@ def primaryAnalysis():
 
 	ax = plt.subplot(2, 2, 2)
 	#aabb intersections by branching factor.
+
+
 	for i in leafSizes:
 		#filter2 = primaryAabb[leafSize == i]
 		filter3 = primaryAabb[leafSize == i]
 		filter2 = primaryNodeIntersections[leafSize == i]
 		filter2 *= filter1
-		plt.plot(filter1, filter2, label='L' + str(i))
+		if printImprovement and i == 4:
+			print("-------- aabb improvement")
+			lastValue = filter2[0]
+			for n in range(0, 15):
+				currentValue = filter2[n]
+				tmp1 = "%.2f" % ((currentValue / lastValue - 1) * 100)
+				tmp2 = "%.2f" % currentValue
+				print(" & N" + str(n + 2) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
+				lastValue = currentValue
 
 	ax.set_ylim(ymin= -5)
 	plt.xlabel('Node size')
@@ -64,6 +86,17 @@ def primaryAnalysis():
 	for i in nodeSizes:
 		filter2 = primaryLeafIntersections[branchFactor == i]
 		filter1 = leafSize[branchFactor == i]
+
+		if printImprovement and i == 4:
+			print("-------- leaf intersection improvement")
+			lastValue = filter2[0]
+			for n in range(0, 16):
+				currentValue = filter2[n]
+				tmp1 = "%.2f" % ((currentValue / lastValue - 1) * 100)
+				tmp2 = "%.2f" % currentValue
+				print(" & L" + str(n + 1) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
+				lastValue = currentValue
+		plt.plot(filter1, filter2, label='L' + str(i))
 		plt.plot(filter1, filter2, label='N' + str(i))
 
 	ax.set_ylim(ymin= -1)
@@ -79,6 +112,17 @@ def primaryAnalysis():
 		filter2 = primaryLeafIntersections[branchFactor == i]
 		filter1 = leafSize[branchFactor == i]
 		filter2 *= filter1
+
+		if printImprovement and i == 4:
+			print("-------- triangle improvement")
+			lastValue = filter2[0]
+			for n in range(0, 16):
+				currentValue = filter2[n]
+				tmp1 = "%.2f" % ((currentValue / lastValue - 1) * 100)
+				tmp2 = "%.2f" % currentValue
+				print(" & L" + str(n + 1) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
+				lastValue = currentValue
+		plt.plot(filter1, filter2, label='L' + str(i))
 		plt.plot(filter1, filter2, label='N' + str(i))
 
 	ax.set_ylim(ymin= -5)
@@ -200,14 +244,14 @@ def measuredFullness():
 		filter2 /= filter1
 		plt.plot(filter1, filter2, label='L' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
-	ax.set_ylim(ymin= -5, ymax = 105)
+	#ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Node size')
 	plt.ylabel('Traversal Node Fullness [%]')
 	plt.legend(ncol=3)
 	
 	#leaf fullness
 	ax = plt.subplot(1, 2, 2)
-	plt.plot([2],[1]) # <- in order to scip first color ;/
+	plt.plot([2],[100]) # <- in order to scip first color ;/
 	#plt.title("Leaf Fullness")
 	for i in nodeSizes:
 		filter2 = traversalLeafFullness[branchFactor == i] * 100
@@ -215,7 +259,7 @@ def measuredFullness():
 		filter2 /= filter1
 		plt.plot(filter1, filter2, label='N' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
-	ax.set_ylim(ymin= -5, ymax = 105)
+	#ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Leaf size')
 	plt.ylabel('Traversal Leaf Fullness [%]')
 	plt.legend(ncol=3)
@@ -228,6 +272,6 @@ def measuredFullness():
 
 
 #primaryAnalysis()
-secondaryAnalysis()
+#secondaryAnalysis()
 
-#measuredFullness()
+measuredFullness()

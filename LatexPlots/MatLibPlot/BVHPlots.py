@@ -44,7 +44,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Node size')
-	plt.ylabel("\#Nodes")
+	plt.ylabel("Relative \#Nodes")
 	plt.legend()
 
 	
@@ -229,21 +229,22 @@ def epoComparison():
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath1, delimiter=',', unpack=True, skiprows=1)
 		
 	fig = plt.figure(figsize=(12,3.8))
-	plt.subplots_adjust(hspace = 0.4, wspace = 0.15)
+	plt.subplots_adjust(hspace = 0.4, wspace = 0.2)
 
 
 	#leaf epo sponza
 	ax = plt.subplot(1, 2, 1)
 	nodeSizes = [4,8,12,16]
-	plt.title("Leaf EPO Sponza")
+	plt.title("Sponza")
 	for i in nodeSizes:
 		filter2 = leafEpo[branchFactor == i]
+		filter2 = leafSurfaceArea[branchFactor == i]
 		filter1 = leafSize[branchFactor == i]
 		plt.plot(filter1, filter2, label='N' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf EPO')
+	plt.ylabel('Leaf surface area')
 	plt.legend()
 
 	#load:
@@ -258,20 +259,21 @@ def epoComparison():
 	#leaf epo gallery
 	ax = plt.subplot(1, 2, 2)
 	leafSizes = [4,8,12,16]
-	plt.title("Leaf EPO Gallery")
+	plt.title("Gallery")
 	for i in nodeSizes:
 		filter2 = leafEpo[branchFactor == i]
+		filter2 = leafSurfaceArea[branchFactor == i]
 		filter1 = leafSize[branchFactor == i]
 		plt.plot(filter1, filter2, label='N' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf EPO')
+	plt.ylabel('Leaf surface area')
 	plt.legend()
 
 	#save to file
-	plt.savefig(outputFolder + "epoComparison.pdf", bbox_inches='tight')
-	plt.savefig(outputFolder + "epoComparison.pgf", bbox_inches='tight')
+	plt.savefig(outputFolder + "SurfaceAreaComparison.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "SurfaceAreaComparison.pgf", bbox_inches='tight')
 	endPlot()
 
 def treeDepth():
@@ -504,10 +506,10 @@ def bvhOverview():
 	#plt.savefig(outputFolder + outputName + "PrimaryAabbIntersection.pgf")
 	endPlot()
 
-#nodeLeafCount(True)
+nodeLeafCount(True)
 #nodeLeafCount(False)
 
-treeDepth()
+#treeDepth()
 
 #fullnessGraph()
 
