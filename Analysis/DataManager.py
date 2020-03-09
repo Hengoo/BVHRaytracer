@@ -53,13 +53,15 @@ class everything:
 
 	def __init__(self, wide):
 		#the folder all the scene folders are in: (leave empty if no folder)
-		self.folder = "ResultsStorage/Data/IntersectionResults/"
+		#self.folder = "ResultsStorage/Data/IntersectionResults/"
+		#self.outputFolder = "Summary/"
 		#self.folder = "ResultsStorage/Data/AllIntersections/"
-		self.outputFolder = "Summary/"
+		self.folder = "ResultsStorage/Data/AllIntersectionsNoSplit/"
+		self.outputFolder = "Summary/tmp/"
 
 		#names of the sceneFolders
 		self.names = [4,8,9,10,12]
-		#self.names = [9]
+		#self.names = [4]
 		
 		#prefixTo the folderNames like this "_4To16"
 		#self.prefix = "_4To16"
@@ -74,20 +76,18 @@ class everything:
 			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Wide/"
 		else:
 			self.intermediateFolderName = "WorkGroupSize_" + str(self.workGroupSize) + "_Normal/"
-		
-
 
 		# -1 for all, id otherwise (starting with 0)
 		self.singeIdOverride = -1
 
 		#maximum branchingfactor and max leafsite
-		self.minBranchingFactor = 4
+		self.minBranchingFactor = 2
 		self.maxBranchingFactor = 16
-		self.minLeafSize = 4
+		self.minLeafSize = 1
 		self.maxLeafSize = 16
 
-		self.branchStep = 4
-		self.leafStep = 4
+		self.branchStep = 1
+		self.leafStep = 1
 
 		#number of subdivisions we test:
 		self.subdivisionRange = [0, 0]
@@ -196,7 +196,7 @@ class everything:
 		self.storage = [None for _ in range(len(self.names))]
 
 		#folder to the performance files. For now its the laptop per files
-		self.perfFolder = "ResultsStorage/Data/PerfResult/"
+		self.perfFolder = "ResultsStorage/Data/PerfResult1/"
 
 		self.listVariableCount = [len(self.variableNames), len(self.normalizedVariableNames), len(self.variableNodeCachelinesNames)]
 

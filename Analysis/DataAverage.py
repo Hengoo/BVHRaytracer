@@ -35,9 +35,9 @@ def computeAverage(inputNames, outputName, suffix):
 		filePath = inputFolder + scenes[i] + suffix
 		tmp = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
-		for i in range(3, 21):
+		for i in range(15, 21):
 			tmp[i] /= tmp[i][0]
-			print(i)
+			#print(i)
 
 		tmp[25] /= tmp[25][0]
 		tmp[26] /= tmp[26][0]

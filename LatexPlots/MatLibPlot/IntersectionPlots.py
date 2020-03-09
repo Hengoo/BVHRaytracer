@@ -4,7 +4,7 @@ import numpy as np
 inputFolder = "../Data/"
 outputFolder = "../Plots/IntersectionPlots/"
 
-showImage = True
+showImage = False
 
 def endPlot():
 	if showImage:
@@ -29,10 +29,10 @@ def primaryAnalysis():
 	leafSizes = [1,2, 4, 8, 12, 16]
 	nodeSizes = [2, 4, 8, 12, 16]
 
-	printImprovement = True
+	printImprovement = False
 
 	fig = plt.figure(figsize=(12, 7))
-	plt.subplots_adjust(hspace = 0.25, wspace = 0.2)
+	plt.subplots_adjust(hspace = 0.25, wspace = 0.22)
 	
 	ax = plt.subplot(2, 2, 1)
 	#Node intersections by branching factor.
@@ -53,7 +53,7 @@ def primaryAnalysis():
 
 	ax.set_ylim(ymin= -1)
 	plt.xlabel('Node size')
-	plt.ylabel('\# Primary Node intersections')
+	plt.ylabel('\# Primary Node intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	ax = plt.subplot(2, 2, 2)
@@ -65,6 +65,7 @@ def primaryAnalysis():
 		filter3 = primaryAabb[leafSize == i]
 		filter2 = primaryNodeIntersections[leafSize == i]
 		filter2 *= filter1
+		plt.plot(filter1, filter2, label='L' + str(i))
 		if printImprovement and i == 4:
 			print("-------- aabb improvement")
 			lastValue = filter2[0]
@@ -77,7 +78,7 @@ def primaryAnalysis():
 
 	ax.set_ylim(ymin= -5)
 	plt.xlabel('Node size')
-	plt.ylabel('\# Primary Aabb intersections')
+	plt.ylabel('\# Primary Aabb intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	ax = plt.subplot(2, 2, 3)
@@ -96,12 +97,11 @@ def primaryAnalysis():
 				tmp2 = "%.2f" % currentValue
 				print(" & L" + str(n + 1) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
 				lastValue = currentValue
-		plt.plot(filter1, filter2, label='L' + str(i))
 		plt.plot(filter1, filter2, label='N' + str(i))
 
 	ax.set_ylim(ymin= -1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('\# Primary Leaf intersections')
+	plt.ylabel('\# Primary Leaf intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 	
 	ax = plt.subplot(2, 2, 4)
@@ -122,12 +122,11 @@ def primaryAnalysis():
 				tmp2 = "%.2f" % currentValue
 				print(" & L" + str(n + 1) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
 				lastValue = currentValue
-		plt.plot(filter1, filter2, label='L' + str(i))
 		plt.plot(filter1, filter2, label='N' + str(i))
 
 	ax.set_ylim(ymin= -5)
 	plt.xlabel('Leaf size')
-	plt.ylabel('\# Primary Triangle intersections')
+	plt.ylabel('\# Primary Triangle intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#save to file
@@ -153,7 +152,7 @@ def secondaryAnalysis():
 	nodeSizes = [2, 4, 8, 12, 16]
 
 	fig = plt.figure(figsize=(12, 7))
-	plt.subplots_adjust(hspace = 0.25, wspace = 0.2)
+	plt.subplots_adjust(hspace = 0.25, wspace = 0.22)
 	
 	ax = plt.subplot(2, 2, 1)
 	#Node intersections by branching factor.
@@ -164,7 +163,7 @@ def secondaryAnalysis():
 
 	ax.set_ylim(ymin= -1)
 	plt.xlabel('Node size')
-	plt.ylabel('\# Secondary Node intersections')
+	plt.ylabel('\# Secondary Node intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	ax = plt.subplot(2, 2, 2)
@@ -177,7 +176,7 @@ def secondaryAnalysis():
 
 	ax.set_ylim(ymin= -5)
 	plt.xlabel('Node size')
-	plt.ylabel('\# Secondary Aabb intersections')
+	plt.ylabel('\# Secondary Aabb intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	ax = plt.subplot(2, 2, 3)
@@ -190,7 +189,7 @@ def secondaryAnalysis():
 
 	ax.set_ylim(ymin= -1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('\# Secondary Leaf intersections')
+	plt.ylabel('\# Secondary Leaf intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 	
 	ax = plt.subplot(2, 2, 4)
@@ -205,7 +204,7 @@ def secondaryAnalysis():
 
 	ax.set_ylim(ymin= -5)
 	plt.xlabel('Leaf size')
-	plt.ylabel('\# Secondary Triangle intersections')
+	plt.ylabel('\# Secondary Triangle intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#save to file
@@ -230,7 +229,7 @@ def measuredFullness():
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
 	fig = plt.figure(figsize=(12,3.8))
-	plt.subplots_adjust(hspace = 0.4, wspace = 0.15)
+	plt.subplots_adjust(hspace = 0.4, wspace = 0.22)
 	nodeSizes = [2, 3, 4, 8, 12, 16]
 	
 	leafSizes = [1,2,3,4,8,12,16]
@@ -246,7 +245,7 @@ def measuredFullness():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Node size')
-	plt.ylabel('Traversal Node Fullness [%]')
+	plt.ylabel('Traversal Node Fullness [%]\nmore is better $\\triangleright$')
 	plt.legend(ncol=3)
 	
 	#leaf fullness
@@ -261,7 +260,7 @@ def measuredFullness():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Traversal Leaf Fullness [%]')
+	plt.ylabel('Traversal Leaf Fullness [%]\nmore is better $\\triangleright$')
 	plt.legend(ncol=3)
 
 	#save to file
@@ -271,7 +270,7 @@ def measuredFullness():
 	endPlot()
 
 
-#primaryAnalysis()
-#secondaryAnalysis()
+primaryAnalysis()
+secondaryAnalysis()
 
 measuredFullness()

@@ -234,7 +234,7 @@ public:
 
 		//since the leaf doesnt use the bounds only load one cacheline of the leaf node.
 		cache.loadHeap((pointerType)leafPointer);
-		int cacheLineCount = (9 * 4 * leafMemory) / 64;
+		int cacheLineCount = std::ceil((9 * 4 * leafMemory) / 64.0f);
 		for (int i = 0; i < cacheLineCount; i++)
 		{
 			cache.loadHeap((pointerType)trianglePointer + i * 64);

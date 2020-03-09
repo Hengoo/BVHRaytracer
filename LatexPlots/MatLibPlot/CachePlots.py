@@ -5,7 +5,7 @@ inputFolder = "../Data/CacheData/"
 inputFolder2 = "../Data/CacheHeapOnly/"
 outputFolder = "../Plots/CachePlots/"
 
-showImage = True
+showImage = False
 
 def endPlot():
 	if showImage:
@@ -13,7 +13,7 @@ def endPlot():
 	else:
 		plt.close()
 
-def perRayCacheMiss(bvhConfig, workSize):
+def perRayCacheMiss(bvhConfig, workSize, yMaxPrim, yMaxSec):
 
 	cacheSizes = [512, 256, 128, 64, 32]
 	cacheSizes = np.array(cacheSizes)
@@ -52,7 +52,7 @@ def perRayCacheMiss(bvhConfig, workSize):
 		if (iteration == len(cacheSizes) -1):
 			plt.xlabel("Ray Id")
 		#plt.legend()
-		ax.set_ylim(ymin=0)
+		ax.set_ylim(ymin=0, ymax = yMaxPrim)
 
 		if iteration == 0:
 			ax = plt.subplot(5, 2, 2 + iteration * 2)
@@ -77,7 +77,7 @@ def perRayCacheMiss(bvhConfig, workSize):
 		if (iteration == len(cacheSizes) -1):
 			plt.xlabel("Ray Id")
 		#plt.legend()
-		ax.set_ylim(ymin=0)
+		ax.set_ylim(ymin=0, ymax = yMaxSec)
 		
 	
 	handles, labels = ax.get_legend_handles_labels()
@@ -101,7 +101,7 @@ def differentCachesizeAnalysis(workSize):
 
 	fig = plt.figure(figsize=(13,11))
 	#plt.suptitle("Cache hit rate with different Cache sizes and Node sizes. (" + str(workSize) + " * " + str(workSize) + " Work groups)")
-	plt.subplots_adjust(hspace = 0.4)
+	plt.subplots_adjust(hspace = 0.4, wspace = 0.15)
 
 	for iteration, n in enumerate(nodeSizes):
 		#l = n
@@ -196,8 +196,10 @@ def differentCachesizeAnalysis(workSize):
 		plt.plot(xAxis, heapHitRate2, label="Wide separated heap")
 		#plt.plot(xAxis, stackHitRate0, label="Single ray Traversal Stack")
 
+		print(np.average(stackHitRate0))
+
 		plt.xticks(xAxis, (8, 16, 32, 64, 128, 256, 512))
-		plt.ylabel("Cache line hit rate[%]")
+		plt.ylabel("Cache line hit rate[%]\nmore is better $\\triangleright$")
 		if (iteration == len(nodeSizes) -1):
 			plt.xlabel("Cache Size per Thread [cache lines]")
 		#plt.legend()
@@ -243,7 +245,7 @@ def differentCachesizeAnalysis(workSize):
 
 
 
-#perRayCacheMiss("_b4_l4_mb4_ml4", 16)
-#perRayCacheMiss("_b16_l16_mb16_ml16", 16)
+perRayCacheMiss("_b4_l4_mb4_ml4", 16, 150, 90)
+perRayCacheMiss("_b16_l16_mb16_ml16", 16, 280, 150)
 
-differentCachesizeAnalysis(16)
+#differentCachesizeAnalysis(16)

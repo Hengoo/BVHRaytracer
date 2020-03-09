@@ -4,7 +4,7 @@ import numpy as np
 inputFolder = "../Data/"
 outputFolder = "../Plots/BVHPlots/"
 
-showImage = True
+showImage = False
 
 def endPlot():
 	if showImage:
@@ -30,7 +30,7 @@ def nodeLeafCount(splitting):
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
 	fig = plt.figure(figsize=(12,12))
-	plt.subplots_adjust(hspace = 0.35, wspace = 0.15)
+	plt.subplots_adjust(hspace = 0.35, wspace = 0.22)
 
 	#Bvh node counts:
 	ax = plt.subplot(3, 2, 1)
@@ -44,7 +44,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Node size')
-	plt.ylabel("Relative \#Nodes")
+	plt.ylabel("Relative \#Nodes\n\$\\triangleleft$ less is better")
 	plt.legend()
 
 	
@@ -60,7 +60,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Relative \#Nodes')
+	plt.ylabel('Relative \#Nodes\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	# leaf counts:
@@ -75,7 +75,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Node size')
-	plt.ylabel('Relative \#Leafs')
+	plt.ylabel('Relative \#Leafs\n\$\\triangleleft$ less is better')
 	plt.legend(ncol=3)
 
 	
@@ -95,7 +95,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Relative \#Leafs')
+	plt.ylabel('Relative \#Leafs\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#node fullness
@@ -110,12 +110,12 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Node size')
-	plt.ylabel('Node Fullness [%]')
+	plt.ylabel('Node Fullness [%]\nmore is better $\\triangleright$')
 	plt.legend(ncol=3)
 	
 	#leaf fullness
 	ax = plt.subplot(3, 2, 6)
-	plt.plot([2],[1]) # <- in order to scip first color ;/
+	plt.plot([2],[100]) # <- in order to scip first color ;/
 	nodeSizes = [2,3,4,8,12,16]
 	#plt.title("Leaf Fullness")
 	for i in nodeSizes:
@@ -126,7 +126,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -5, ymax = 105)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf Fullness [%]')
+	plt.ylabel('Leaf Fullness [%]\nmore is better $\\triangleright$')
 	plt.legend(ncol=3)
 
 	#save to file
@@ -152,7 +152,7 @@ def bvhVolume():
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
 	fig = plt.figure(figsize=(12,7))
-	plt.subplots_adjust(hspace = 0.35, wspace = 0.15)
+	plt.subplots_adjust(hspace = 0.35, wspace = 0.22)
 
 	ax = plt.subplot(2, 2, 1)
 	#plt.title("Leaf surface area")
@@ -164,7 +164,7 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Relative Leaf surface area')
+	plt.ylabel('Relative Leaf surface area\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	ax = plt.subplot(2, 2, 2)
@@ -177,7 +177,7 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Relative Leaf Volume')
+	plt.ylabel('Relative Leaf Volume\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#leaf epo
@@ -191,7 +191,7 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Relative Leaf EPO')
+	plt.ylabel('Relative Leaf EPO\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#node epo
@@ -205,7 +205,7 @@ def bvhVolume():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Node size')
-	plt.ylabel('Relative Node EPO')
+	plt.ylabel('Relative Node EPO\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#save to file
@@ -229,7 +229,7 @@ def epoComparison():
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath1, delimiter=',', unpack=True, skiprows=1)
 		
 	fig = plt.figure(figsize=(12,3.8))
-	plt.subplots_adjust(hspace = 0.4, wspace = 0.2)
+	plt.subplots_adjust(hspace = 0.4, wspace = 0.22)
 
 
 	#leaf epo sponza
@@ -244,7 +244,7 @@ def epoComparison():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf surface area')
+	plt.ylabel('Leaf surface area\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#load:
@@ -268,7 +268,7 @@ def epoComparison():
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf surface area')
+	plt.ylabel('Leaf surface area\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#save to file
@@ -293,7 +293,7 @@ def treeDepth():
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
 	fig = plt.figure(figsize=(12,3.8))
-	plt.subplots_adjust(hspace = 0.4, wspace = 0.15)
+	plt.subplots_adjust(hspace = 0.4, wspace = 0.22)
 
 
 	#average leaf depth
@@ -306,7 +306,7 @@ def treeDepth():
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -1)
 	plt.xlabel('Leaf Size')
-	plt.ylabel('Average tree depth')
+	plt.ylabel('Average tree depth\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#average leaf depth
@@ -319,7 +319,7 @@ def treeDepth():
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -1)
 	plt.xlabel('Node Size')
-	plt.ylabel('Average tree depth')
+	plt.ylabel('Average tree depth\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#save to file
@@ -509,11 +509,11 @@ def bvhOverview():
 nodeLeafCount(True)
 #nodeLeafCount(False)
 
-#treeDepth()
+treeDepth()
 
 #fullnessGraph()
 
 #bvhOverview()
 
-#bvhVolume()
-#epoComparison()
+bvhVolume()
+epoComparison()
