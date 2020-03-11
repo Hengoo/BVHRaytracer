@@ -243,8 +243,9 @@ void RayTracer::run()
 				//erato scene converted to glb with blender (replaced some #indoo with 0 so blender could load it?)
 				name = "erato";
 				loadGltfModel("models/erato/erato.glb", gameObjects, meshBins);
-				cameraPositions.push_back(glm::vec3(10, 6, 9));
-				cameraTargets.push_back(glm::vec3(-3, 1.5, 0));
+				//good image with 480 * 960 resolution and 2.0 focal length
+				cameraPositions.push_back(glm::vec3(4, 3, 9));
+				cameraTargets.push_back(glm::vec3(-2.5, 1.5, 0));
 
 				lights.push_back(std::make_unique<DirectionalLight>(glm::vec3(0, -1, 0), 10));
 				break;

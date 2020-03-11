@@ -4,7 +4,7 @@ import numpy as np
 inputFolder = "../Data/"
 outputFolder = "../Plots/BVHPlots/"
 
-showImage = False
+showImage = True
 
 def endPlot():
 	if showImage:
@@ -213,7 +213,7 @@ def bvhVolume():
 	plt.savefig(outputFolder + outputName + "BVHVolume.pgf", bbox_inches='tight')
 	endPlot()
 
-def epoComparison():
+def leafSurfaceAreaComparison():
 	#comparing sponza and gallery epos
 
 	filePath1 = inputFolder + "sponzaTable_AllInter.txt"
@@ -232,13 +232,12 @@ def epoComparison():
 	plt.subplots_adjust(hspace = 0.4, wspace = 0.22)
 
 
-	#leaf epo sponza
 	ax = plt.subplot(1, 2, 1)
 	nodeSizes = [4,8,12,16]
 	plt.title("Sponza")
 	for i in nodeSizes:
-		filter2 = leafEpo[branchFactor == i]
-		filter2 = leafSurfaceArea[branchFactor == i]
+		#filter2 = leafEpo[branchFactor == i]
+		filter2 = leafSurfaceArea[branchFactor == i] / 35727148
 		filter1 = leafSize[branchFactor == i]
 		plt.plot(filter1, filter2, label='N' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
@@ -256,19 +255,18 @@ def epoComparison():
 		averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
 		secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath2, delimiter=',', unpack=True, skiprows=1)
 
-	#leaf epo gallery
 	ax = plt.subplot(1, 2, 2)
 	leafSizes = [4,8,12,16]
 	plt.title("Gallery")
 	for i in nodeSizes:
-		filter2 = leafEpo[branchFactor == i]
-		filter2 = leafSurfaceArea[branchFactor == i]
+		#filter2 = leafEpo[branchFactor == i]
+		filter2 = leafSurfaceArea[branchFactor == i] / 1023.30
 		filter1 = leafSize[branchFactor == i]
 		plt.plot(filter1, filter2, label='N' + str(i))
 	plt.xticks(np.arange(2, 18, step=2))
 	#ax.set_ylim(ymin= -0.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Leaf surface area\n\$\\triangleleft$ less is better')
+	plt.ylabel('Relative leaf surface area\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#save to file
@@ -506,14 +504,14 @@ def bvhOverview():
 	#plt.savefig(outputFolder + outputName + "PrimaryAabbIntersection.pgf")
 	endPlot()
 
-nodeLeafCount(True)
+#nodeLeafCount(True)
 #nodeLeafCount(False)
 
-treeDepth()
+#treeDepth()
 
 #fullnessGraph()
 
 #bvhOverview()
 
-bvhVolume()
-epoComparison()
+#bvhVolume()
+leafSurfaceAreaComparison()
