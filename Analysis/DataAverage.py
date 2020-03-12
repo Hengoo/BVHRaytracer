@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 inputFolder = "Summary/"
-outputFolder = "Summary/"
+outputFolder = "Summary/tmp"
 
 scenes = [
 	"sponza",
@@ -35,6 +35,9 @@ def computeAverage(inputNames, outputName, suffix):
 		filePath = inputFolder + scenes[i] + suffix
 		tmp = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
 		
+		for i in range(3, 15):
+			tmp[i] /= tmp[i][0]
+
 		for i in range(15, 21):
 			tmp[i] /= tmp[i][0]
 			#print(i)
@@ -58,7 +61,7 @@ test = ("branchFactor","leafSize ","subdivision","primaryNodeIntersections","pri
 #computeAverage(scenes, "average", "Table_Normal.txt")
 #computeAverage(scenes, "average", "Table_Wide.txt")
 computeAverage(scenes, "average", "Table_AllInter.txt")
-computeAverage(scenes, "average", "Table_AllInterNoSplit.txt")
+#computeAverage(scenes, "average", "Table_AllInterNoSplit.txt")
 
 
 #19 = volume

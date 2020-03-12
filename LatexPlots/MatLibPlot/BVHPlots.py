@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 inputFolder = "../Data/"
 outputFolder = "../Plots/BVHPlots/"
 
-showImage = True
+showImage = False
 
 def endPlot():
 	if showImage:
@@ -75,7 +76,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Node size')
-	plt.ylabel('Relative \#Leafs\n\$\\triangleleft$ less is better')
+	plt.ylabel('Relative \#Leaves\n\$\\triangleleft$ less is better')
 	plt.legend(ncol=3)
 
 	
@@ -95,7 +96,7 @@ def nodeLeafCount(splitting):
 	plt.xticks(np.arange(2, 18, step=2))
 	ax.set_ylim(ymin= -0.1, ymax = 1.1)
 	plt.xlabel('Leaf size')
-	plt.ylabel('Relative \#Leafs\n\$\\triangleleft$ less is better')
+	plt.ylabel('Relative \#Leaves\n\$\\triangleleft$ less is better')
 	plt.legend()
 
 	#node fullness
@@ -504,6 +505,121 @@ def bvhOverview():
 	#plt.savefig(outputFolder + outputName + "PrimaryAabbIntersection.pgf")
 	endPlot()
 
+def BVHNodeComparison():
+	#compares all scene results
+
+	fig = plt.figure(figsize=(13, 15))
+	plt.subplots_adjust(hspace = 0.5, wspace = 0.30)
+	
+	filePaths = ["sponzaTable_AllInter.txt", "sanMiguelTable_AllInter.txt", "galleryTable_AllInter.txt", "amazonLumberyardInteriorTable_AllInter.txt", "amazonLumberyardExteriorTable_AllInter.txt"]
+	sceneNames = ["Sponza", "San Miguel", "Gallery", "Bistro Interior", "Bistro Exterior"]
+	for iteration, n in enumerate(filePaths):
+		filePath = inputFolder + n
+		sceneName = sceneNames[iteration]
+
+		#load:
+		(branchFactor, leafSize, subdivision, primaryNodeIntersections, primaryLeafIntersections, primaryAabb,
+			primaryAabbSuccessRatio, primaryPrimitive, primaryPrimitiveSuccessRatio, secondaryNodeIntersections,
+			secondaryLeafIntersections, secondaryAabb, secondaryAabbSuccessRatio, secondaryPrimitive,
+			secondaryPrimitiveSuccessRatio, nodeSah, leafSah, nodeEpo, leafEpo, leafVolume, leafSurfaceArea,
+			traversalNodeFullness, traversalLeafFullness, BVHNodeFullness, BVHLeafFullness, nodeCount, leafCount,
+			averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
+			secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+
+		leafSizes = [1,2, 4, 8, 12, 16]
+		nodeSizes = [2, 4, 8, 12, 16]
+
+		ax = plt.subplot(5, 2, 1 + iteration * 2)
+		plt.title(sceneName)
+		#Node intersections by branching factor.
+		for i in leafSizes:
+			filter2 = nodeCount[leafSize == i]
+			filter1 = branchFactor[leafSize == i]
+			plt.plot(filter1, filter2, label='L' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Node size')
+		plt.ylabel('\# Nodes\n\$\\triangleleft$ less is better')
+		ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
+		plt.legend(ncol=2, fontsize = "small")
+
+		ax = plt.subplot(5, 2, 2 + iteration * 2)
+		plt.title(sceneName)
+		plt.plot([2],[1]) # <- in order to scip first color ;/
+		#Leaf intersections by Leaf size.
+		for i in nodeSizes:
+			filter2 = nodeCount[branchFactor == i]
+			filter1 = leafSize[branchFactor == i]
+			plt.plot(filter1, filter2, label='N' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Leaf size')
+		plt.ylabel('\# Nodes\n\$\\triangleleft$ less is better')
+		ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
+		plt.legend(ncol=2, fontsize = "small")
+		
+	plt.savefig(outputFolder + "BVHCopmarisonNode.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "BVHCopmarisonNode.pgf", bbox_inches='tight')
+	endPlot()
+
+
+def BVHLeafComparison():
+	#compares all scene results
+
+	fig = plt.figure(figsize=(13, 15))
+	plt.subplots_adjust(hspace = 0.5, wspace = 0.30)
+	
+	filePaths = ["sponzaTable_AllInter.txt", "sanMiguelTable_AllInter.txt", "galleryTable_AllInter.txt", "amazonLumberyardInteriorTable_AllInter.txt", "amazonLumberyardExteriorTable_AllInter.txt"]
+	sceneNames = ["Sponza", "San Miguel", "Gallery", "Bistro Interior", "Bistro Exterior"]
+	for iteration, n in enumerate(filePaths):
+		filePath = inputFolder + n
+		sceneName = sceneNames[iteration]
+
+		#load:
+		(branchFactor, leafSize, subdivision, primaryNodeIntersections, primaryLeafIntersections, primaryAabb,
+			primaryAabbSuccessRatio, primaryPrimitive, primaryPrimitiveSuccessRatio, secondaryNodeIntersections,
+			secondaryLeafIntersections, secondaryAabb, secondaryAabbSuccessRatio, secondaryPrimitive,
+			secondaryPrimitiveSuccessRatio, nodeSah, leafSah, nodeEpo, leafEpo, leafVolume, leafSurfaceArea,
+			traversalNodeFullness, traversalLeafFullness, BVHNodeFullness, BVHLeafFullness, nodeCount, leafCount,
+			averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
+			secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+
+		leafSizes = [1,2, 4, 8, 12, 16]
+		nodeSizes = [2, 4, 8, 12, 16]
+
+		ax = plt.subplot(5, 2, 1 + iteration * 2)
+		plt.title(sceneName)
+		#Node intersections by branching factor.
+		for i in leafSizes:
+			filter2 = leafCount[leafSize == i]
+			filter1 = branchFactor[leafSize == i]
+			plt.plot(filter1, filter2, label='L' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Node size')
+		plt.ylabel('\# Leaves\n\$\\triangleleft$ less is better')
+		ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
+		plt.legend(ncol=2, fontsize = "x-small")
+
+		ax = plt.subplot(5, 2, 2 + iteration * 2)
+		plt.title(sceneName)
+		plt.plot([2],[1]) # <- in order to scip first color ;/
+		#Leaf intersections by Leaf size.
+		for i in nodeSizes:
+			filter2 = leafCount[branchFactor == i]
+			filter1 = leafSize[branchFactor == i]
+			plt.plot(filter1, filter2, label='N' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Leaf size')
+		plt.ylabel('\# Leaves\n\$\\triangleleft$ less is better')
+		ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
+		plt.legend(ncol=2, fontsize = "x-small")
+		
+	plt.savefig(outputFolder + "BVHCopmarisonLeaf.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "BVHCopmarisonLeaf.pgf", bbox_inches='tight')
+	endPlot()
+
 #nodeLeafCount(True)
 #nodeLeafCount(False)
 
@@ -514,4 +630,7 @@ def bvhOverview():
 #bvhOverview()
 
 #bvhVolume()
-leafSurfaceAreaComparison()
+#leafSurfaceAreaComparison()
+
+BVHNodeComparison()
+BVHLeafComparison()

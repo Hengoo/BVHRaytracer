@@ -190,9 +190,9 @@ def differentCachesizeAnalysis(workSize):
 		#horizontal line at 0 and 1
 		plt.axhline(y = 100, linewidth=0.5, color='0.6')
 		plt.axhline(y = 0, linewidth=0.5, color='0.6')
-		plt.plot(xAxis, heapSecondaryHitRate1, label="Wide traversal BVH cache")
-		plt.plot(xAxis, stackSecondaryHitRate1, label="Wide traversal memory overhead cache")
-		plt.plot(xAxis, heapSecondaryHitRate0, label="Single ray Traversal BVH cache")
+		plt.plot(xAxis, heapSecondaryHitRate1, label="Wide traversal BVH")
+		plt.plot(xAxis, stackSecondaryHitRate1, label="Wide traversal memory overhead")
+		plt.plot(xAxis, heapSecondaryHitRate0, label="Single ray Traversal BVH")
 
 		plt.xticks(xAxis, (8, 16, 32, 64, 128, 256, 512))
 		#plt.ylabel("cache hit rate")
@@ -373,8 +373,8 @@ def differentCachesizeAnalysis2(workSize):
 		plt.axhline(y = 0, linewidth=0.5, color='0.6')
 		#plt.plot(xAxis, heapSecondaryLoads1, label="Wide heap")
 
-		plt.plot(xAxis, heapSecondaryMisses1 + stackSecondaryMisses1, label= "\# Wide traversal cache")
-		plt.plot(xAxis, heapSecondaryMisses0 + stackSecondaryMisses0, label= "\# Single ray traversal cache")
+		plt.plot(xAxis, heapSecondaryMisses1 + stackSecondaryMisses1, label= "\# Wide traversal")
+		plt.plot(xAxis, heapSecondaryMisses0 + stackSecondaryMisses0, label= "\# Single ray traversal")
 		plt.xticks(xAxis, (8, 16, 32, 64, 128, 256, 512))
 		#plt.ylabel("cache hit rate")
 		if (iteration == len(nodeSizes) -1):
@@ -613,8 +613,8 @@ def differentCachesizeAnalysis4(workSize):
 		#horizontal line at 0 and 1
 		plt.axhline(y = 0, linewidth=0.5, color='0.6')
 
-		plt.plot(xAxis, heapSecondaryMisses1 + stackSecondaryMisses1, label= "\# Wide traversal cache")
-		plt.plot(xAxis, heapSecondaryMisses0 + stackSecondaryMisses0, label= "\# Single ray traversal cache")
+		plt.plot(xAxis, heapSecondaryMisses1 + stackSecondaryMisses1, label= "\# Wide traversal")
+		plt.plot(xAxis, heapSecondaryMisses0 + stackSecondaryMisses0, label= "\# Single ray traversal")
 		plt.xticks(xAxis, (4, 8, 12, 16,))
 		#plt.ylabel("cache hit rate")
 		if (iteration == len(cacheSizes) -1):
@@ -632,13 +632,13 @@ def differentCachesizeAnalysis4(workSize):
 #perRayCacheMiss("_b4_l4_mb4_ml4", 16, 155, 90)
 #perRayCacheMiss("_b16_l16_mb16_ml16", 16, 300, 150)
 
-#differentCachesizeAnalysis(16)
-#differentCachesizeAnalysis(8)
-#differentCachesizeAnalysis(32)
+differentCachesizeAnalysis(16)
+differentCachesizeAnalysis(8)
+differentCachesizeAnalysis(32)
 #
-#differentCachesizeAnalysis2(8)
-#differentCachesizeAnalysis2(16)
-#differentCachesizeAnalysis2(32)
+differentCachesizeAnalysis2(8)
+differentCachesizeAnalysis2(16)
+differentCachesizeAnalysis2(32)
 #differentCachesizeAnalysis3(16)
 
 differentCachesizeAnalysis4(8)
