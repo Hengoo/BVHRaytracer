@@ -4,7 +4,7 @@ import numpy as np
 inputFolder = "../Data/"
 outputFolder = "../Plots/IntersectionPlots/"
 
-showImage = False
+showImage = True
 
 def endPlot():
 	if showImage:
@@ -51,7 +51,7 @@ def primaryAnalysis():
 				print(" & N" + str(n + 2) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
 				lastValue = currentValue
 
-	ax.set_ylim(ymin= -1)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Node size')
 	plt.ylabel('\# Primary Node intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -76,7 +76,7 @@ def primaryAnalysis():
 				print(" & N" + str(n + 2) +" & " + tmp2 +  " & " + tmp1 + " \\% \\\\")
 				lastValue = currentValue
 
-	ax.set_ylim(ymin= -5)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Node size')
 	plt.ylabel('\# Primary Aabb intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -99,7 +99,7 @@ def primaryAnalysis():
 				lastValue = currentValue
 		plt.plot(filter1, filter2, label='N' + str(i))
 
-	ax.set_ylim(ymin= -1)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Leaf size')
 	plt.ylabel('\# Primary Leaf intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -124,7 +124,7 @@ def primaryAnalysis():
 				lastValue = currentValue
 		plt.plot(filter1, filter2, label='N' + str(i))
 
-	ax.set_ylim(ymin= -5)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Leaf size')
 	plt.ylabel('\# Primary Triangle intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -161,7 +161,7 @@ def secondaryAnalysis():
 		filter1 = branchFactor[leafSize == i]
 		plt.plot(filter1, filter2, label='L' + str(i))
 
-	ax.set_ylim(ymin= -1)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Node size')
 	plt.ylabel('\# Secondary Node intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -174,7 +174,7 @@ def secondaryAnalysis():
 		filter2 *= filter1
 		plt.plot(filter1, filter2, label='L' + str(i))
 
-	ax.set_ylim(ymin= -5)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Node size')
 	plt.ylabel('\# Secondary Aabb intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -187,7 +187,7 @@ def secondaryAnalysis():
 		filter1 = leafSize[branchFactor == i]
 		plt.plot(filter1, filter2, label='N' + str(i))
 
-	ax.set_ylim(ymin= -1)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Leaf size')
 	plt.ylabel('\# Secondary Leaf intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -202,7 +202,7 @@ def secondaryAnalysis():
 		filter2 *= filter1
 		plt.plot(filter1, filter2, label='N' + str(i))
 
-	ax.set_ylim(ymin= -5)
+	ax.set_ylim(ymin= 0)
 	plt.xlabel('Leaf size')
 	plt.ylabel('\# Secondary Triangle intersections\n\$\\triangleleft$ less is better')
 	plt.legend()
@@ -269,8 +269,119 @@ def measuredFullness():
 	plt.savefig(outputFolder + "measuredFullness.pgf", bbox_inches='tight')
 	endPlot()
 
+def intersectionCompPrim():
+	#compares all scene results
 
-primaryAnalysis()
-secondaryAnalysis()
+	fig = plt.figure(figsize=(13, 15))
+	plt.subplots_adjust(hspace = 0.5, wspace = 0.20)
+	
+	filePaths = ["sponzaTable_AllInter.txt", "sanMiguelTable_AllInter.txt", "galleryTable_AllInter.txt", "amazonLumberyardInteriorTable_AllInter.txt", "amazonLumberyardExteriorTable_AllInter.txt"]
+	sceneNames = ["Sponza", "San Miguel", "Gallery", "Bistro Interior", "Bistro Exterior"]
+	for iteration, n in enumerate(filePaths):
+		filePath = inputFolder + n
+		sceneName = sceneNames[iteration]
 
-measuredFullness()
+		#load:
+		(branchFactor, leafSize, subdivision, primaryNodeIntersections, primaryLeafIntersections, primaryAabb,
+			primaryAabbSuccessRatio, primaryPrimitive, primaryPrimitiveSuccessRatio, secondaryNodeIntersections,
+			secondaryLeafIntersections, secondaryAabb, secondaryAabbSuccessRatio, secondaryPrimitive,
+			secondaryPrimitiveSuccessRatio, nodeSah, leafSah, nodeEpo, leafEpo, leafVolume, leafSurfaceArea,
+			traversalNodeFullness, traversalLeafFullness, BVHNodeFullness, BVHLeafFullness, nodeCount, leafCount,
+			averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
+			secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+
+		leafSizes = [1,2, 4, 8, 12, 16]
+		nodeSizes = [2, 4, 8, 12, 16]
+
+		ax = plt.subplot(5, 2, 1 + iteration * 2)
+		plt.title(sceneName)
+		#Node intersections by branching factor.
+		for i in leafSizes:
+			filter2 = primaryNodeIntersections[leafSize == i]
+			filter1 = branchFactor[leafSize == i]
+			plt.plot(filter1, filter2, label='L' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Node size')
+		plt.ylabel('\# Primary Node intersections\n\$\\triangleleft$ less is better')
+		plt.legend(ncol=2)
+
+		ax = plt.subplot(5, 2, 2 + iteration * 2)
+		plt.title(sceneName)
+		plt.plot([2],[1]) # <- in order to scip first color ;/
+		#Leaf intersections by Leaf size.
+		for i in nodeSizes:
+			filter2 = primaryLeafIntersections[branchFactor == i]
+			filter1 = leafSize[branchFactor == i]
+			plt.plot(filter1, filter2, label='N' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Leaf size')
+		plt.ylabel('\# Primary Leaf intersections\n\$\\triangleleft$ less is better')
+		plt.legend(ncol=2)
+		
+	plt.savefig(outputFolder + "intersectionComparisonPrim.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "intersectionComparisonPrim.pgf", bbox_inches='tight')
+	endPlot()
+
+def intersectionCompSec():
+	#compares all scene results
+
+	fig = plt.figure(figsize=(13, 15))
+	plt.subplots_adjust(hspace = 0.5, wspace = 0.20)
+	
+	filePaths = ["sponzaTable_AllInter.txt", "sanMiguelTable_AllInter.txt", "galleryTable_AllInter.txt", "amazonLumberyardInteriorTable_AllInter.txt", "amazonLumberyardExteriorTable_AllInter.txt"]
+	sceneNames = ["Sponza", "San Miguel", "Gallery", "Bistro Interior", "Bistro Exterior"]
+	for iteration, n in enumerate(filePaths):
+		filePath = inputFolder + n
+		sceneName = sceneNames[iteration]
+
+		#load:
+		(branchFactor, leafSize, subdivision, primaryNodeIntersections, primaryLeafIntersections, primaryAabb,
+			primaryAabbSuccessRatio, primaryPrimitive, primaryPrimitiveSuccessRatio, secondaryNodeIntersections,
+			secondaryLeafIntersections, secondaryAabb, secondaryAabbSuccessRatio, secondaryPrimitive,
+			secondaryPrimitiveSuccessRatio, nodeSah, leafSah, nodeEpo, leafEpo, leafVolume, leafSurfaceArea,
+			traversalNodeFullness, traversalLeafFullness, BVHNodeFullness, BVHLeafFullness, nodeCount, leafCount,
+			averageLeafDepth, treeDepth, primaryWasteFactor, secondaryWasteFactor, primaryNodeCachelines,
+			secondaryNodeCachelines, totalTime, nodeTime, leafTime, perAabbCost, perTriCost, sahNodeFactor) = np.loadtxt(filePath, delimiter=',', unpack=True, skiprows=1)
+
+		leafSizes = [1,2, 4, 8, 12, 16]
+		nodeSizes = [2, 4, 8, 12, 16]
+
+		ax = plt.subplot(5, 2, 1 + iteration * 2)
+		plt.title(sceneName)
+		#Node intersections by branching factor.
+		for i in leafSizes:
+			filter2 = secondaryNodeIntersections[leafSize == i]
+			filter1 = branchFactor[leafSize == i]
+			plt.plot(filter1, filter2, label='L' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Node size')
+		plt.ylabel('\# Secondary Node intersections\n\$\\triangleleft$ less is better')
+		plt.legend(ncol=2)
+
+		ax = plt.subplot(5, 2, 2 + iteration * 2)
+		plt.title(sceneName)
+		plt.plot([2],[1]) # <- in order to scip first color ;/
+		#Leaf intersections by Leaf size.
+		for i in nodeSizes:
+			filter2 = secondaryLeafIntersections[branchFactor == i]
+			filter1 = leafSize[branchFactor == i]
+			plt.plot(filter1, filter2, label='N' + str(i))
+
+		ax.set_ylim(ymin= 0)
+		plt.xlabel('Leaf size')
+		plt.ylabel('\# Secondary Leaf intersections\n\$\\triangleleft$ less is better')
+		plt.legend(ncol=2)
+		
+	plt.savefig(outputFolder + "intersectionComparisonSec.pdf", bbox_inches='tight')
+	plt.savefig(outputFolder + "intersectionComparisonSec.pgf", bbox_inches='tight')
+	endPlot()
+
+#primaryAnalysis()
+#secondaryAnalysis()
+#measuredFullness()
+
+intersectionCompPrim()
+intersectionCompSec()

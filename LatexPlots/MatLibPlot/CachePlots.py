@@ -532,18 +532,118 @@ def differentCachesizeAnalysis3(workSize):
 	plt.savefig(outputFolder + "CacheLoadsSpecial" + str(workSize) + ".pgf", bbox_extra_artists=(lgd,), bbox_inches='tight')
 	endPlot()
 
+def differentCachesizeAnalysis4(workSize):
+
+
+	cacheSizes = [8, 16, 32, 64, 128]#, 256, 512]
+	cacheSizes = np.array(cacheSizes)
+
+	l = 4
+	nodeSizes = [4, 8, 12, 16]
+
+	fig = plt.figure(figsize=(13,13))
+	#plt.suptitle("Cache hit rate with different Cache sizes and Node sizes. (" + str(workSize) + " * " + str(workSize) + " Work groups)")
+	plt.subplots_adjust(hspace = 0.4, wspace = 0.15)
+
+	for iteration in range(len(cacheSizes)):
+		stackMisses0, stackMisses1, stackLoads0, stackLoads1, stackHitRate0, stackHitRate1= (np.zeros(0) for i in range(6))
+		heapMisses0, heapMisses1, heapLoads0, heapLoads1, heapHitRate0, heapHitRate1= (np.zeros(0) for i in range(6))
+		stackSecondaryMisses0, stackSecondaryMisses1, stackSecondaryLoads0, stackSecondaryLoads1, stackSecondaryHitRate0, stackSecondaryHitRate1= (np.zeros(0) for i in range(6))
+		heapSecondaryMisses0, heapSecondaryMisses1, heapSecondaryLoads0, heapSecondaryLoads1, heapSecondaryHitRate0, heapSecondaryHitRate1= (np.zeros(0) for i in range(6))
+
+		cacheSize = cacheSizes[iteration]
+		titleConfigString = "Cache size " + str(cacheSize)
+		for n in nodeSizes:
+			l = n
+			configString = "_b" + str(n) + "_l" + str(l) + "_mb" + str(n) + "_ml" + str(l)
+			
+			filePath0 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Normal/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
+			filePath1 = inputFolder + "WorkGroupSize_" + str(workSize) + "_Wide/amazonLumberyardInterior_PerWorkgroupCache_Cache" + str(cacheSize) + configString + ".txt"
+
+			#single ray:
+			(workGroupId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss,
+				secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads,
+				secondaryHeapCacheMiss) = np.loadtxt(filePath0, delimiter=',', unpack=True, skiprows=1)
+
+			stackLoads0 = np.append(stackLoads0, np.average(stackCacheLoads / (workSize * workSize)))
+			stackMisses0 = np.append(stackMisses0, np.average(stackCacheMiss / (workSize * workSize)))
+			heapLoads0 = np.append(heapLoads0, np.average(heapCacheLoads / (workSize * workSize)))
+			heapMisses0 = np.append(heapMisses0, np.average(heapCacheMiss / (workSize * workSize)))
+
+			stackSecondaryLoads0 = np.append(stackSecondaryLoads0, np.average(secondaryStackCacheLoads / (workSize * workSize)))
+			stackSecondaryMisses0 = np.append(stackSecondaryMisses0, np.average(secondaryStackCacheMiss / (workSize * workSize)))
+			heapSecondaryLoads0 = np.append(heapSecondaryLoads0, np.average(secondaryHeapCacheLoads / (workSize * workSize)))
+			heapSecondaryMisses0 = np.append(heapSecondaryMisses0, np.average(secondaryHeapCacheMiss / (workSize * workSize)))
+
+			#wide ray
+			(workGroupId, stackCacheLoads, stackCacheMiss, heapCacheLoads, heapCacheMiss,
+				secondaryStackCacheLoads, secondaryStackCacheMiss, secondaryHeapCacheLoads,
+				secondaryHeapCacheMiss) = np.loadtxt(filePath1, delimiter=',', unpack=True, skiprows=1)
+
+
+			stackLoads1 = np.append(stackLoads1, np.average(stackCacheLoads / (workSize * workSize)))
+			stackMisses1 = np.append(stackMisses1, np.average(stackCacheMiss / (workSize * workSize)))
+			heapLoads1 = np.append(heapLoads1, np.average(heapCacheLoads / (workSize * workSize)))
+			heapMisses1 = np.append(heapMisses1, np.average(heapCacheMiss / (workSize * workSize)))
+
+			stackSecondaryLoads1 = np.append(stackSecondaryLoads1, np.average(secondaryStackCacheLoads / (workSize * workSize)))
+			stackSecondaryMisses1 = np.append(stackSecondaryMisses1, np.average(secondaryStackCacheMiss / (workSize * workSize)))
+			heapSecondaryLoads1 = np.append(heapSecondaryLoads1, np.average(secondaryHeapCacheLoads / (workSize * workSize)))
+			heapSecondaryMisses1 = np.append(heapSecondaryMisses1, np.average(secondaryHeapCacheMiss / (workSize * workSize)))
+
+		xAxis = nodeSizes
+		#Cache Hitrate
+
+		ax = plt.subplot(5,2,1 + iteration * 2)
+		plt.title("Primary rays, " + titleConfigString)
+		
+		#horizontal line at 0 and 1
+		plt.axhline(y = 0, linewidth=0.5, color='0.6')
+		plt.plot(xAxis, heapMisses1 + stackMisses1)
+		plt.plot(xAxis, heapMisses0 + stackMisses0)
+
+		plt.xticks(xAxis, (4, 8, 12, 16,))
+		plt.ylabel("\# Cache line misses\n$\\triangleleft$ less is better")
+		if (iteration == len(cacheSizes) -1):
+			plt.xlabel("Node and Leaf size")
+		#plt.legend()
+
+		ax = plt.subplot(5,2,2 + iteration * 2)
+		plt.title("Secondary rays, " + titleConfigString)
+		#horizontal line at 0 and 1
+		plt.axhline(y = 0, linewidth=0.5, color='0.6')
+
+		plt.plot(xAxis, heapSecondaryMisses1 + stackSecondaryMisses1, label= "\# Wide traversal cache")
+		plt.plot(xAxis, heapSecondaryMisses0 + stackSecondaryMisses0, label= "\# Single ray traversal cache")
+		plt.xticks(xAxis, (4, 8, 12, 16,))
+		#plt.ylabel("cache hit rate")
+		if (iteration == len(cacheSizes) -1):
+			plt.xlabel("Node and Leaf size")
+		#plt.legend()
+
+
+	handles, labels = ax.get_legend_handles_labels()
+	lgd = ax.legend(handles, labels, ncol=2, loc='lower center', bbox_to_anchor=(-0.1, 6.8))
+
+	plt.savefig(outputFolder + "CacheLoadsPerNode" + str(workSize) + ".pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
+	plt.savefig(outputFolder + "CacheLoadsPerNode" + str(workSize) + ".pgf", bbox_extra_artists=(lgd,), bbox_inches='tight')
+	endPlot()
 
 #perRayCacheMiss("_b4_l4_mb4_ml4", 16, 155, 90)
 #perRayCacheMiss("_b16_l16_mb16_ml16", 16, 300, 150)
 
-differentCachesizeAnalysis(16)
-differentCachesizeAnalysis(8)
-differentCachesizeAnalysis(32)
-
-differentCachesizeAnalysis2(8)
-differentCachesizeAnalysis2(16)
-differentCachesizeAnalysis2(32)
+#differentCachesizeAnalysis(16)
+#differentCachesizeAnalysis(8)
+#differentCachesizeAnalysis(32)
+#
+#differentCachesizeAnalysis2(8)
+#differentCachesizeAnalysis2(16)
+#differentCachesizeAnalysis2(32)
 #differentCachesizeAnalysis3(16)
+
+differentCachesizeAnalysis4(8)
+differentCachesizeAnalysis4(16)
+differentCachesizeAnalysis4(32)
 
 
 #stackMissrate(16)
