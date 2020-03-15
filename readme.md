@@ -1,15 +1,21 @@
-## Analysis of different Bounding Volume Hierarchies for Raytracing
+## Analysis of Different Bounding VolumeHierarchies and Ray Tracing Algorithms
 
-This is the implementaion part of my master thesis : [Thesis](http://share.splamy.de/hengo/20/03/AndreasLeitnerThesis.pdf)
+This repository contains the the implementation part of my master thesis : [Thesis](http://share.splamy.de/hengo/20/03/AndreasLeitnerThesis.pdf)
 
-### To get it rumning:
+Short Summary:
 
-Needed libary to compile:
+Analysis of effects of the effects of different BVH configurations like node size and leaf size on ray tracing. SIMD is used to compute the node and leaf intersections efficiently. We discuss two different approaches to traversing the BVH and evaluate how they are are effected by the different BVH configurations. The general goal is to find an algorithm and BVH configuration that is well suited to be implemented as function hardware on the GPU. The evaluation includes performance benchmarks and a cache simulator.
+
+### Building and example:
+
+Needed library to compile:
 
 	-GLM in ../../Libraries/glm
 	(or change visual studio setting if you dont like that location)
 	
-	-ISPC compiler needs to be installed (exe has to be in path)
+	-ISPC compiler needs to be installed (.exe has to be in path)
+
+	-Python and Jinja2 is required.
 
 Needed models:
 
