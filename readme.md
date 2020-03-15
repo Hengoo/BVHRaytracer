@@ -30,4 +30,4 @@ The default config renders Bistro Interior with performance tests and instrument
 
 The results are stored in /Analysis/Results/\<sceneName\> 
 
-The evaluation of the data is done with the python scripts in \Analysis
+The evaluation of the data is done with the python scripts in /Analysis
