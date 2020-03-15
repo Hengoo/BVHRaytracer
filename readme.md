@@ -1,26 +1,27 @@
 ## Analysis of different Bounding Volume Hierarchies for Raytracing
 
-### Getting it to run:
+This is the implementaion part of my master thesis : [Thesis](http://share.splamy.de/hengo/20/03/AndreasLeitnerThesis.pdf)
 
-Needed libary:
+### To get it rumning:
+
+Needed libary to compile:
 
 	-GLM in ../../Libraries/glm
 	(or change visual studio setting if you dont like that location)
 	
 	-ISPC compiler needs to be installed (exe has to be in path)
 
-Needed models: (currently not up to date)
+Needed models:
 
-	-For now downloadable here: https://www.dropbox.com/s/ri3azxcga87dt5q/RaytracerModels.zip?dl=0
+	-Can be downloaded from here: [Dropbox Link](https://www.dropbox.com/s/gjjnz189hsuhnfr/MasterThesisModels.zip?dl=0)
 	-unzip them to /models
 
 ### Settings:
 
 The render and analysis settings can be changed in config.txt
-	
-### Analysis:
-Analysis results are saved in /Analysis/Results/\<sceneName\>
 
-The python file "DataManager.py" in /Analysis can gather the data from different scenes into one big table.
+The default config renders Bistro Interior with performance tests and instrumented renderer for N4L4 to N16L16 with steps of 4
 
-For now you have to edit the python code to choose what scene to summerize
+The results are stored in /Analysis/Results/\<sceneName\> 
+
+The evaluation of the data is done with the python scripts in \Analysis

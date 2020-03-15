@@ -69,7 +69,7 @@
 *.pdfsync
 
 ## for now pdf:
-*.pdf
+#*.pdf
 
 ##in the latexPlots area:
 LatexPlots/*.dat
@@ -78,6 +78,8 @@ LatexPlots/*.table
 LatexPlots/*.cmd
 LatexPlots/Data/Old
 LatexPlots/Data
+LatexPlots/*.pdf
+LatexPlots/plots
 
 #debug and compied folder:
 Debug/

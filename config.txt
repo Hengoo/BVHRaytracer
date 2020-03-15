@@ -1,12 +1,11 @@
 #Config file for raytracer.
 
 #Resolution
-#xRes = 1920
-#yRes = 1088
-xRes = 3840
-yRes = 2176
-#xRes = 960
-#yRes = 544
+xRes = 1920
+yRes = 1088
+
+#xRes = 3840
+#yRes = 2176
 
 #Leafsize and Branching Factor to test:
 minLeafSize = 4
@@ -20,15 +19,15 @@ branchStep = 4
 workGroupSize = 16
 
 #What analysis to do:
-renderAnalysisImage = false
+renderAnalysisImage = true
 saveDepthDetailedImage = false
 bvhAnalysis = false
 saveBvhImage = false
 saveImage = false
-doWorkGroupAnalysis = false
+doWorkGroupAnalysis = true
 
 #Do performance Analysis: (this disables parallel execution)
-doPerformanceTest = true
+doPerformanceTest = false
 doLeafMemoryTests = false
 doNodeMemoryTests = false
 saveRayTimes = false
@@ -56,7 +55,7 @@ subdivisionEnd = 0
 subdivisionStep = 1
 
 
-#Render type for data render:	
+#Render type for data render:
 #	0 = normal bvh tree traversal
 #	1 = compact node
 #	2 = compact node immediate <- tests all childNodes at once
@@ -68,7 +67,7 @@ saveDistance = false
 #Use wide renderer / alternative wide renderer or not:
 wideRender = true
 wideAlternative = true
-renderAllOptions = true
+renderAllOptions = false
 
 #Scenes:
 #	0 = lizard
@@ -87,7 +86,7 @@ renderAllOptions = true
 #Multiple scenes are seperated by comma like "scenario = 6, 4, 1, 2" 
 #When rendering multiple scenarios they are all started parallel
 #When rendering a single scene with more than one leaf/branch combination they are started in parallel batches of 4
-#scenario = 7,8,9,10,11,12
+#scenario = 4,8,9,10,12
 scenario = 9
 
 #Node order:
