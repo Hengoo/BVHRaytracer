@@ -1,6 +1,6 @@
 ## Analysis of Different Bounding VolumeHierarchies and Ray Tracing Algorithms
 
-This repository contains the the implementation part of my master thesis: [Thesis](http://share.splamy.de/hengo/20/03/AndreasLeitnerThesis.pdf)
+This repository contains the the implementation part of my master thesis: [Thesis](http://share.splamy.de/hengo/20/04/AndreasLeitnerThesis.pdf)
 
 Short Summary:
 
